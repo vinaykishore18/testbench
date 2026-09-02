@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testbench by Vinay</title>
+<meta name="description" content="Hardware test bench for keyboards, mice, controllers, wheels, headsets, monitors, webcams and touchscreens. Runs entirely in the browser.">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/testbench.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='4' fill='%230E1113'/%3E%3Cpath d='M4 14h3l2-5 2.6 7 2.2-9 2 7h3.2' stroke='%233FD07E' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<div class="tb-lockbar" id="lockbar">
+  <span class="rec"></span>
+  <span>CAPTURE MODE — every key is being read by this page. Windows key, Alt+Tab and Escape are held.</span>
+  <span class="esc">HOLD <kbd>Esc</kbd> TO EXIT <span class="tb-escbar"><i id="escfill"></i></span> <span style="color:var(--ink-faint)">or</span> <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd></span>
+</div>
+
+<div class="tb-app">
+  <div class="tb-brand">
+    <svg class="tb-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="1.5" y="4.5" width="21" height="15" rx="2" stroke="#35C3D4" stroke-width="1.5"/>
+      <path d="M4.5 14.5h3l2-5 2.6 7 2.2-9 2 7h3.2" stroke="#3FD07E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <b>Testbench</b>
+  </div>
+
+  <div class="tb-status" id="statusbar">
+    <span class="tb-chip" id="chip-pad"><span class="tb-dot"></span>Controllers <b>0</b></span>
+    <span class="tb-chip" id="chip-wheel"><span class="tb-dot"></span>Wheel <b>—</b></span>
+    <span class="tb-chip" id="chip-mic"><span class="tb-dot"></span>Mic <b>off</b></span>
+    <span class="tb-chip" id="chip-cam"><span class="tb-dot"></span>Camera <b>off</b></span>
+    <span class="tb-chip" id="chip-scr"><span class="tb-dot"></span>Display <b>—</b></span>
+    <span class="tb-clock" id="clock"></span>
+  </div>
+
+  <nav class="tb-rail" id="rail">
+    <div class="tb-railhead">Input</div>
+    <button class="tb-nav" data-view="home" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>Bench<span class="tb-badge" id="badge-home"></span></button>
+    <button class="tb-nav" data-view="keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>Keyboard<span class="tb-badge" id="badge-keyboard"></span></button>
+    <button class="tb-nav" data-view="mouse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="2.5" width="12" height="19" rx="6"/><path d="M12 6.5v4"/></svg>Mouse<span class="tb-badge" id="badge-mouse"></span></button>
+    <button class="tb-nav" data-view="gamepad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6.5 8h11a4.5 4.5 0 0 1 4.4 5.4l-.8 4A2.6 2.6 0 0 1 16.6 18L15 16H9l-1.6 2a2.6 2.6 0 0 1-4.5-.6l-.8-4A4.5 4.5 0 0 1 6.5 8Z"/><path d="M7 11v3M5.5 12.5h3M16 12h.01M18 13.5h.01"/></svg>Controllers<span class="tb-badge" id="badge-gamepad"></span></button>
+    <button class="tb-nav" data-view="wheel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M4.5 17l5-3M19.5 17l-5-3"/></svg>Wheels<span class="tb-badge" id="badge-wheel"></span></button>
+    <div class="tb-railhead">Audio</div>
+    <button class="tb-nav" data-view="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>Mic &amp; Headsets<span class="tb-badge" id="badge-audio"></span></button>
+    <div class="tb-railhead">Screens &amp; optics</div>
+    <button class="tb-nav" data-view="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/></svg>Monitors<span class="tb-badge" id="badge-monitor"></span></button>
+    <button class="tb-nav" data-view="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/></svg>Webcams<span class="tb-badge" id="badge-camera"></span></button>
+    <button class="tb-nav" data-view="touch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 11V5.5a1.8 1.8 0 0 1 3.6 0V11"/><path d="M12.6 11V9.2a1.7 1.7 0 0 1 3.4 0V13"/><path d="M16 12.5a1.7 1.7 0 0 1 3.4 0v3.2A5.8 5.8 0 0 1 13.6 21h-1.2a5 5 0 0 1-4-2l-3-4a1.7 1.7 0 0 1 2.6-2.1L9 14.5"/></svg>Touchscreens<span class="tb-badge" id="badge-touch"></span></button>
+    <div class="tb-railhead">Machine</div>
+    <button class="tb-nav" data-view="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>System<span class="tb-badge" id="badge-system"></span></button>
+  </nav>
+
+  <main class="tb-main" id="main">
+
+  <!-- ================= HOME ================= -->
+  <section class="tb-view on" id="view-home">
+    <div class="tb-h">
+      <h1>Bench</h1>
+      <p>Everything plugged into this machine, read live. Plug a device in and its card lights up — controllers are scored the moment they connect.</p>
+    </div>
+    <div class="tb-hint"><span>Nothing is uploaded. All tests run inside this browser tab.</span></div>
+
+    <div class="tb-panel">
+      <h2 class="tb-ptitle">Detected now<span class="tb-rule"></span></h2>
+      <div class="tb-devcards" id="devcards"></div>
+    </div>
+
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Live controller scoreboard<span class="tb-rule"></span></h2>
+        <div id="home-pads"><p class="tb-empty">No controller connected. Plug one in over USB or pair it, then press any button to wake it.</p></div>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Bench notes<span class="tb-rule"></span></h2>
+        <dl class="tb-kv" id="envinfo"></dl>
+        <p class="tb-note">A controller must send one input before the browser will hand it over — that is a browser rule, not a fault with the pad. If a card stays dark, press a face button.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= KEYBOARD ================= -->
+  <section class="tb-view" id="view-keyboard">
+    <div class="tb-h"><h1>Keyboard</h1><p>Capture mode holds the keys that normally throw you out of the page — Windows, Alt+Tab, Escape, F-keys. Hold Escape for one second to leave.</p></div>
+    <div class="tb-bar" style="margin-top:12px">
+      <button class="tb-btn pri" id="kb-lock">Start capture mode</button>
+      <label class="tb-lab">Layout
+        <select id="kb-layout">
+          <optgroup label="Full size">
+            <option value="ansi_full" selected>ANSI 104 — full size</option>
+            <option value="iso_full">ISO 105 — full size</option>
+          </optgroup>
+          <optgroup label="Tenkeyless">
+            <option value="ansi_tkl">ANSI 87 — TKL</option>
+            <option value="iso_tkl">ISO 88 — TKL</option>
+          </optgroup>
+          <optgroup label="Compact">
+            <option value="c75">75% — compact with F-row</option>
+            <option value="c65">65% — arrows, no F-row</option>
+            <option value="c60">60% — alphas only</option>
+            <option value="laptop">Laptop / notebook</option>
+          </optgroup>
+          <optgroup label="Part">
+            <option value="numpad">Numpad only</option>
+          </optgroup>
+        </select>
+      </label>
+      <button class="tb-btn" id="kb-reset">Reset</button>
+      <label class="tb-lab">Size <input type="range" id="kb-size" min="26" max="58" value="42" style="width:92px"></label>
+    </div>
+    <div class="tb-idbar" id="kb-id"></div>
+    <p class="tb-note" id="kb-lockstate">Capture mode needs Chrome, Edge or Opera for the full key hold. In Firefox and Safari the page still reads every key, but the operating system may steal Windows/Command and some F-keys.</p>
+
+    <div class="tb-panel">
+      <div class="tb-stats" style="margin-bottom:14px">
+        <div class="tb-stat"><div class="k">Keys tested</div><div class="v" id="kb-tested">0<small> / 0</small></div></div>
+        <div class="tb-stat"><div class="k">Presses</div><div class="v" id="kb-presses">0</div></div>
+        <div class="tb-stat"><div class="k">Held at once (NKRO)</div><div class="v" id="kb-nkro">0</div></div>
+        <div class="tb-stat"><div class="k">Chatter / bounce</div><div class="v" id="kb-chatter">0</div></div>
+        <div class="tb-stat"><div class="k">Stuck keys</div><div class="v" id="kb-stuck">0</div></div>
+        <div class="tb-stat"><div class="k">Fastest repeat</div><div class="v" id="kb-fast">—</div></div>
+      </div>
+      <div class="tb-scroll"><div class="tb-kbwrap" id="kbwrap"></div></div>
+      <p class="tb-note">Green outline = tested at least once. Solid green = held down now. Red = stuck (held over 5 s with no release). Amber = chatter, the key reported a second press within 35 ms of the last one — that is the classic worn-switch fault.</p>
+    </div>
+
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel"><h2 class="tb-ptitle">Verdict<span class="tb-rule"></span></h2><div id="kb-verdict"></div></div>
+      <div class="tb-panel"><h2 class="tb-ptitle">Key log<span class="tb-rule"></span></h2><div class="tb-log" id="kb-log"></div>
+        <p class="tb-note">Any key the layout does not know — media keys, macro keys, laptop extras — is logged here with its raw code, so nothing goes untested.</p></div>
+    </div>
+  </section>
+
+  <!-- ================= MOUSE ================= -->
+  <section class="tb-view" id="view-mouse">
+    <div class="tb-h"><h1>Mouse</h1><p>Reads up to 20 buttons, catches the double-click fault that kills most returned mice, and measures polling rate and sensor jitter.</p></div>
+    <div class="tb-bar" style="margin-top:12px">
+      <button class="tb-btn" id="ms-reset">Reset</button>
+      <button class="tb-btn" id="ms-lock">Raw mode (pointer lock)</button>
+      <label class="tb-lab">Double-click threshold <input type="number" id="ms-dcth" value="80" min="20" max="200" step="5" style="width:64px"> ms</label>
+    </div>
+    <div class="tb-panel">
+      <div class="tb-stats">
+        <div class="tb-stat"><div class="k">Buttons seen</div><div class="v" id="ms-btnseen">0</div></div>
+        <div class="tb-stat"><div class="k">Clicks</div><div class="v" id="ms-clicks">0</div></div>
+        <div class="tb-stat"><div class="k">Suspect doubles</div><div class="v" id="ms-dbl">0</div></div>
+        <div class="tb-stat"><div class="k">Shortest gap</div><div class="v" id="ms-gap">—</div></div>
+        <div class="tb-stat"><div class="k">Polling rate</div><div class="v" id="ms-poll">—</div></div>
+        <div class="tb-stat"><div class="k">Scroll up / down</div><div class="v" id="ms-scroll">0 / 0</div></div>
+        <div class="tb-stat"><div class="k">Tilt L / R</div><div class="v" id="ms-tilt">0 / 0</div></div>
+      </div>
+    </div>
+
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">The mouse<span class="tb-rule"></span></h2>
+        <div class="tb-bar" style="margin-bottom:12px">
+          <div class="tb-seg" id="ms-shape" role="group" aria-label="Mouse shape">
+            <button data-s="std" aria-pressed="false">3-button</button>
+            <button data-s="five" aria-pressed="true">5-button</button>
+            <button data-s="mmo" aria-pressed="false">MMO 12-side</button>
+          </div>
+        </div>
+        <div id="ms-svg"></div>
+        <div class="tb-idbar" id="ms-id"></div>
+        <p class="tb-note" id="ms-mmonote">Press each button on the mouse and watch it light up on the diagram. Side buttons on MMO mice usually send keyboard macros — click a thumb-pad key on the diagram, then press that button on the mouse, and it will bind and light up from then on.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Buttons<span class="tb-rule"></span></h2>
+        <div class="tb-btngrid" id="ms-grid"></div>
+        <p class="tb-note">Side buttons on MMO and multi-button mice often ship as keyboard macros rather than mouse buttons. Anything the mouse sends as a key lands in the capture list below, so a 12-button pad still tests fully — press each one and watch a new line appear.</p>
+        <div class="tb-log" id="ms-keylog" style="height:104px;margin-top:9px"></div>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Sensor &amp; tracking<span class="tb-rule"></span></h2>
+        <div class="tb-mousepad" id="ms-pad" style="height:236px"><canvas id="ms-canvas"></canvas></div>
+        <div class="tb-bar" style="margin-top:9px">
+          <button class="tb-btn" id="ms-clear">Clear trace</button>
+          <button class="tb-btn" id="ms-cpireset">Reset count</button>
+          <label class="tb-lab">Swipe distance <input type="number" id="ms-cpidist" value="0" min="0" max="200" step="1" style="width:58px"> cm</label>
+          <span class="tb-lab">CPI <b id="ms-cpi" style="color:var(--ink);font-size:12px">—</b></span>
+        </div>
+        <p class="tb-note">Drag to draw — a healthy sensor draws a smooth line, a failing one steps, jumps or drops out. For CPI: turn on raw mode, reset the count, swipe the mouse a measured distance in one straight pass, then type that distance in. Switch off pointer acceleration in the operating system first or the number will read high.</p>
+      </div>
+    </div>
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel"><h2 class="tb-ptitle">Verdict<span class="tb-rule"></span></h2><div id="ms-verdict"></div></div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Click timing<span class="tb-rule"></span></h2>
+        <div class="tb-hist" id="ms-hist"></div>
+        <p class="tb-note">Every gap between releasing a button and pressing it again, bucketed in 25 ms steps from 0 on the left to 600 ms on the right. Human clicking piles up in the middle. Bars in the first three red buckets are the mouse firing on its own.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GAMEPAD ================= -->
+  <section class="tb-view" id="view-gamepad">
+    <div class="tb-h"><h1>Controllers</h1><p>Plug in and it scores itself: stick drift, stick noise, resting triggers and stuck buttons, read in the first second.</p></div>
+    <div class="tb-bar" style="margin-top:12px">
+      <div class="tb-devsel" id="gp-sel"></div>
+      <button class="tb-btn" id="gp-rescore">Re-score at rest</button>
+      <button class="tb-btn" id="gp-clear">Clear tested</button>
+    </div>
+    <div id="gp-body"><p class="tb-empty">Connect a controller and press any button on it. USB is the most reliable; Bluetooth works too.</p></div>
+  </section>
+
+  <!-- ================= WHEEL ================= -->
+  <section class="tb-view" id="view-wheel">
+    <div class="tb-h"><h1>Wheels &amp; pedals</h1><p>Steering range, pedal travel, shifter and paddles for G29, G920, T300, Fanatec and anything else that shows up as a game device.</p></div>
+    <div class="tb-bar" style="margin-top:12px">
+      <div class="tb-devsel" id="wh-sel"></div>
+      <label class="tb-lab">Rotation
+        <select id="wh-range"><option value="900">900°</option><option value="1080">1080°</option><option value="540">540°</option><option value="270">270°</option><option value="240">240°</option></select>
+      </label>
+      <button class="tb-btn" id="wh-reset">Reset captured range</button>
+    </div>
+    <div id="wh-body"><p class="tb-empty">Connect a wheel and turn it, or press a button on it, so the browser hands it over.</p></div>
+  </section>
+
+  <!-- ================= AUDIO ================= -->
+  <section class="tb-view" id="view-audio">
+    <div class="tb-h"><h1>Mic &amp; headsets</h1><p>Level, noise floor and clipping on the way in; channel check and a sweep on the way out.</p></div>
+
+    <div class="tb-panel">
+      <h2 class="tb-ptitle">Microphone<span class="tb-rule"></span></h2>
+      <div class="tb-bar">
+        <button class="tb-btn pri" id="au-start">Start microphone</button>
+        <select id="au-indev" style="min-width:190px"><option>Grant access to list devices</option></select>
+        <button class="tb-btn" id="au-rec" disabled>Record 6 s</button>
+        <button class="tb-btn" id="au-play" disabled>Play back</button>
+      </div>
+      <div class="tb-stats" style="margin-top:12px">
+        <div class="tb-stat"><div class="k">Level now</div><div class="v" id="au-lvl">—</div></div>
+        <div class="tb-stat"><div class="k">Peak</div><div class="v" id="au-peak">—</div></div>
+        <div class="tb-stat"><div class="k">Noise floor</div><div class="v" id="au-floor">—</div></div>
+        <div class="tb-stat"><div class="k">Clipping</div><div class="v" id="au-clip">0</div></div>
+        <div class="tb-stat"><div class="k">Sample rate</div><div class="v" id="au-sr">—</div></div>
+      </div>
+      <canvas class="tb-scope" id="au-scope" style="margin-top:12px"></canvas>
+      <canvas class="tb-scope" id="au-spec" style="margin-top:8px;height:96px"></canvas>
+      <div id="au-verdict" style="margin-top:12px"></div>
+    </div>
+
+    <div class="tb-panel">
+      <h2 class="tb-ptitle">Headphones &amp; speakers<span class="tb-rule"></span></h2>
+      <div class="tb-bar">
+        <button class="tb-btn" data-tone="left">Left only</button>
+        <button class="tb-btn" data-tone="right">Right only</button>
+        <button class="tb-btn" data-tone="both">Both</button>
+        <button class="tb-btn" data-tone="pan">Pan L → R</button>
+        <button class="tb-btn" data-tone="sweep">Sweep 20 Hz → 20 kHz</button>
+        <button class="tb-btn" data-tone="bass">Bass 30–120 Hz</button>
+        <button class="tb-btn danger" data-tone="stop">Stop</button>
+        <label class="tb-lab">Volume <input type="range" id="au-vol" min="0" max="100" value="35" style="width:110px"></label>
+      </div>
+      <div class="tb-meterrow" style="margin-top:12px"><span class="lbl">Output L</span><span class="tb-meter"><i id="au-outl"></i></span><span class="val" id="au-outlv">0</span></div>
+      <div class="tb-meterrow"><span class="lbl">Output R</span><span class="tb-meter"><i id="au-outr"></i></span><span class="val" id="au-outrv">0</span></div>
+      <p class="tb-note" id="au-sweeplbl">Left/right tells you a dead earcup instantly. The sweep finds blown drivers and rattles — listen for a gap, a buzz or a sudden drop.</p>
+    </div>
+  </section>
+
+  <!-- ================= MONITOR ================= -->
+  <section class="tb-view" id="view-monitor">
+    <div class="tb-h"><h1>Monitors</h1><p>Full-screen patterns for dead pixels, backlight bleed, banding and ghosting. Click a pattern, then use arrow keys to move through the set and Escape to come back.</p></div>
+    <div class="tb-panel">
+      <div class="tb-stats">
+        <div class="tb-stat"><div class="k">Screen</div><div class="v" id="mn-res">—</div></div>
+        <div class="tb-stat"><div class="k">Refresh rate</div><div class="v" id="mn-hz">—</div></div>
+        <div class="tb-stat"><div class="k">Device pixel ratio</div><div class="v" id="mn-dpr">—</div></div>
+        <div class="tb-stat"><div class="k">Colour depth</div><div class="v" id="mn-depth">—</div></div>
+        <div class="tb-stat"><div class="k">Colour gamut</div><div class="v" id="mn-gamut">—</div></div>
+        <div class="tb-stat"><div class="k">HDR</div><div class="v" id="mn-hdr">—</div></div>
+      </div>
+      <p class="tb-note">Refresh rate is measured live over one second. Run it on the monitor you are testing — drag this window onto that screen first.</p>
+    </div>
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Solid fields — dead &amp; stuck pixels<span class="tb-rule"></span></h2>
+        <div class="tb-swatchrow" id="mn-swatches"></div>
+        <p class="tb-note">A dead pixel stays black on every field. A stuck pixel stays one colour on every field. Dust wipes off; a fault does not.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Automatic run<span class="tb-rule"></span></h2>
+        <div class="tb-bar">
+          <button class="tb-btn pri" id="mn-runfull">Run full test</button>
+          <button class="tb-btn" id="mn-runquick">Quick run</button>
+          <label class="tb-lab">Hold each
+            <select id="mn-dwell"><option value="4">4 s</option><option value="6" selected>6 s</option><option value="9">9 s</option><option value="14">14 s</option></select>
+          </label>
+        </div>
+        <p class="tb-note">The full run walks all eleven colour fields and all nine patterns on its own — 20 steps, about two minutes at 6 seconds each. Space pauses, → skips ahead, ← goes back, Esc stops. Quick run is the eight that catch most faults.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Single patterns<span class="tb-rule"></span></h2>
+        <div class="tb-bar">
+          <button class="tb-btn" data-pat="gradient">Grey ramp — banding</button>
+          <button class="tb-btn" data-pat="nearblack">Near black — bleed &amp; crush</button>
+          <button class="tb-btn" data-pat="nearwhite">Near white — clipping</button>
+          <button class="tb-btn" data-pat="grid">1 px grid — sharpness</button>
+          <button class="tb-btn" data-pat="geometry">Geometry &amp; overscan</button>
+          <button class="tb-btn" data-pat="colorbars">Colour bars</button>
+          <button class="tb-btn" data-pat="ghosting">Motion — ghosting</button>
+          <button class="tb-btn" data-pat="uniformity">Uniformity 50% grey</button>
+          <button class="tb-btn" data-pat="fixer">Stuck-pixel flush</button>
+        </div>
+        <p class="tb-note">Stuck-pixel flush cycles colours fast over the whole screen; leave it running ten minutes on a stuck subpixel. It flashes rapidly — skip it if anyone nearby is sensitive to flashing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CAMERA ================= -->
+  <section class="tb-view" id="view-camera">
+    <div class="tb-h"><h1>Webcams</h1><p>Preview, real resolution, measured frame rate and a still you can eyeball for focus and dead sensor lines.</p></div>
+    <div class="tb-panel">
+      <div class="tb-bar">
+        <button class="tb-btn pri" id="cam-start">Start camera</button>
+        <select id="cam-dev" style="min-width:200px"><option>Grant access to list devices</option></select>
+        <button class="tb-btn" id="cam-shot" disabled>Grab still</button>
+        <button class="tb-btn danger" id="cam-stop" disabled>Stop</button>
+      </div>
+      <div class="tb-grid tb-cols2" style="margin-top:12px">
+        <div><video id="cam-video" playsinline autoplay muted style="width:100%;border:1px solid var(--line);border-radius:3px;background:#0A0D0F;aspect-ratio:16/9;object-fit:contain"></video></div>
+        <div>
+          <div class="tb-stats">
+            <div class="tb-stat"><div class="k">Resolution</div><div class="v" id="cam-res">—</div></div>
+            <div class="tb-stat"><div class="k">Frame rate</div><div class="v" id="cam-fps">—</div></div>
+            <div class="tb-stat"><div class="k">Device</div><div class="v" id="cam-name" style="font-size:12px">—</div></div>
+          </div>
+          <canvas id="cam-canvas" style="width:100%;margin-top:12px;border:1px solid var(--line);border-radius:3px;display:none"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TOUCH ================= -->
+  <section class="tb-view" id="view-touch">
+    <div class="tb-h"><h1>Touchscreens</h1><p>How many fingers the panel actually reports, and whether any area of the glass has gone dead.</p></div>
+    <div class="tb-panel">
+      <div class="tb-stats" style="margin-bottom:12px">
+        <div class="tb-stat"><div class="k">Touching now</div><div class="v" id="tc-now">0</div></div>
+        <div class="tb-stat"><div class="k">Max at once</div><div class="v" id="tc-max">0</div></div>
+        <div class="tb-stat"><div class="k">Pointer type</div><div class="v" id="tc-type" style="font-size:13px">—</div></div>
+        <div class="tb-stat"><div class="k">Pressure</div><div class="v" id="tc-press">—</div></div>
+      </div>
+      <div class="tb-touchpad" id="tc-pad"><canvas id="tc-canvas"></canvas></div>
+      <div class="tb-bar" style="margin-top:9px"><button class="tb-btn" id="tc-clear">Clear</button><span class="tb-note" style="margin:0">Drag across the whole panel edge to edge. Gaps in the trail are dead zones in the digitiser.</span></div>
+    </div>
+  </section>
+
+
+  <!-- ================= SYSTEM ================= -->
+  <section class="tb-view" id="view-system">
+    <div class="tb-h"><h1>System</h1><p>What this machine reports about itself — graphics chip, cores, memory, battery and storage. Useful on intake before a laptop or desktop goes for a wipe.</p></div>
+    <div class="tb-panel">
+      <h2 class="tb-ptitle">Hardware<span class="tb-rule"></span></h2>
+      <div class="tb-stats">
+        <div class="tb-stat"><div class="k">CPU threads</div><div class="v" id="sy-cores">—</div></div>
+        <div class="tb-stat"><div class="k">Memory (min)</div><div class="v" id="sy-ram">—</div></div>
+        <div class="tb-stat"><div class="k">Platform</div><div class="v" id="sy-plat" style="font-size:13px">—</div></div>
+        <div class="tb-stat"><div class="k">Touch points</div><div class="v" id="sy-touch">—</div></div>
+        <div class="tb-stat"><div class="k">Storage quota</div><div class="v" id="sy-store">—</div></div>
+        <div class="tb-stat"><div class="k">Connection</div><div class="v" id="sy-net" style="font-size:13px">—</div></div>
+      </div>
+      <dl class="tb-kv" id="sy-gpu" style="margin-top:14px"></dl>
+      <p class="tb-note">Graphics details come from the browser's own renderer string. It names the GPU on most machines, and reports a generic name when the browser is masking it.</p>
+    </div>
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Battery<span class="tb-rule"></span></h2>
+        <div class="tb-batt" id="sy-battbar"><i></i><span>—</span></div>
+        <dl class="tb-kv" id="sy-batt" style="margin-top:12px"></dl>
+        <p class="tb-note">Charge level and charging state only. Browsers do not expose cycle count or design capacity — for battery health you still need the manufacturer tool or the operating system report.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Connection watchdog<span class="tb-rule"></span></h2>
+        <p class="tb-sub" style="margin-bottom:8px">Leave this open with a device plugged in. Every drop-out and reconnect is time-stamped — that is how you catch a failing cable or a loose port that tests fine for ten seconds.</p>
+        <div class="tb-log" id="sy-watch" style="height:186px"></div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<div class="tb-full" id="fullstage"></div>
+<div class="tb-toasts" id="toasts"></div>
+
+<script src="js/00-core.js"></script>
+<script src="js/10-keyboard.js"></script>
+<script src="js/20-mouse.js"></script>
+<script src="js/30-gamepad.js"></script>
+<script src="js/40-wheel.js"></script>
+<script src="js/50-audio.js"></script>
+<script src="js/60-display.js"></script>
+<script src="js/70-extras.js"></script>
+<script src="js/80-bench.js"></script>
+</body>
+</html>
