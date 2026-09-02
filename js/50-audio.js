@@ -355,5 +355,7 @@ listDevices();
 stepTo(1);
 verdict($("#au-verdict"), null, [], "Start the microphone to see level, noise floor and clipping.");
 TB.onLeave("audio", function () { stopTone(); });
+/* never leave a microphone open on a machine that is walking out the door */
+window.addEventListener("pagehide", function () { stopTone(); if (micStream) stopMic(); });
 return { listDevices: listDevices };
 })();

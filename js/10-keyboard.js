@@ -97,7 +97,8 @@ var KB=(function(){
 
   var wrap=$("#kbwrap"), kb=null, keyEls={}, layout="ansi_full", layoutMap=null;
   var state=fresh();
-  function fresh(){ return {down:{},downAt:{},lastUp:{},tested:{},chatter:{},presses:0,chat:0,stuck:{},nkro:0,fastest:null}; }
+  function fresh(){ var b=function(){return Object.create(null);};
+    return {down:b(),downAt:b(),lastUp:b(),tested:b(),chatter:b(),presses:0,chat:0,stuck:b(),nkro:0,fastest:null}; }
 
   function build(){
     wrap.innerHTML=""; keyEls={};
@@ -360,8 +361,9 @@ if (TB.isCoarse()) {
 
 /* ---------------- rollover + shortcuts ---------------- */
 (function () {
-  var held = {}, maxN = 0;
+  var held = Object.create(null), maxN = 0;
   var box = $("#ro-keys");
+  var downAt = {}, repFirst = null, repLast = 0, repGaps = [];
   function paint() {
     var codes = Object.keys(held);
     if (codes.length > maxN) maxN = codes.length;
@@ -396,8 +398,25 @@ if (TB.isCoarse()) {
   window.addEventListener("keydown", function (e) {
     if (TB.view() !== "keyboard") return;
     var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    var code = e.code || e.key;
     if (pane === "rollover") {
-      if (!e.repeat) { held[e.code || e.key] = true; paint(); }
+      if (!e.repeat) {
+        held[code] = true; downAt[code] = performance.now();
+        repFirst = null; repLast = 0; repGaps = [];
+        paint();
+      } else {
+        var now = performance.now();
+        if (repFirst === null && downAt[code]) {
+          repFirst = now - downAt[code];
+          $("#ro-delay").textContent = Math.round(repFirst) + " ms";
+        } else if (repLast) {
+          repGaps.push(now - repLast);
+          if (repGaps.length > 20) repGaps.shift();
+          var avg = repGaps.reduce(function (a, b) { return a + b; }, 0) / repGaps.length;
+          $("#ro-rate").textContent = (1000 / avg).toFixed(1) + " /s";
+        }
+        repLast = now;
+      }
       var c = combo(e);
       $("#sc-display").textContent = c;
       if (!e.repeat) {
@@ -415,8 +434,8 @@ if (TB.isCoarse()) {
     delete held[e.code || e.key];
     if (pane === "rollover") paint();
   }, true);
-  window.addEventListener("blur", function () { held = {}; if (pane === "rollover") paint(); });
-  $("#ro-reset").onclick = function () { held = {}; maxN = 0; $("#sc-log").textContent = ""; $("#sc-display").textContent = "Press any key combination"; paint(); };
+  window.addEventListener("blur", function () { held = Object.create(null); if (pane === "rollover") paint(); });
+  $("#ro-reset").onclick = function () { held = Object.create(null); maxN = 0; $("#sc-log").textContent = ""; $("#sc-display").textContent = "Press any key combination"; paint(); };
   paint();
 })();
 

@@ -9,10 +9,11 @@ var NAMES = ["Left", "Middle", "Right", "Back", "Forward"];
 var MAX = 20;
 var st = fresh();
 function fresh() {
+  var bare = function () { return Object.create(null); };
   return {
-    seen: {}, down: {}, clicks: 0, dbl: 0, minGap: null, lastUp: {}, gaps: [],
+    seen: bare(), down: bare(), clicks: 0, dbl: 0, minGap: null, lastUp: bare(), gaps: [],
     up: 0, dn: 0, tl: 0, tr: 0, deltas: [],
-    keys: {}, keyDown: {},
+    keys: bare(), keyDown: bare(),
     pollPeak: 0, reports: 0
   };
 }
@@ -21,7 +22,7 @@ var pane = "buttons";
 /* ============================================================
    1. DIAGRAM
    ============================================================ */
-var shape = "five", parts = {}, cells = [], binds = {}, arming = -1;
+var shape = "five", parts = {}, cells = [], binds = Object.create(null), arming = -1;
 
 function P(d, cls) { return svgEl("path", { d: d, "class": cls }); }
 function R(x, y, w, h, r, cls) { return svgEl("rect", { x: x, y: y, width: w, height: h, rx: r, "class": cls }); }
@@ -178,11 +179,30 @@ function score() {
    ============================================================ */
 function onChrome(e) {
   var t = e.target;
-  return !!(t && t.closest && t.closest("#rail,.tb-status,.tb-lockbar,#ms-svg,button,select,input,textarea,label,a,.tb-tabs,.tb-seg"));
+  if (!t || !t.closest) return false;
+  /* the page's own controls never count as a mouse test */
+  if (t.closest("#rail,.tb-status,.tb-lockbar,.tb-tabs,.tb-seg")) return true;
+  if (t.closest("button,select,input,textarea,label,a")) return true;
+  /* clicking a thumb-pad key on the diagram binds it — every other click counts,
+     including clicks anywhere on the diagram itself */
+  if (e.button === 0 && t.closest(".cell")) return true;
+  return false;
+}
+var BITS = [[1, "Left"], [2, "Right"], [4, "Middle"], [8, "Back"], [16, "Forward"]];
+function heldNames(mask) {
+  var out = [];
+  BITS.forEach(function (b) { if (mask & b[0]) out.push(b[1]); });
+  return out.length ? out.join(" + ") : "none";
+}
+function showHeld(e) {
+  var h = $("#ms-heldnow"); if (h) h.textContent = heldNames(e.buttons || 0);
 }
 function press(e) {
   var b = e.button;
   if (b >= 1) e.preventDefault();
+  showHeld(e);
+  var le = $("#ms-lastev"); if (le) le.textContent = "down " + b;
+  raw("mousedown", "button " + b + "  buttons " + e.buttons + "  (" + (NAMES[b] || "extra " + b) + ")");
   st.seen[b] = true; st.down[b] = true;
   if (st.lastUp[b] != null) {
     var gap = e.timeStamp - st.lastUp[b];
@@ -199,6 +219,9 @@ function press(e) {
 function release(e) {
   var b = e.button;
   if (b >= 1) e.preventDefault();
+  showHeld(e);
+  var le2 = $("#ms-lastev"); if (le2) le2.textContent = "up " + b;
+  raw("mouseup", "button " + b + "  buttons " + e.buttons);
   st.down[b] = false; st.lastUp[b] = e.timeStamp; st.clicks++;
   paint();
 }
@@ -253,6 +276,163 @@ window.addEventListener("keyup", function (e) {
   st.keyDown[e.code || ("k" + e.keyCode)] = false;
   paint();
 }, true);
+
+/* ============================================================
+   3b. RAW EVENT MONITOR — nothing hides from this
+   ============================================================ */
+var rawOn = true;
+function raw(type, detail) {
+  if (!rawOn) return;
+  var box = $("#raw-log"); if (!box) return;
+  if (/^key/.test(type) && !$("#raw-keys").checked) return;
+  if (/move|rawupdate/.test(type) && !$("#raw-move").checked) return;
+  var d = el("div");
+  d.appendChild(el("b", null, TB.stamp() + "  " + type));
+  d.appendChild(document.createTextNode("   " + detail));
+  box.insertBefore(d, box.firstChild);
+  while (box.childElementCount > 300) box.lastChild.remove();
+}
+$("#raw-clear").onclick = function () { $("#raw-log").textContent = ""; };
+$("#raw-pause").onclick = function () {
+  rawOn = !rawOn;
+  this.textContent = rawOn ? "Recording" : "Paused";
+  this.classList.toggle("on", rawOn);
+};
+document.addEventListener("wheel", function (e) {
+  if (TB.view() === "mouse") raw("wheel", "deltaY " + e.deltaY.toFixed(1) + "  deltaX " + e.deltaX.toFixed(1) + "  mode " + e.deltaMode);
+}, { passive: true });
+document.addEventListener("auxclick", function (e) { if (TB.view() === "mouse") raw("auxclick", "button " + e.button); }, true);
+document.addEventListener("contextmenu", function (e) { if (TB.view() === "mouse") raw("contextmenu", "right button"); }, true);
+window.addEventListener("keydown", function (e) {
+  if (TB.view() !== "mouse" || e.repeat) return;
+  raw("keydown", "code " + (e.code || "?") + "  key “" + (e.key || "") + "”  keyCode " + e.keyCode +
+      (e.altKey ? "  ALT" : "") + (e.ctrlKey ? "  CTRL" : "") + (e.shiftKey ? "  SHIFT" : ""));
+}, true);
+
+/* Some mice never send button 3 and 4. Their driver sends a browser Back or
+   Forward command instead, which the browser acts on before the page sees a
+   mouse event at all. These two catch that: a history buffer that notices the
+   navigation and puts the page back, and the Alt+Arrow shortcut some drivers
+   send instead. Either way the side button registers and is marked tested. */
+function registerVirtual(btn, why) {
+  st.seen[btn] = true; st.down[btn] = true;
+  st.clicks++;
+  var le = $("#ms-lastev"); if (le) le.textContent = why;
+  raw("NAVIGATION", why + "  —  counted as button " + btn + " (side button via driver)");
+  paint();
+  setTimeout(function () { st.down[btn] = false; paint(); }, 160);
+}
+var navArmed = false, navBusy = false, navOK = true;
+function armNav() {
+  if (navArmed || !navOK) return;
+  try {
+    history.replaceState({ tb: 0 }, "");
+    history.pushState({ tb: 1 }, "");
+    history.pushState({ tb: 2 }, "");
+    navBusy = true;
+    history.go(-1);
+    setTimeout(function () { navBusy = false; }, 120);
+    navArmed = true;
+  } catch (err) { navOK = false; }
+}
+function disarmNav() { navArmed = false; }
+window.addEventListener("popstate", function (e) {
+  if (!navArmed || navBusy) return;
+  var i = (e.state && typeof e.state.tb === "number") ? e.state.tb : 1;
+  if (i < 1) registerVirtual(3, "browser BACK");
+  else if (i > 1) registerVirtual(4, "browser FORWARD");
+  else return;
+  navBusy = true;
+  try { history.go(1 - i); } catch (err) {}
+  setTimeout(function () { navBusy = false; }, 120);
+});
+window.addEventListener("keydown", function (e) {
+  if (TB.view() !== "mouse" || e.repeat || !e.altKey) return;
+  if (e.code === "ArrowLeft") { e.preventDefault(); registerVirtual(3, "Alt+Left from driver"); }
+  if (e.code === "ArrowRight") { e.preventDefault(); registerVirtual(4, "Alt+Right from driver"); }
+}, true);
+$("#ms-navtrap").onclick = function () {
+  if (navArmed) { disarmNav(); this.textContent = "Hold back/forward: off"; this.classList.remove("on"); }
+  else { armNav(); this.textContent = navArmed ? "Hold back/forward: on" : "Not supported here"; this.classList.toggle("on", navArmed); }
+};
+TB.onEnter("mouse", armNav);
+TB.onLeave("mouse", disarmNav);
+
+/* ============================================================
+   3c. DRAG AND HOLD
+   ============================================================ */
+(function () {
+  var pad = $("#drag-pad"), zones = [], hitCount = 0, dragging = false, t0 = 0;
+  var drops = 0, runs = 0, best = 0;
+  function build() {
+    pad.textContent = "";
+    zones = [];
+    for (var i = 0; i < 6; i++) {
+      var z = el("div");
+      z.style.cssText = "position:absolute;width:16%;height:26%;border:2px dashed var(--line);border-radius:8px;" +
+        "display:grid;place-items:center;font-family:var(--f-mono);font-size:13px;color:var(--ink-3);";
+      z.style.left = (4 + (i % 3) * 32) + "%";
+      z.style.top = (i < 3 ? 14 : 58) + "%";
+      z.textContent = String(i + 1);
+      pad.appendChild(z);
+      zones.push({ node: z, hit: false });
+    }
+    hitCount = 0; upd();
+  }
+  function upd() {
+    $("#drag-hit").textContent = "";
+    $("#drag-hit").appendChild(document.createTextNode(String(hitCount)));
+    $("#drag-hit").appendChild(el("small", null, " / 6"));
+    $("#drag-hold").textContent = best ? Math.round(best) + " ms" : "—";
+    var dd = $("#drag-drop"); dd.textContent = drops; dd.className = "v" + (drops ? " fail" : "");
+    $("#drag-done").textContent = runs;
+  }
+  function reset(soft) {
+    zones.forEach(function (z) {
+      z.hit = false;
+      z.node.style.borderColor = "var(--line)";
+      z.node.style.background = "";
+      z.node.style.color = "var(--ink-3)";
+    });
+    hitCount = 0;
+    if (!soft) { drops = 0; runs = 0; best = 0; $("#drag-log").textContent = ""; }
+    upd();
+  }
+  pad.addEventListener("pointerdown", function (e) {
+    e.preventDefault(); pad.setPointerCapture(e.pointerId);
+    dragging = true; t0 = performance.now(); reset(true);
+    logD("START", "button held down");
+  });
+  pad.addEventListener("pointermove", function (e) {
+    if (!dragging) return;
+    var r = pad.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    zones.forEach(function (z, i) {
+      if (z.hit) return;
+      var b = z.node.getBoundingClientRect();
+      if (e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom) {
+        z.hit = true; hitCount++;
+        z.node.style.borderColor = "var(--pass)";
+        z.node.style.background = "rgba(34,224,123,.16)";
+        z.node.style.color = "var(--pass)";
+        upd();
+      }
+    });
+  });
+  function end(e) {
+    if (!dragging) return;
+    dragging = false;
+    var held = performance.now() - t0;
+    if (held > best) best = held;
+    if (hitCount >= 6) { runs++; logD("PASS", "all six in one hold, " + Math.round(held) + " ms"); }
+    else { drops++; logD("DROPPED", "let go after " + hitCount + " of 6, " + Math.round(held) + " ms"); }
+    upd();
+  }
+  pad.addEventListener("pointerup", end);
+  pad.addEventListener("pointercancel", end);
+  function logD(tag, txt) { logLine("#drag-log", tag, txt); }
+  $("#drag-reset").onclick = function () { reset(false); };
+  build();
+})();
 
 /* ============================================================
    4. CLICK SPEED (CPS)
@@ -369,6 +549,7 @@ $("#dbl-reset").onclick = function () {
   new ResizeObserver(resize).observe(pad); resize();
 
   pad.addEventListener("pointerdown", function (e) { drawing = true; last = null; pad.setPointerCapture(e.pointerId); });
+  document.addEventListener("mousemove", function (e) { if (TB.view() === "mouse") showHeld(e); }, true);
   window.addEventListener("pointerup", function () { drawing = false; last = null; });
 
   function record(ts) { times.push(ts); }

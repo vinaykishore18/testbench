@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090C">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
@@ -54,7 +54,10 @@
     <button class="tb-nav" data-view="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/></svg>Monitors<span class="tb-badge" id="badge-monitor"></span></button>
     <button class="tb-nav" data-view="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/></svg>Webcams<span class="tb-badge" id="badge-camera"></span></button>
     <button class="tb-nav" data-view="touch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11V5.5a1.8 1.8 0 0 1 3.6 0V11M12.6 11V9.2a1.7 1.7 0 0 1 3.4 0V13"/><path d="M16 12.5a1.7 1.7 0 0 1 3.4 0v3.2A5.8 5.8 0 0 1 13.6 21h-1.2a5 5 0 0 1-4-2l-3-4a1.7 1.7 0 0 1 2.6-2.1L9 14.5"/></svg>Touch<span class="tb-badge" id="badge-touch"></span></button>
+    <div class="tb-railhead">Network</div>
+    <button class="tb-nav" data-view="network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12.5a10 10 0 0 1 14 0M2 9a15 15 0 0 1 20 0M8.5 16a5.5 5.5 0 0 1 7 0M12 19.5h.01"/></svg>Routers<span class="tb-badge" id="badge-network"></span></button>
     <div class="tb-railhead">Machine</div>
+    <button class="tb-nav" data-view="stress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" stroke-linejoin="round"/></svg>Stress test<span class="tb-badge" id="badge-stress"></span></button>
     <button class="tb-nav" data-view="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>System<span class="tb-badge" id="badge-system"></span></button>
   </nav>
 
@@ -190,7 +193,10 @@
             <div class="tb-stat"><div class="k">Held right now</div><div class="v" id="ro-now">0</div></div>
             <div class="tb-stat"><div class="k">Best so far</div><div class="v" id="ro-max">0</div></div>
             <div class="tb-stat"><div class="k">Verdict</div><div class="v" id="ro-verdict" style="font-size:15px">—</div></div>
+            <div class="tb-stat"><div class="k">Repeat delay</div><div class="v" id="ro-delay">—</div></div>
+            <div class="tb-stat"><div class="k">Repeat rate</div><div class="v" id="ro-rate">—</div></div>
           </div>
+          <p class="tb-note">Hold one key down for two seconds to read repeat delay and rate — that is the operating system setting, and it confirms the key holds cleanly rather than releasing on its own.</p>
           <div class="tb-btngrid" id="ro-keys" style="margin-top:14px"></div>
           <div class="tb-bar" style="margin-top:12px"><button class="tb-btn" id="ro-reset">Reset</button></div>
         </div>
@@ -221,6 +227,8 @@
       <button role="tab" aria-selected="false" data-t="track">Tracking &amp; polling</button>
       <button role="tab" aria-selected="false" data-t="dpi">DPI / CPI</button>
       <button role="tab" aria-selected="false" data-t="react">Reaction time</button>
+      <button role="tab" aria-selected="false" data-t="drag">Drag &amp; hold</button>
+      <button role="tab" aria-selected="false" data-t="raw">Raw events</button>
     </div>
 
     <!-- buttons -->
@@ -235,6 +243,11 @@
               <button data-s="mmo" aria-pressed="false">MMO 12-side</button>
             </div>
             <button class="tb-btn" id="ms-armmacro">Capture macro keys: off</button>
+            <button class="tb-btn on" id="ms-navtrap">Hold back/forward: on</button>
+          </div>
+          <div class="tb-stats" style="margin-bottom:14px">
+            <div class="tb-stat"><div class="k">Held right now</div><div class="v" id="ms-heldnow" style="font-size:16px">none</div></div>
+            <div class="tb-stat"><div class="k">Last event</div><div class="v" id="ms-lastev" style="font-size:16px">—</div></div>
           </div>
           <div id="ms-svg"></div>
           <div class="tb-idbar" id="ms-id"></div>
@@ -412,6 +425,44 @@
       </div>
     </div>
 
+    <!-- drag -->
+    <div data-mspane="drag" hidden>
+      <div class="tb-grid tb-cols2">
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Drag &amp; hold<span class="tb-rule"></span></h2>
+          <p class="tb-sub">Press and hold the left button on the first square, then drag through all six without letting go. A switch that is starting to fail lets go halfway — that is the fault that makes files land in the wrong folder.</p>
+          <div class="tb-mousepad" id="drag-pad" style="height:clamp(220px,32vh,300px)"></div>
+          <div class="tb-bar" style="margin-top:10px"><button class="tb-btn" id="drag-reset">Reset</button></div>
+        </div>
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Result<span class="tb-rule"></span></h2>
+          <div class="tb-stats">
+            <div class="tb-stat"><div class="k">Squares hit</div><div class="v" id="drag-hit">0<small> / 6</small></div></div>
+            <div class="tb-stat"><div class="k">Longest hold</div><div class="v" id="drag-hold">—</div></div>
+            <div class="tb-stat"><div class="k">Early drops</div><div class="v" id="drag-drop">0</div></div>
+            <div class="tb-stat"><div class="k">Runs completed</div><div class="v" id="drag-done">0</div></div>
+          </div>
+          <div class="tb-log" id="drag-log" data-empty="Press and drag on the pad to start a run." style="height:180px;margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- raw -->
+    <div data-mspane="raw" hidden>
+      <div class="tb-panel accent">
+        <h2 class="tb-ptitle">Raw event monitor<span class="tb-rule"></span></h2>
+        <p class="tb-sub">Everything the browser receives, exactly as it arrives — every mouse button, wheel step, key and navigation attempt. If a button on your mouse does nothing anywhere else on this page, press it here: whatever it really sends will show up in this list.</p>
+        <div class="tb-bar">
+          <button class="tb-btn" id="raw-clear">Clear</button>
+          <button class="tb-btn on" id="raw-pause">Recording</button>
+          <label class="tb-lab"><input type="checkbox" id="raw-keys" checked style="min-height:auto"> include keys</label>
+          <label class="tb-lab"><input type="checkbox" id="raw-move" style="min-height:auto"> include movement</label>
+        </div>
+        <div class="tb-log" id="raw-log" data-empty="Press buttons, turn the wheel, hit keys — everything lands here." style="height:clamp(260px,44vh,460px);margin-top:14px"></div>
+        <p class="tb-note">If a side button produces a line saying <code>NAVIGATION back</code> rather than <code>mousedown button 3</code>, the mouse driver is sending a browser command instead of a mouse button. That is normal for Logitech and Razer software — the page catches it either way, and the button still counts as tested.</p>
+      </div>
+    </div>
+
     <div class="tb-panel"><h2 class="tb-ptitle">Verdict<span class="tb-rule"></span></h2><div id="ms-verdict"></div></div>
   </section>
 
@@ -532,6 +583,10 @@
       </div>
       <p class="tb-note">Refresh rate is measured live over one second. Drag this window onto the monitor you are testing before you read it.</p>
     </div>
+    <div class="tb-callout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><b>Before you run these on a shop floor:</b> the stuck-pixel flush cycles colours across the whole screen. It runs slowly on purpose, well below the rate that provokes photosensitive seizures, but if anyone nearby is sensitive to flashing, skip it. Every other pattern here is still or slow-moving.</span>
+    </div>
     <div class="tb-grid tb-cols2">
       <div class="tb-panel accent">
         <h2 class="tb-ptitle">Automatic run<span class="tb-rule"></span></h2>
@@ -647,6 +702,128 @@
     </div>
   </section>
 
+  <!-- ============================= ROUTERS ============================= -->
+  <section class="tb-view" id="view-network">
+    <div class="tb-h">
+      <div><span class="tb-eyebrow">Network</span><h1>Routers</h1></div>
+      <p>Pushes traffic through the router and watches what happens. Catches the fault that actually comes back: works fine, then drops out ten minutes later.</p>
+    </div>
+
+    <div class="tb-callout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>These numbers cover the router, the modem and the line together — no browser can isolate the router on its own. Run one test on a router you know is good, write the numbers down, and judge everything else against that.</span>
+    </div>
+
+    <ol class="tb-steps" id="net-steps">
+      <li><b>1</b><span>Connect this machine to the router — the port or band you want to check</span></li>
+      <li><b>2</b><span>Label the run so you can compare them</span></li>
+      <li><b>3</b><span>Soak it, then move to the next port or band</span></li>
+    </ol>
+
+    <div class="tb-panel accent">
+      <div class="tb-bar">
+        <label class="tb-lab">This run is <input type="text" id="net-label" placeholder="LAN port 1 / 5 GHz / 2.4 GHz" style="min-width:210px;text-transform:none"></label>
+        <label class="tb-lab">Soak for
+          <select id="net-dur"><option value="60">1 min</option><option value="300" selected>5 min</option><option value="900">15 min</option><option value="1800">30 min</option></select>
+        </label>
+        <button class="tb-btn pri big" id="net-run">Start soak test</button>
+        <button class="tb-btn" id="net-quick">Quick check (30 s)</button>
+      </div>
+      <div class="tb-stats" style="margin-top:14px">
+        <div class="tb-stat"><div class="k">Latency now</div><div class="v" id="net-rtt">—</div></div>
+        <div class="tb-stat"><div class="k">Average</div><div class="v" id="net-avg">—</div></div>
+        <div class="tb-stat"><div class="k">Jitter</div><div class="v" id="net-jit">—</div></div>
+        <div class="tb-stat"><div class="k">Worst spike</div><div class="v" id="net-worst">—</div></div>
+        <div class="tb-stat"><div class="k">Dropouts</div><div class="v" id="net-drops">0</div></div>
+        <div class="tb-stat"><div class="k">Loss</div><div class="v" id="net-loss">—</div></div>
+        <div class="tb-stat"><div class="k">Probes sent</div><div class="v" id="net-sent">0</div></div>
+        <div class="tb-stat"><div class="k">Elapsed</div><div class="v" id="net-elapsed">0:00</div></div>
+      </div>
+      <canvas class="tb-scope" id="net-graph" style="margin-top:14px;height:clamp(130px,22vh,200px)"></canvas>
+      <p class="tb-note">Green line is response time, second by second. Every red column is a moment the router did not answer at all. One red column on a five-minute soak is a router you send back.</p>
+      <div id="net-verdict" style="margin-top:14px"></div>
+    </div>
+
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Speed &amp; load<span class="tb-rule"></span></h2>
+        <div class="tb-bar">
+          <button class="tb-btn" id="net-speed">Measure speed (8 s)</button>
+          <button class="tb-btn" id="net-load">Load test</button>
+          <label class="tb-lab">connections
+            <select id="net-conc-n"><option value="60">60</option><option value="120" selected>120</option><option value="250">250</option></select>
+          </label>
+        </div>
+        <div class="tb-stats" style="margin-top:14px">
+          <div class="tb-stat"><div class="k">Download</div><div class="v" id="net-mbps">—<small> Mbps</small></div></div>
+          <div class="tb-stat"><div class="k">Connections answered</div><div class="v" id="net-conc" style="font-size:20px">—</div></div>
+        </div>
+        <p class="tb-note">Speed is capped by the shop's internet, so it will not prove a router is gigabit — but it will show one crawling at 3 Mbps when the line does fifty. The load test opens every connection at once: routers with a failing NAT table choke here exactly the way they choke on a house full of devices.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Runs this session<span class="tb-rule"></span></h2>
+        <div id="net-runs"></div>
+        <div class="tb-bar" style="margin-top:12px"><button class="tb-btn" id="net-clear">Clear runs</button></div>
+        <p class="tb-note">Move the cable to the next LAN port, relabel, run again. Four runs and you have tested every port properly — a dead port shows up as total loss, a bad one as dropouts the others do not have.</p>
+      </div>
+    </div>
+
+    <div class="tb-panel">
+      <h2 class="tb-ptitle">Event log<span class="tb-rule"></span></h2>
+      <div class="tb-log" id="net-log" data-empty="Every dropout and slow response is time-stamped here." style="height:clamp(180px,28vh,300px)"></div>
+      <dl class="tb-kv" id="net-env" style="margin-top:14px"></dl>
+    </div>
+  </section>
+
+  <!-- ============================= STRESS ============================= -->
+  <section class="tb-view" id="view-stress">
+    <div class="tb-h">
+      <div><span class="tb-eyebrow">Machine</span><h1>Stress test</h1></div>
+      <p>Loads every CPU core and the graphics chip, then watches the frame rate. A machine that throttles, crashes or drops off a cliff under load has a cooling or power fault you will not find by opening the lid.</p>
+    </div>
+    <div class="tb-callout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>This deliberately heats the machine and spins the fans up. Run it on a bench, not on a lap, and stop it if anything smells hot or the machine shuts down.</span>
+    </div>
+    <div class="tb-panel accent">
+      <div class="tb-bar">
+        <button class="tb-btn pri big" id="st-run">Start stress test</button>
+        <label class="tb-lab">Load
+          <select id="st-mode"><option value="both" selected>CPU + GPU</option><option value="cpu">CPU only</option><option value="gpu">GPU only</option></select>
+        </label>
+        <label class="tb-lab">Duration
+          <select id="st-dur"><option value="30">30 s</option><option value="60" selected>1 min</option><option value="180">3 min</option><option value="600">10 min</option></select>
+        </label>
+      </div>
+      <div class="tb-stats" style="margin-top:14px">
+        <div class="tb-stat"><div class="k">Elapsed</div><div class="v" id="st-time">0<small>s</small></div></div>
+        <div class="tb-stat"><div class="k">Frame rate</div><div class="v" id="st-fps">—</div></div>
+        <div class="tb-stat"><div class="k">Start / now</div><div class="v" id="st-drop" style="font-size:18px">—</div></div>
+        <div class="tb-stat"><div class="k">CPU workers</div><div class="v" id="st-workers">0</div></div>
+        <div class="tb-stat"><div class="k">Work done</div><div class="v" id="st-ops">—</div></div>
+        <div class="tb-stat"><div class="k">Longest stall</div><div class="v" id="st-stall">—</div></div>
+      </div>
+      <canvas class="tb-scope" id="st-graph" style="margin-top:14px;height:clamp(120px,20vh,180px)"></canvas>
+      <div id="st-verdict" style="margin-top:14px"></div>
+    </div>
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">GPU load<span class="tb-rule"></span></h2>
+        <canvas id="st-gl" style="width:100%;aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:block"></canvas>
+        <p class="tb-note">A shader running flat out. If this stutters, tears or the image freezes while the counter keeps going, the graphics chip is unstable under load.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">How to read it<span class="tb-rule"></span></h2>
+        <ul class="tb-flags">
+          <li class="ok"><span class="tag">good</span><span>Frame rate holds flat for the whole run and the fans settle. Cooling is doing its job.</span></li>
+          <li class="warn"><span class="tag">throttle</span><span>Frame rate starts high then steps down after thirty to ninety seconds. That is thermal throttling — dust, dried paste, or a fan not spinning.</span></li>
+          <li class="bad"><span class="tag">fault</span><span>Long stalls, the image freezing, the tab crashing or the machine restarting. Power delivery, memory or the graphics chip.</span></li>
+        </ul>
+        <p class="tb-note">Browsers cannot read temperatures or fan speeds, so this measures the symptom rather than the cause. For actual sensor numbers you still need a tool on the machine itself.</p>
+      </div>
+    </div>
+  </section>
+
   </main>
 </div>
 
@@ -662,5 +839,7 @@
 <script src="js/60-display.js"></script>
 <script src="js/70-extras.js"></script>
 <script src="js/80-bench.js"></script>
+<script src="js/90-stress.js"></script>
+<script src="js/95-network.js"></script>
 </body>
 </html>

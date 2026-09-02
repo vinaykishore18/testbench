@@ -41,6 +41,8 @@ $("#cam-start").onclick = function () {
   });
 };
 $("#cam-stop").onclick = stop;
+window.addEventListener("pagehide", stop);
+TB.onLeave("camera", function () { /* preview keeps running only while the page is open */ });
 $("#cam-shot").onclick = function () {
   if (!stream) return;
   var c = $("#cam-canvas"); c.width = v.videoWidth; c.height = v.videoHeight;

@@ -188,16 +188,16 @@ function render() {
     return;
   }
   if (s.kind === "inversion") {
-    var flip = 0;
-    (function frame() {
-      anim = requestAnimationFrame(frame);
-      flip ^= 1;
-      ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "#fff";
-      for (var yy = flip; yy < H; yy += 2) ctx.fillRect(0, yy, W, 1);
-      ctx.fillStyle = "rgba(255,0,0,.85)"; ctx.font = (H * 0.025) + "px monospace"; ctx.textAlign = "center";
-      ctx.fillText("A steady grey field is healthy. Visible flicker or crawling bands mean pixel inversion artefacts.", W / 2, H * 0.06);
-    })();
+    /* Deliberately static. The flicker that reveals an inversion fault is produced
+       by the panel itself driving alternate lines, not by the page animating them.
+       Animating this at screen refresh made a full-screen strobe, which is both the
+       wrong test and a seizure risk. */
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#fff";
+    for (var yy = 0; yy < H; yy += 2) ctx.fillRect(0, yy, W, 1);
+    ctx.fillStyle = "rgba(255,45,70,.95)";
+    ctx.font = (H * 0.024) + "px monospace"; ctx.textAlign = "center";
+    ctx.fillText("This pattern is still. Step back — if you see it shimmer, crawl or flicker, that is a pixel inversion fault in the panel.", W / 2, H * 0.06);
     return;
   }
   if (s.kind === "ghosting") {
@@ -218,10 +218,14 @@ function render() {
     return;
   }
   if (s.kind === "fixer") {
-    var f = 0;
+    /* Cycled at about 5 Hz, not at screen refresh. Fast enough to work a stuck
+       subpixel loose, well clear of the 15-25 Hz band that provokes seizures. */
+    var lastSwap = 0, f = 0;
     (function frame() {
       anim = requestAnimationFrame(frame);
-      f++;
+      var now = performance.now();
+      if (now - lastSwap < 200) return;
+      lastSwap = now; f++;
       ctx.fillStyle = ["#FF0000", "#00FF00", "#0000FF", "#FFFFFF", "#000000"][f % 5];
       ctx.fillRect(0, 0, W, H);
     })();

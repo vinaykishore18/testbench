@@ -132,16 +132,35 @@ once the DNS propagates, usually within the hour. HTTPS is issued automatically.
 
 ---
 
-## 6. Other hosts
+## 6. Hosting elsewhere — and a licensing note
 
-The site is plain static files, so any static host works:
+**Vercel's free Hobby plan is for non-commercial use only.** Their docs state it
+plainly. A tool used by a business technically does not qualify, so the site now
+ships headers for both hosts and moving is a ten-minute job.
 
-- **GitHub Pages** — push the files, then **Settings → Pages → Deploy from a branch → main / (root)**.
-- **Netlify** — drag the folder onto <https://app.netlify.com/drop>.
-- **Cloudflare Pages** — **Create a project → Connect to Git**, no build command, output directory `/`.
-- **An internal server** — copy the folder into the web root. It must be served
-  over HTTPS or from `localhost`, otherwise the browser will block the
-  microphone and camera tests.
+### Cloudflare Pages (free, commercial use allowed, unmetered bandwidth)
+
+1. Sign up at <https://dash.cloudflare.com/sign-up> — free, no card.
+2. In the sidebar: **Workers & Pages** → **Create** → **Pages** tab → **Connect to Git**.
+3. Authorise GitHub and pick the `testbench` repository.
+4. Build settings:
+   - Framework preset: **None**
+   - Build command: **leave empty**
+   - Build output directory: **/**
+5. **Save and Deploy.** You get a URL like `testbench.pages.dev`.
+6. Push to `main` from then on and it redeploys itself, same as Vercel.
+
+The `_headers` file in this repo is what Cloudflare reads for the security headers —
+it is the Cloudflare equivalent of `vercel.json`. Both files are kept, so either host
+works and neither one interferes with the other.
+
+### Other static hosts
+
+- **GitHub Pages** — push, then **Settings → Pages → Deploy from a branch → main / (root)**.
+  Note it does not support custom headers, so the security policy would be lost.
+- **Netlify** — reads the same `_headers` file. Drag the folder onto <https://app.netlify.com/drop>.
+- **An internal server** — copy the folder into the web root. It must be served over
+  HTTPS or from `localhost`, or the browser blocks the microphone and camera tests.
 
 ---
 

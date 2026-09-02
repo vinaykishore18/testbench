@@ -5,19 +5,23 @@ var $ = TB.$, $$ = TB.$$, el = TB.el, svgEl = TB.svgEl, clamp = TB.clamp, verdic
 var PADS = TB.pads(), shortName = TB.shortName, labelFor = TB.labelFor, glyphFor = TB.glyphFor;
 
 /* ---------------- diagram geometry ---------------- */
+/* Everything below sits inside the shell path on purpose. The sticks used to be
+   placed at y=212 while the body's central edge stopped at y=192, so they hung
+   outside the outline; the small buttons carried text labels that landed on the
+   d-pad and the face cluster. Both are gone. Nothing here overlaps anything else. */
 var GEO = {
-  ps:       { ls: [148, 212], rs: [252, 212], dp: [100, 150], face: [300, 150], guide: [200, 168, 11],
-              small: [[8, 130, 100, "Create"], [9, 270, 100, "Options"]], touch: [150, 86, 100, 52] },
-  xbox:     { ls: [110, 140], rs: [250, 216], dp: [150, 216], face: [300, 140], guide: [200, 100, 15],
-              small: [[8, 168, 146, "View"], [9, 232, 146, "Menu"], [17, 200, 176, "Share"]] },
-  nintendo: { ls: [110, 140], rs: [250, 216], dp: [150, 216], face: [300, 140], guide: [222, 176, 11],
-              small: [[8, 168, 146, "−"], [9, 232, 146, "+"], [17, 178, 176, "Capt"]] },
-  generic:  { ls: [110, 140], rs: [250, 216], dp: [150, 216], face: [300, 140], guide: [200, 100, 15],
-              small: [[8, 168, 146, "B8"], [9, 232, 146, "B9"], [17, 200, 176, "B17"]] }
+  ps:       { ls: [158, 178], rs: [242, 178], dp: [86, 118], face: [314, 118], guide: [200, 134, 10],
+              small: [[8, 128, 74], [9, 272, 74]], touch: [148, 62, 104, 54] },
+  xbox:     { ls: [104, 116], rs: [250, 186], dp: [140, 190], face: [314, 118], guide: [200, 86, 15],
+              small: [[8, 172, 126], [9, 236, 126], [17, 200, 142]] },
+  nintendo: { ls: [104, 116], rs: [250, 186], dp: [140, 190], face: [314, 118], guide: [224, 142, 10],
+              small: [[8, 172, 126], [9, 236, 126], [17, 176, 142]] },
+  generic:  { ls: [104, 116], rs: [250, 186], dp: [140, 190], face: [314, 118], guide: [200, 86, 15],
+              small: [[8, 172, 126], [9, 236, 126], [17, 200, 142]] }
 };
-var BODY = "M62,62 C22,62 10,102 8,152 C6,202 22,266 57,266 C82,266 94,244 112,219 C127,199 147,192 200,192 " +
-           "C253,192 273,199 288,219 C306,244 318,266 343,266 C378,266 394,204 392,152 C390,102 378,62 338,62 " +
-           "C298,62 258,74 200,74 C142,74 102,62 62,62 Z";
+var BODY = "M66,46 C26,46 12,86 10,136 C8,190 24,276 62,276 C92,276 106,250 122,236 C142,220 166,214 200,214 " +
+           "C234,214 258,220 278,236 C294,250 308,276 338,276 C376,276 392,188 390,136 C388,86 374,46 334,46 " +
+           "C294,46 254,58 200,58 C146,58 106,46 66,46 Z";
 
 function R(x, y, w, h, r, cls) { return svgEl("rect", { x: x, y: y, width: w, height: h, rx: r, "class": cls }); }
 function C(cx, cy, r, cls) { return svgEl("circle", { cx: cx, cy: cy, r: r, "class": cls }); }
@@ -25,21 +29,21 @@ function T(x, y, txt, cls) { var t = svgEl("text", { x: x, y: y, "class": cls ||
 
 function padSVG(fam, nbtn, naxes) {
   var g = GEO[fam] || GEO.generic;
-  var s = svgEl("svg", { viewBox: "0 0 400 300", "class": "tb-dev", role: "img", "aria-label": "Controller diagram" });
-  s.style.maxWidth = "540px";
+  var s = svgEl("svg", { viewBox: "0 0 400 290", "class": "tb-dev", role: "img", "aria-label": "Controller diagram" });
+  s.style.maxWidth = "560px";
   var btn = {}, labels = {}, trig = {}, knob = [];
 
   /* triggers + bumpers sit behind the body */
-  [[6, 84, "LT"], [7, 248, "RT"]].forEach(function (t) {
+  [[6, 84, "LT"], [7, 246, "RT"]].forEach(function (t) {
     if (nbtn <= t[0]) return;
-    s.appendChild(R(t[1], 10, 68, 24, 10, "well"));
-    var f = R(t[1] + 3, 13, 0, 18, 7, "fill"); s.appendChild(f); trig[t[0]] = f;
-    s.appendChild(T(t[1] + 34, 22, t[2], "lbl sm"));
+    s.appendChild(R(t[1], 2, 70, 22, 10, "well"));
+    var f = R(t[1] + 3, 5, 0, 16, 7, "fill"); s.appendChild(f); trig[t[0]] = f;
+    s.appendChild(T(t[1] + 35, 13, t[2], "lbl sm"));
   });
-  [[4, 70, "LB"], [5, 244, "RB"]].forEach(function (t) {
+  [[4, 70, "LB"], [5, 242, "RB"]].forEach(function (t) {
     if (nbtn <= t[0]) return;
-    var r = R(t[1], 40, 86, 20, 9, "btn"); s.appendChild(r); btn[t[0]] = r;
-    s.appendChild(T(t[1] + 43, 50, t[2], "lbl sm"));
+    var r = R(t[1], 26, 88, 20, 9, "btn"); s.appendChild(r); btn[t[0]] = r;
+    s.appendChild(T(t[1] + 44, 36, t[2], "lbl sm"));
   });
 
   s.appendChild(svgEl("path", { d: BODY, "class": "shell" }));
@@ -51,7 +55,7 @@ function padSVG(fam, nbtn, naxes) {
 
   /* d-pad */
   var dx = g.dp[0], dy = g.dp[1];
-  s.appendChild(R(dx - 12, dy - 12, 24, 24, 3, "plate"));
+  s.appendChild(R(dx - 12, dy - 12, 24, 24, 4, "plate"));
   [[12, dx - 11, dy - 36, 22, 25, "▲"], [13, dx - 11, dy + 11, 22, 25, "▼"],
    [14, dx - 36, dy - 11, 25, 22, "◀"], [15, dx + 11, dy - 11, 25, 22, "▶"]].forEach(function (d) {
     if (nbtn <= d[0]) return;
@@ -59,7 +63,7 @@ function padSVG(fam, nbtn, naxes) {
   });
 
   /* face buttons */
-  var fx = g.face[0], fy = g.face[1], off = 33;
+  var fx = g.face[0], fy = g.face[1], off = 34;
   [[0, fx, fy + off], [1, fx + off, fy], [2, fx - off, fy], [3, fx, fy - off]].forEach(function (f) {
     if (nbtn <= f[0]) return;
     var c = C(f[1], f[2], 17, "btn"); s.appendChild(c); btn[f[0]] = c;
@@ -69,8 +73,9 @@ function padSVG(fam, nbtn, naxes) {
   /* small buttons */
   (g.small || []).forEach(function (b) {
     if (nbtn <= b[0]) return;
-    var r = R(b[1] - 10, b[2] - 7, 20, 14, 6, "btn"); s.appendChild(r); btn[b[0]] = r;
-    s.appendChild(T(b[1], b[2] + 17, b[3], "lbl sm"));
+    var r = R(b[1] - 10, b[2] - 7, 20, 14, 6, "btn");
+    var tt = svgEl("title"); tt.textContent = labelFor(fam, b[0]); r.appendChild(tt);
+    s.appendChild(r); btn[b[0]] = r;
   });
 
   /* guide */
@@ -81,9 +86,9 @@ function padSVG(fam, nbtn, naxes) {
   /* sticks */
   [[g.ls, 10, 0, 1, "L"], [g.rs, 11, 2, 3, "R"]].forEach(function (sk) {
     if (naxes <= sk[3]) return;
-    s.appendChild(C(sk[0][0], sk[0][1], 32, "well"));
+    s.appendChild(C(sk[0][0], sk[0][1], 30, "well"));
     s.appendChild(C(sk[0][0], sk[0][1], 2, "tick"));
-    var k = C(sk[0][0], sk[0][1], 18, "knob"); s.appendChild(k);
+    var k = C(sk[0][0], sk[0][1], 17, "knob"); s.appendChild(k);
     var lt = T(sk[0][0], sk[0][1], sk[4], "lbl sm"); s.appendChild(lt);
     knob.push({ node: k, label: lt, cx: sk[0][0], cy: sk[0][1], ax: sk[2], ay: sk[3], press: sk[1] });
   });
@@ -271,10 +276,10 @@ function tick() {
   });
   d.knob.forEach(function (kn) {
     var x = rec.axes[kn.ax] || 0, y = rec.axes[kn.ay] || 0;
-    kn.node.setAttribute("cx", (kn.cx + x * 13).toFixed(1));
-    kn.node.setAttribute("cy", (kn.cy + y * 13).toFixed(1));
-    kn.label.setAttribute("x", (kn.cx + x * 13).toFixed(1));
-    kn.label.setAttribute("y", (kn.cy + y * 13).toFixed(1));
+    kn.node.setAttribute("cx", (kn.cx + x * 12).toFixed(1));
+    kn.node.setAttribute("cy", (kn.cy + y * 12).toFixed(1));
+    kn.label.setAttribute("x", (kn.cx + x * 12).toFixed(1));
+    kn.label.setAttribute("y", (kn.cy + y * 12).toFixed(1));
     var pressed = !!rec.pressed[kn.press];
     kn.node.classList.toggle("on", pressed);
     kn.label.classList.toggle("on", pressed);

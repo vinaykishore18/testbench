@@ -13,6 +13,8 @@ var defs = [
   { v: "monitor", t: "Monitors", d: "Automatic 20-step run: dead pixels, bleed, banding, ghosting.", ic: '<rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/>' },
   { v: "camera", t: "Webcams", d: "Live preview, true resolution, measured frame rate, still grab.", ic: '<rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/>' },
   { v: "touch", t: "Touchscreens", d: "Simultaneous touch points and dead zones in the digitiser.", ic: '<path d="M9 11V5.5a1.8 1.8 0 0 1 3.6 0V11M12.6 11V9.2a1.7 1.7 0 0 1 3.4 0V13"/><path d="M16 12.5a1.7 1.7 0 0 1 3.4 0v3.2A5.8 5.8 0 0 1 13.6 21h-1.2a5 5 0 0 1-4-2l-3-4a1.7 1.7 0 0 1 2.6-2.1L9 14.5"/>' },
+  { v: "network", t: "Routers", d: "Soak a router for thirty minutes and catch every dropout.", ic: '<path d="M5 12.5a10 10 0 0 1 14 0M2 9a15 15 0 0 1 20 0M8.5 16a5.5 5.5 0 0 1 7 0M12 19.5h.01"/>' },
+  { v: "stress", t: "Stress test", d: "Load every core and the graphics chip, then watch for throttling.", ic: '<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" stroke-linejoin="round"/>' },
   { v: "system", t: "System", d: "Graphics chip, cores, memory, battery and a connection watchdog.", ic: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/>' }
 ];
 if (TB.isCoarse()) {
@@ -72,6 +74,8 @@ setInterval(function () {
   set("touch", (navigator.maxTouchPoints || 0) > 0, (navigator.maxTouchPoints || 0) > 0 ? navigator.maxTouchPoints + " pt" : "none");
   set("monitor", true, window.screen.width + "×" + window.screen.height);
   set("system", true, (navigator.hardwareConcurrency || "?") + " threads");
+  set("stress", false, "ready");
+  set("network", navigator.onLine, navigator.onLine ? "online" : "offline");
 }, 1200);
 
 /* bench notes */
