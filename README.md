@@ -1,4 +1,4 @@
-# Testbench
+# Testbench by Vinay
 
 A browser-based hardware test bench for reverse logistics. Keyboards, mice,
 controllers, racing wheels, headsets and mics, monitors, webcams, touchscreens,
@@ -13,16 +13,17 @@ dependencies, nothing uploaded anywhere.
 
 ```
 index.html            the page — markup only
-css/testbench.css     all styling
+css/testbench.css     all styling (black + red design system, responsive)
 js/00-core.js         helpers, navigation, device identity, gamepad polling
-js/10-keyboard.js     layouts, capture mode, chatter and stuck-key detection
-js/20-mouse.js        diagram, buttons, double-click faults, polling, sensor
+js/10-keyboard.js     layouts, capture mode, chatter, typing test, rollover, shortcuts
+js/20-mouse.js        diagram, buttons, CPS, double-click, scroll, polling, CPI, reaction
 js/30-gamepad.js      controller diagram, rest scoring, sticks, triggers, rumble
 js/40-wheel.js        steering range, pedals, shifters, raw axes
-js/50-audio.js        microphone metering and headset output tests
+js/50-audio.js        microphone metering, headset output, loopback
 js/60-display.js      automatic monitor run and single patterns
 js/70-extras.js       webcam, touchscreen, machine info
 js/80-bench.js        the home dashboard
+vercel.json           security headers (CSP, HSTS, frame deny, permissions policy)
 build.py              optional: bundles everything into one file
 dist/                 output of build.py
 ```
@@ -32,7 +33,27 @@ The numbering keeps that obvious.
 
 ---
 
-## 2. Deploy to Vercel — GitHub route (recommended)
+## 2. Committing a change
+
+Once the repo exists, every change follows the same three steps in GitHub Desktop:
+
+1. Save the file you edited. GitHub Desktop picks it up straight away and lists it
+   under **Changes** on the left.
+2. Type a short line in the **Summary** box — it cannot be empty. Something like
+   `Fix mouse polling rate` is plenty.
+3. Click **Commit N files to main**, then **Push origin** in the top bar.
+
+Vercel sees the push and redeploys within about a minute. Nothing else to do.
+
+If the top bar says **Publish repository** instead of **Push origin**, the repo has
+not reached GitHub yet — click that first, choose whether it is private, and publish.
+
+The yellow "this file uses LF line endings" banner is normal on Windows and can be
+ignored; Git is just normalising line endings.
+
+---
+
+## 3. Deploy to Vercel — GitHub route (recommended)
 
 This is the route to use. Once it is set up, every change you push to GitHub
 redeploys the site automatically.
@@ -82,7 +103,7 @@ Nothing else to do.
 
 ---
 
-## 3. Deploy to Vercel — command line route
+## 4. Deploy to Vercel — command line route
 
 Faster if you already have Node installed and you would rather not use GitHub.
 
@@ -103,7 +124,7 @@ vercel --prod
 
 ---
 
-## 4. Custom domain
+## 5. Custom domain
 
 In the Vercel dashboard: **your project → Settings → Domains → Add**. Enter the
 domain, then add the DNS record Vercel shows you at your registrar. It goes live
@@ -111,7 +132,7 @@ once the DNS propagates, usually within the hour. HTTPS is issued automatically.
 
 ---
 
-## 5. Other hosts
+## 6. Other hosts
 
 The site is plain static files, so any static host works:
 
@@ -124,7 +145,7 @@ The site is plain static files, so any static host works:
 
 ---
 
-## 6. Browser
+## 7. Browser
 
 Use **Chrome, Edge or Opera** on the bench machines.
 
@@ -141,7 +162,29 @@ the tests keep working.
 
 ---
 
-## 7. Editing
+## 8. Security
+
+The site has no backend, no database, no forms and no analytics, so there is very
+little to attack. What is in place anyway:
+
+- A strict **Content Security Policy** — scripts load only from this site, styles and
+  fonts only from Google Fonts, and nothing may be fetched from anywhere else. Even
+  if someone injected a script tag it would not run.
+- **X-Frame-Options: DENY** and `frame-ancestors 'none'` — the page cannot be embedded
+  in someone else's site to trick people (clickjacking).
+- **No `innerHTML` for anything a device reports.** Product names that come back from
+  USB and gamepad devices are inserted as plain text, so a device with markup in its
+  name cannot inject anything.
+- **Permissions-Policy** limits microphone, camera, gamepad and USB access to this
+  page only, and switches off geolocation and payment entirely.
+- **HSTS** so browsers always use HTTPS.
+
+These live in `vercel.json` and in the `<meta>` tag at the top of `index.html`. If you
+move to a different host, copy the headers from `vercel.json` into that host's config.
+
+---
+
+## 9. Editing
 
 Everything is plain HTML, CSS and JavaScript — no framework, no compiler.
 Open a file, change it, reload the page.

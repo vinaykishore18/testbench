@@ -273,3 +273,154 @@ var KB=(function(){
 
 window.KB=KB;
 })();
+
+/* ============================================================
+   Keyboard extras — typing test, rollover, shortcut capture
+   ============================================================ */
+(function () {
+var $ = TB.$, $$ = TB.$$, el = TB.el, clamp = TB.clamp;
+var pane = "layout";
+TB.tabs("#kb-tabs", "data-kbpane", function (n) { pane = n; });
+var stepTo = TB.steps("#kb-steps");
+stepTo(1);
+
+if (TB.isCoarse()) {
+  $("#kb-mobile").appendChild(TB.callout("Keyboard testing needs a physical keyboard. On a phone the on-screen keyboard reports almost nothing — plug this page into a computer for a real test."));
+}
+
+/* ---------------- typing test ---------------- */
+(function () {
+  var LINES = [
+    "The quick brown fox jumps over the lazy dog while the keyboard records every single keystroke.",
+    "Pack my box with five dozen liquor jugs; then check that every letter still registers cleanly.",
+    "Amazingly few discotheques provide jukeboxes, but a worn switch will still double up on you.",
+    "How vexingly quick daft zebras jump when a refurbished board finally passes its bench test.",
+    "Sphinx of black quartz, judge my vow — and judge this keyboard by whether it drops a letter."
+  ];
+  var sample = "", started = 0, mistyped = {}, done = false, timer = null;
+  var out = $("#ty-sample"), input = $("#ty-input");
+
+  function pick() {
+    sample = LINES[Math.floor(Math.random() * LINES.length)];
+    render("");
+    input.value = ""; started = 0; mistyped = {}; done = false;
+    if (timer) { clearInterval(timer); timer = null; }
+    $("#ty-wpm").textContent = "—"; $("#ty-acc").textContent = "—";
+    $("#ty-err").textContent = "0"; $("#ty-time").textContent = "0";
+  }
+  function render(typed) {
+    out.textContent = "";
+    for (var i = 0; i < sample.length; i++) {
+      var sp = el("span", null, sample[i]);
+      if (i < typed.length) {
+        var ok = typed[i] === sample[i];
+        sp.style.color = ok ? "var(--pass)" : "#140005";
+        if (!ok) { sp.style.background = "var(--red)"; sp.style.borderRadius = "3px"; }
+      } else if (i === typed.length) {
+        sp.style.borderBottom = "2px solid var(--red)";
+      } else {
+        sp.style.color = "var(--ink-3)";
+      }
+      out.appendChild(sp);
+    }
+  }
+  input.addEventListener("input", function () {
+    var typed = input.value;
+    if (!started && typed.length) {
+      started = performance.now();
+      timer = setInterval(function () {
+        $("#ty-time").textContent = ((performance.now() - started) / 1000).toFixed(0);
+      }, 200);
+    }
+    for (var i = 0; i < typed.length && i < sample.length; i++) {
+      if (typed[i] !== sample[i]) mistyped[i] = true;
+    }
+    render(typed);
+    var errs = Object.keys(mistyped).length;
+    $("#ty-err").textContent = errs;
+    var mins = started ? (performance.now() - started) / 60000 : 0;
+    if (mins > 0) {
+      var wpm = (typed.length / 5) / mins;
+      $("#ty-wpm").textContent = Math.round(wpm);
+      var acc = typed.length ? clamp((typed.length - errs) / typed.length * 100, 0, 100) : 100;
+      var a = $("#ty-acc");
+      a.textContent = acc.toFixed(1) + "%";
+      a.className = "v " + (acc > 97 ? "pass" : acc > 90 ? "warn" : "fail");
+    }
+    if (typed.length >= sample.length && !done) {
+      done = true;
+      if (timer) { clearInterval(timer); timer = null; }
+      TB.toast("Line finished", Object.keys(mistyped).length + " mistake(s). A board that drops or repeats letters shows up here first.", Object.keys(mistyped).length ? null : "ok");
+    }
+  });
+  $("#ty-new").onclick = pick;
+  $("#ty-reset").onclick = pick;
+  pick();
+})();
+
+/* ---------------- rollover + shortcuts ---------------- */
+(function () {
+  var held = {}, maxN = 0;
+  var box = $("#ro-keys");
+  function paint() {
+    var codes = Object.keys(held);
+    if (codes.length > maxN) maxN = codes.length;
+    $("#ro-now").textContent = codes.length;
+    var m = $("#ro-max"); m.textContent = maxN;
+    m.className = "v " + (maxN >= 6 ? "pass" : maxN >= 4 ? "warn" : "");
+    var v = $("#ro-verdict");
+    if (!maxN) { v.textContent = "—"; v.className = "v"; }
+    else if (maxN >= 6) { v.textContent = "N-key rollover"; v.className = "v pass"; }
+    else if (maxN >= 4) { v.textContent = "4-key rollover"; v.className = "v warn"; }
+    else { v.textContent = "2-key — membrane"; v.className = "v fail"; }
+    box.textContent = "";
+    codes.forEach(function (c) {
+      var chip = el("div", "tb-btnchip down");
+      chip.appendChild(el("div", null, "HELD"));
+      chip.appendChild(el("b", null, c.replace(/^Key|^Digit/, "")));
+      box.appendChild(chip);
+    });
+  }
+  function combo(e) {
+    var parts = [];
+    if (e.ctrlKey) parts.push("Ctrl");
+    if (e.altKey) parts.push("Alt");
+    if (e.shiftKey) parts.push("Shift");
+    if (e.metaKey) parts.push("Meta");
+    var k = e.key;
+    if (["Control", "Alt", "Shift", "Meta"].indexOf(k) === -1) {
+      parts.push(k === " " ? "Space" : (k.length === 1 ? k.toUpperCase() : k));
+    }
+    return parts.join(" + ") || "—";
+  }
+  window.addEventListener("keydown", function (e) {
+    if (TB.view() !== "keyboard") return;
+    var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    if (pane === "rollover") {
+      if (!e.repeat) { held[e.code || e.key] = true; paint(); }
+      var c = combo(e);
+      $("#sc-display").textContent = c;
+      if (!e.repeat) {
+        var d = el("div");
+        d.appendChild(el("b", null, TB.stamp()));
+        d.appendChild(document.createTextNode("  " + c + "   [code " + (e.code || "?") + "]"));
+        var lg = $("#sc-log");
+        lg.insertBefore(d, lg.firstChild);
+        while (lg.childElementCount > 80) lg.lastChild.remove();
+      }
+    }
+  }, true);
+  window.addEventListener("keyup", function (e) {
+    if (TB.view() !== "keyboard") return;
+    delete held[e.code || e.key];
+    if (pane === "rollover") paint();
+  }, true);
+  window.addEventListener("blur", function () { held = {}; if (pane === "rollover") paint(); });
+  $("#ro-reset").onclick = function () { held = {}; maxN = 0; $("#sc-log").textContent = ""; $("#sc-display").textContent = "Press any key combination"; paint(); };
+  paint();
+})();
+
+/* ---------------- step progress on the layout pane ---------------- */
+$("#kb-layout").addEventListener("change", function () { stepTo(2); });
+$("#kb-lock").addEventListener("click", function () { setTimeout(function () { stepTo(3); }, 50); });
+})();

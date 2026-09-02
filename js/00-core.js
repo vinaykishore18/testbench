@@ -118,8 +118,10 @@ var TB = (function () {
       if (!navigator.hid) { box.appendChild(el("span", null, "Device names need Chrome, Edge or Opera. Every test still works without them.")); return; }
       if (!hidGranted.length) { box.appendChild(el("span", null, t.hint)); return; }
       hidGranted.forEach(function (d) {
-        var s = el("span", "name"), vn = VENDORS[d.vendorId];
-        s.innerHTML = "<b>" + esc(d.productName || "Unnamed device") + "</b>" + (vn ? " · " + esc(vn) : "") + " · " + hex4(d.vendorId) + ":" + hex4(d.productId);
+        var s = el("span", "name");
+        s.appendChild(el("b", null, d.productName || "Unnamed device"));
+        var vn = VENDORS[d.vendorId];
+        s.appendChild(document.createTextNode((vn ? " \u00b7 " + vn : "") + " \u00b7 " + hex4(d.vendorId) + ":" + hex4(d.productId)));
         box.appendChild(s);
       });
       var clr = el("button", "tb-btn", "Clear"); clr.onclick = function () { hidGranted = []; hidDraw(); };
@@ -306,8 +308,56 @@ var TB = (function () {
   $$("#rail .tb-nav").forEach(function (b) { b.onclick = function () { go(b.dataset.view); }; });
   (function () { var c = $("#clock"); function tick() { c.textContent = stamp(); } tick(); setInterval(tick, 1000); })();
 
+  /* ---------- environment ---------- */
+  function isCoarse() { return window.matchMedia && matchMedia("(pointer: coarse)").matches; }
+  function isNarrow() { return window.innerWidth < 820; }
+  function isMobile() { return isCoarse() && isNarrow(); }
+
+  function callout(text) {
+    var d = el("div", "tb-callout");
+    var i = svgEl("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8" });
+    i.appendChild(svgEl("path", { d: "M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z", "stroke-linecap": "round", "stroke-linejoin": "round" }));
+    d.appendChild(i);
+    d.appendChild(el("span", null, text));
+    return d;
+  }
+
+  /* ---------- tab strips ---------- */
+  function tabs(stripSel, paneAttr, onChange) {
+    var strip = $(stripSel); if (!strip) return;
+    var btns = $$("button", strip);
+    function show(name) {
+      btns.forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.t === name)); });
+      $$("[" + paneAttr + "]").forEach(function (p) { p.hidden = p.getAttribute(paneAttr) !== name; });
+      if (onChange) onChange(name);
+    }
+    btns.forEach(function (b) { b.onclick = function () { show(b.dataset.t); }; });
+    return show;
+  }
+
+  /* ---------- step strips ---------- */
+  function steps(sel) {
+    var box = $(sel);
+    return function (n) {
+      if (!box) return;
+      $$("li", box).forEach(function (li, i) {
+        li.classList.toggle("on", i + 1 === n);
+        li.classList.toggle("done", i + 1 < n);
+      });
+    };
+  }
+
+  /* ---------- device activity (what browsers will not name for us) ---------- */
+  var activity = { keyboard: false, mouse: false, touch: false };
+  window.addEventListener("keydown", function () { activity.keyboard = true; }, { capture: true, passive: true });
+  window.addEventListener("mousemove", function () { activity.mouse = true; }, { capture: true, passive: true, once: true });
+  window.addEventListener("mousedown", function () { activity.mouse = true; }, { capture: true, passive: true });
+  window.addEventListener("touchstart", function () { activity.touch = true; }, { capture: true, passive: true });
+
   return {
     $: $, $$: $$, el: el, svgEl: svgEl, clamp: clamp, esc: esc, stamp: stamp,
+    isMobile: isMobile, isCoarse: isCoarse, isNarrow: isNarrow,
+    callout: callout, tabs: tabs, steps: steps, activity: activity,
     toast: toast, verdict: verdict, ptitle: ptitle, meterRow: meterRow, checklist: checklist,
     go: go, onEnter: onEnter, onLeave: onLeave, view: view, badge: badge, chip: chip,
     hidMount: hidMount, watch: watch,

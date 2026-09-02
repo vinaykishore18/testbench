@@ -15,6 +15,11 @@ var defs = [
   { v: "touch", t: "Touchscreens", d: "Simultaneous touch points and dead zones in the digitiser.", ic: '<path d="M9 11V5.5a1.8 1.8 0 0 1 3.6 0V11M12.6 11V9.2a1.7 1.7 0 0 1 3.4 0V13"/><path d="M16 12.5a1.7 1.7 0 0 1 3.4 0v3.2A5.8 5.8 0 0 1 13.6 21h-1.2a5 5 0 0 1-4-2l-3-4a1.7 1.7 0 0 1 2.6-2.1L9 14.5"/>' },
   { v: "system", t: "System", d: "Graphics chip, cores, memory, battery and a connection watchdog.", ic: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/>' }
 ];
+if (TB.isCoarse()) {
+  $("#home-mobile").appendChild(TB.callout(
+    "You are on a touch device. Touch, screen, camera and microphone tests all work here. Keyboard, mouse, controller and wheel tests need a computer with the device plugged in."));
+}
+
 var box = $("#devcards"), cards = {};
 defs.forEach(function (d) {
   var c = el("button", "tb-devcard");
@@ -28,7 +33,7 @@ defs.forEach(function (d) {
 });
 function set(v, live, txt) { var c = cards[v]; if (!c) return; c.node.classList.toggle("live", !!live); c.st.textContent = txt; }
 
-var scoreBox = $("#home-pads"), lastSig = "";
+var scoreBox = $("#home-pads"), lastSig = null;
 function refresh() {
   var ks = Object.keys(PADS);
   var pads = ks.filter(function (k) { return !PADS[k].wheel; });
@@ -60,6 +65,8 @@ TB.onPads(function () { if (TB.view() === "home") refresh(); });
 TB.onEnter("home", function () { lastSig = ""; refresh(); });
 
 setInterval(function () {
+  set("keyboard", TB.activity.keyboard, TB.activity.keyboard ? "responding" : "ready");
+  set("mouse", TB.activity.mouse, TB.activity.mouse ? "responding" : "ready");
   set("audio", $("#chip-mic").classList.contains("live"), $("#chip-mic").querySelector("b").textContent);
   set("camera", $("#chip-cam").classList.contains("live"), $("#chip-cam").querySelector("b").textContent);
   set("touch", (navigator.maxTouchPoints || 0) > 0, (navigator.maxTouchPoints || 0) > 0 ? navigator.maxTouchPoints + " pt" : "none");
@@ -73,12 +80,14 @@ function row(k, v) { kvbox.appendChild(el("dt", null, k)); kvbox.appendChild(el(
 var ua = navigator.userAgent;
 var br = /Edg\//.test(ua) ? "Edge" : /OPR\//.test(ua) ? "Opera" : /Firefox\//.test(ua) ? "Firefox" : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Unknown";
 row("Browser", br);
+row("Screen", window.innerWidth + "\u00d7" + window.innerHeight + " window, " + window.screen.width + "\u00d7" + window.screen.height + " display");
 row("Key hold (capture mode)", (navigator.keyboard && navigator.keyboard.lock) ? "supported" : "not in this browser");
 row("Device names (USB)", navigator.hid ? "supported" : "not in this browser");
 row("Gamepad API", navigator.getGamepads ? "supported" : "missing");
 row("Media devices", (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) ? "supported" : "missing");
 row("Secure context", window.isSecureContext ? "yes — mic and camera allowed" : "no — mic and camera will be blocked");
-row("Screen", window.screen.width + "×" + window.screen.height + " at " + (window.devicePixelRatio || 1).toFixed(2) + "×");
+row("Pixel ratio", (window.devicePixelRatio || 1).toFixed(2) + "\u00d7");
+row("Why no device names", "Browsers deliberately hide plain keyboards and mice from web pages so a site cannot fingerprint your hardware. Gaming models with their own vendor software usually do appear under \u201cRead device name\u201d.");
 refresh();
 
 /* keep the page put during tests */
