@@ -47,9 +47,11 @@
     <button class="tb-nav" data-view="keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>Keyboard<span class="tb-badge" id="badge-keyboard"></span></button>
     <button class="tb-nav" data-view="mouse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2.5" width="12" height="19" rx="6"/><path d="M12 6.5v4"/></svg>Mouse<span class="tb-badge" id="badge-mouse"></span></button>
     <button class="tb-nav" data-view="gamepad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6.5 8h11a4.5 4.5 0 0 1 4.4 5.4l-.8 4A2.6 2.6 0 0 1 16.6 18L15 16H9l-1.6 2a2.6 2.6 0 0 1-4.5-.6l-.8-4A4.5 4.5 0 0 1 6.5 8Z"/><path d="M7 11v3M5.5 12.5h3"/></svg>Controllers<span class="tb-badge" id="badge-gamepad"></span></button>
+    <button class="tb-nav" data-view="joycon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="18" rx="3.5"/><rect x="14" y="3" width="7" height="18" rx="3.5"/><path d="M6.5 8v.01M17.5 8v.01"/></svg>Joy-Cons<span class="tb-badge" id="badge-joycon"></span></button>
     <button class="tb-nav" data-view="wheel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M4.5 17l5-3M19.5 17l-5-3"/></svg>Wheels<span class="tb-badge" id="badge-wheel"></span></button>
     <div class="tb-railhead">Audio</div>
     <button class="tb-nav" data-view="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>Mic &amp; Headsets<span class="tb-badge" id="badge-audio"></span></button>
+    <button class="tb-nav" data-view="airpods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3.5c-2.2 0-3.5 1.8-3.5 4.2S5.8 12 8 12s3.5-1.8 3.5-4.3S10.2 3.5 8 3.5Z"/><path d="M8 12v6.5a2 2 0 0 0 4 0"/><path d="M16.5 3.5c2.2 0 3.5 1.8 3.5 4.2S18.7 12 16.5 12"/></svg>Earbuds<span class="tb-badge" id="badge-airpods"></span></button>
     <div class="tb-railhead">Screens &amp; optics</div>
     <button class="tb-nav" data-view="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/></svg>Monitors<span class="tb-badge" id="badge-monitor"></span></button>
     <button class="tb-nav" data-view="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/></svg>Webcams<span class="tb-badge" id="badge-camera"></span></button>
@@ -474,10 +476,45 @@
     </div>
     <div class="tb-bar" style="margin-bottom:16px">
       <div class="tb-devsel" id="gp-sel"></div>
+      <span class="tb-lab" id="gp-selhint" style="text-transform:none;letter-spacing:0"></span>
       <button class="tb-btn" id="gp-rescore">Re-score at rest</button>
       <button class="tb-btn" id="gp-clear">Clear tested</button>
     </div>
     <div id="gp-body"></div>
+  </section>
+
+  <!-- ============================= JOY-CONS ============================= -->
+  <section class="tb-view" id="view-joycon">
+    <div class="tb-h">
+      <div><span class="tb-eyebrow">Input</span><h1>Joy-Cons &amp; Pro Controllers</h1></div>
+      <p>Reads the raw stick position and the calibration stored inside the controller — including whether someone recalibrated it to hide drift before selling it on.</p>
+    </div>
+
+    <div class="tb-callout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Detach the Joy-Con from the console and pair it to this computer first — hold the small round button on the rail until the lights run back and forth, then pair it in Windows Bluetooth settings. A Pro Controller can go straight in with a USB cable. Chrome, Edge or Opera only.</span>
+    </div>
+
+    <ol class="tb-steps">
+      <li><b>1</b><span>Pair the Joy-Con, or plug the Pro Controller in</span></li>
+      <li><b>2</b><span>Connect it here and leave it flat on the bench for a second</span></li>
+      <li><b>3</b><span>Read the drift, then press every button</span></li>
+    </ol>
+
+    <div class="tb-bar" style="margin-bottom:16px">
+      <button class="tb-btn pri big" id="jc-connect">Connect a controller</button>
+      <button class="tb-btn" id="jc-rest">Re-measure at rest</button>
+      <span class="tb-lab" id="jc-state" style="text-transform:none;letter-spacing:0">Not connected.</span>
+    </div>
+
+    <div id="jc-verdict"></div>
+    <div id="jc-body"></div>
+
+    <div class="tb-panel">
+      <h2 class="tb-ptitle">Protocol log<span class="tb-rule"></span></h2>
+      <p class="tb-sub">Every message sent to the controller and everything it sends back. If the page cannot read the controller, screenshot this — it says exactly which step failed and what the raw bytes were.</p>
+      <div class="tb-log" id="jc-raw" data-empty="Connect a controller and the conversation appears here." style="height:clamp(200px,32vh,340px)"></div>
+    </div>
   </section>
 
   <!-- ============================= WHEELS ============================= -->
@@ -566,6 +603,157 @@
     </div>
   </section>
 
+  <!-- ============================= EARBUDS ============================= -->
+  <section class="tb-view" id="view-airpods">
+    <div class="tb-h">
+      <div><span class="tb-eyebrow">Audio</span><h1>Earbuds &amp; authenticity</h1></div>
+      <p>Measures the drivers against a pair you know is genuine, checks the sensors behave like real ones, and watches for a bud dropping out.</p>
+    </div>
+
+    <div class="tb-callout">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><b>No browser can read a serial number, firmware version or anything else from Apple.</b> Nothing here talks to Apple and nothing here is proof on its own. What it gives you is a confidence score from things that <i>can</i> be measured — drivers, sensors, and behaviour — which you weigh alongside the case, the engraving and the price you paid.</span>
+    </div>
+
+    <div class="tb-tabs" id="ap-tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-t="test">Test a pair</button>
+      <button role="tab" aria-selected="false" data-t="ref">Reference profiles</button>
+      <button role="tab" aria-selected="false" data-t="behave">Sensors &amp; dropouts</button>
+      <button role="tab" aria-selected="false" data-t="serial">Serial log</button>
+      <button role="tab" aria-selected="false" data-t="hand">By hand</button>
+    </div>
+
+    <!-- test -->
+    <div data-appane="test">
+      <ol class="tb-steps">
+        <li><b>1</b><span>Connect the earbuds and set them as the computer's output</span></li>
+        <li><b>2</b><span>Rest one bud directly on the laptop's microphone hole</span></li>
+        <li><b>3</b><span>Run the sweep and read the score</span></li>
+      </ol>
+      <div class="tb-panel accent">
+        <div class="tb-bar">
+          <button class="tb-btn pri big" id="ap-test">Test this pair</button>
+          <label class="tb-lab">Compare against <select id="ap-refsel" style="min-width:190px"></select></label>
+          <label class="tb-lab">Listen with <select id="ap-indev" style="min-width:190px"></select></label>
+          <label class="tb-lab">Volume <input type="range" id="ap-vol" min="10" max="100" value="60" style="width:110px"></label>
+        </div>
+        <p class="tb-note"><b>Listen with must be the laptop's own microphone, not the earbuds.</b> The moment earbuds become the input device they drop into headset mode — mono, and everything above about 8 kHz thrown away — which ruins both the playback and the measurement.</p>
+        <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Progress</span><span class="tb-meter"><i id="ap-bar"></i></span><span class="val" id="ap-state" style="text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ready</span></div>
+        <canvas class="tb-scope" id="ap-chart" style="margin-top:14px;height:clamp(200px,32vh,300px)"></canvas>
+        <div class="tb-stats" style="margin-top:14px">
+          <div class="tb-stat"><div class="k">Average difference</div><div class="v" id="ap-dev">—</div></div>
+          <div class="tb-stat"><div class="k">Worst band</div><div class="v" id="ap-worst">—</div></div>
+          <div class="tb-stat"><div class="k">at</div><div class="v" id="ap-worsthz" style="font-size:20px">—</div></div>
+        </div>
+        <div id="ap-verdict" style="margin-top:14px"></div>
+        <p class="tb-note">Only the <i>shape</i> of the curve is compared, so how loud you set it does not matter. Position does — same bud, same spot on the microphone, every time. If a result looks bad, re-seat it and run again before you call it.</p>
+      </div>
+    </div>
+
+    <!-- reference -->
+    <div data-appane="ref" hidden>
+      <div class="tb-grid tb-cols2">
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Capture a reference<span class="tb-rule"></span></h2>
+          <p class="tb-sub">Do this once per model, with a pair whose provenance you are sure about — sealed, or bought from Apple. Everything you test afterwards is scored against it.</p>
+          <div class="tb-bar">
+            <input type="text" id="ap-refname" placeholder="AirPods Pro 2 — sealed" style="min-width:220px;text-transform:none">
+            <button class="tb-btn pri" id="ap-capture">Capture reference</button>
+          </div>
+          <p class="tb-note">Capture it the same way you will test: same bud position, same microphone, same room. The comparison is only as good as how repeatable your placement is.</p>
+        </div>
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Saved references<span class="tb-rule"></span></h2>
+          <div id="ap-profiles"></div>
+          <div class="tb-bar" style="margin-top:12px">
+            <button class="tb-btn" id="ap-export">Export to file</button>
+            <button class="tb-btn" id="ap-import">Import from box</button>
+          </div>
+          <textarea id="ap-json" rows="4" placeholder="Paste an exported file here to bring references onto this machine" style="width:100%;margin-top:10px;font-size:11px"></textarea>
+          <p class="tb-note">Profiles live in this browser on this machine. Export once and import on every other bench PC so all of them judge against the same pair.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- behaviour -->
+    <div data-appane="behave" hidden>
+      <div class="tb-grid tb-cols2">
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Ear detection<span class="tb-rule"></span></h2>
+          <p class="tb-sub">Genuine AirPods pause the moment a bud leaves your ear — that is an infrared sensor and a chip most counterfeits do not bother with. Put both in, press start, then take one out.</p>
+          <div class="tb-bar">
+            <button class="tb-btn pri" id="ap-earrun">Start ear test</button>
+            <button class="tb-btn" id="ap-earstop">Stop</button>
+          </div>
+          <div class="tb-stats" style="margin-top:14px">
+            <div class="tb-stat"><div class="k">Result</div><div class="v" id="ap-ear" style="font-size:17px">—</div></div>
+          </div>
+          <p class="tb-note" id="ap-earstate">Not run yet.</p>
+          <p class="tb-note">One honest catch: if automatic ear detection is switched off in the phone or computer settings, a genuine pair fails this too. Check the setting before you judge it.</p>
+        </div>
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Dropout watch<span class="tb-rule"></span></h2>
+          <p class="tb-sub">A bud that dies after fifteen minutes is the most common fault on used earbuds and the easiest one to miss. Start this, play music through them, and leave it.</p>
+          <div class="tb-bar">
+            <button class="tb-btn pri" id="ap-soakrun">Start dropout watch</button>
+          </div>
+          <div class="tb-stats" style="margin-top:14px">
+            <div class="tb-stat"><div class="k">Minutes watched</div><div class="v" id="ap-soaktime">0.0</div></div>
+          </div>
+          <p class="tb-note" id="ap-soakstate">Not running.</p>
+          <p class="tb-note">It watches the computer's audio device list. When a bud drops off, the list changes and the moment is stamped in the log on the System page.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- serial -->
+    <div data-appane="serial" hidden>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Serial log<span class="tb-rule"></span></h2>
+        <p class="tb-sub">Read the serial off the case lid and type it in. A serial you have logged before is close to proof of a counterfeit — real ones are unique, fakes come off a line sharing one.</p>
+        <div class="tb-bar">
+          <input type="text" id="ap-sn" placeholder="serial from inside the case lid" style="min-width:230px;text-transform:uppercase">
+          <input type="text" id="ap-snnote" placeholder="note (optional)" style="min-width:150px;text-transform:none">
+          <button class="tb-btn pri" id="ap-snadd">Check &amp; log</button>
+        </div>
+        <div class="tb-stats" style="margin-top:14px">
+          <div class="tb-stat"><div class="k">Result</div><div class="v" id="ap-snresult" style="font-size:16px">—</div></div>
+          <div class="tb-stat"><div class="k">Logged so far</div><div class="v" id="ap-sncount">0</div></div>
+        </div>
+        <div id="ap-serials" style="margin-top:14px"></div>
+        <p class="tb-note">This checks your own history only — it never contacts Apple, and it cannot tell you whether a serial is valid, only whether you have seen it before. To verify one properly, type it into Apple's own coverage checker yourself.</p>
+      </div>
+    </div>
+
+    <!-- by hand -->
+    <div data-appane="hand" hidden>
+      <div class="tb-grid tb-cols2">
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">What the computer cannot check<span class="tb-rule"></span></h2>
+          <ul class="tb-flags">
+            <li class="warn"><span class="tag">engraving</span><span>Inside the case lid, under a loupe. Genuine text is crisp and evenly spaced. Fakes are dotty, shallow or slightly crooked.</span></li>
+            <li class="warn"><span class="tag">hinge</span><span>Metal, firm, and it stops cleanly. A loose or plasticky hinge with a soft stop is the single fastest tell.</span></li>
+            <li class="warn"><span class="tag">weight</span><span>Weigh your sealed reference pair and its case, write the numbers on the bench. Counterfeits are almost always lighter — compare against your own known-good figures, not against numbers off the internet.</span></li>
+            <li class="warn"><span class="tag">mesh</span><span>The speaker and microphone grilles are a fine, even mesh set flush. Fakes use coarser mesh, often sitting slightly proud or recessed.</span></li>
+            <li class="warn"><span class="tag">magnets</span><span>Buds snap into the case decisively and the lid pulls itself shut. Weak or vague magnets mean cheap ones.</span></li>
+            <li class="warn"><span class="tag">pairing</span><span>On an iPhone, a genuine pair raises the full pairing card with the correct model name and an animation. Fakes often show a generic card, the wrong name, or nothing at all.</span></li>
+            <li class="warn"><span class="tag">squeeze</span><span>On Pro models the stem squeeze gives a distinct click through the bud. Touch-only controls with no click are a strong tell.</span></li>
+          </ul>
+        </div>
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">How to weigh it all up<span class="tb-rule"></span></h2>
+          <p class="tb-sub">No single check here is conclusive, including the sweep. Faults cluster, and so do fakes.</p>
+          <ul class="tb-flags">
+            <li class="bad"><span class="tag">send back</span><span>Driver response more than 6 dB out, <i>and</i> ear detection does nothing, <i>and</i> the hinge feels wrong. Three independent signals agreeing is as close to certain as you will get without Apple.</span></li>
+            <li class="warn"><span class="tag">look again</span><span>One signal fails and the rest pass. Re-seat the bud and sweep again, check the ear-detection setting is actually on, and look at the engraving before you decide.</span></li>
+            <li class="ok"><span class="tag">sell it</span><span>Response within 3 dB, ear detection pauses, serial not seen before, case and engraving clean, and both buds survive a dropout watch.</span></li>
+          </ul>
+          <p class="tb-note">Keep the sealed reference pair in a drawer and do not sell it. It is a measuring instrument now, and it is worth more to you than its resale value.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============================= MONITORS ============================= -->
   <section class="tb-view" id="view-monitor">
     <div class="tb-h">
@@ -637,6 +825,13 @@
       </div>
       <div class="tb-grid tb-cols2" style="margin-top:14px">
         <div><video id="cam-video" playsinline autoplay muted style="width:100%;border:1px solid var(--line);border-radius:10px;background:var(--bg);aspect-ratio:16/9;object-fit:contain"></video></div>
+        <div id="cam-hint">
+          <ul class="tb-flags">
+            <li class="warn"><span class="tag">permission</span><span>Chrome asks once per site. If you refused it before, click the camera icon at the right of the address bar and allow it, then reload.</span></li>
+            <li class="ok"><span class="tag">in use</span><span>If the preview stays black, another program has the camera — Teams and Zoom hold it even when minimised. Close them and try again.</span></li>
+            <li class="ok"><span class="tag">privacy shutter</span><span>Plenty of laptops have a physical slider or an F-key that cuts the camera. Check that before condemning it.</span></li>
+          </ul>
+        </div>
         <div>
           <div class="tb-stats">
             <div class="tb-stat"><div class="k">Resolution</div><div class="v" id="cam-res">—</div></div>
@@ -841,5 +1036,7 @@
 <script src="js/80-bench.js"></script>
 <script src="js/90-stress.js"></script>
 <script src="js/95-network.js"></script>
+<script src="js/97-airpods.js"></script>
+<script src="js/98-joycon.js"></script>
 </body>
 </html>

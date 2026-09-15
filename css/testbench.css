@@ -448,6 +448,13 @@ body.tb-locked .tb-app{padding-top:44px}
 
 /* fullscreen stage */
 .tb-full{position:fixed;inset:0;z-index:80;background:#000;display:none;cursor:none}
+.tb-full.showcursor{cursor:default}
+.tb-fullhud .exit{
+  background:var(--red);border:0;color:#140005;border-radius:7px;
+  padding:6px 13px;font-family:var(--f-display);font-size:12px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;flex:0 0 auto;
+}
+.tb-fullhud .exit:hover{background:#FF4459}
 .tb-full.on{display:block}
 .tb-full canvas,.tb-full .fill{position:absolute;inset:0;width:100%;height:100%}
 .tb-fullhud{
@@ -556,3 +563,6 @@ body.tb-locked .tb-app{padding-top:44px}
 
 /* placeholder text inside empty logs */
 .tb-log:empty::before{content:attr(data-empty);color:var(--ink-3);font-style:normal;opacity:.8}
+
+/* an axis that has actually moved */
+.tb-meterrow.seen .lbl{color:var(--pass)}

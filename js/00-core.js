@@ -82,8 +82,32 @@ var TB = (function () {
     $$("#rail .tb-nav").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.view === view)); });
     $("#main").scrollTop = 0;
     if (enterFns[view]) enterFns[view].forEach(function (f) { try { f(); } catch (e) {} });
+    writeHash(view);
   }
   function onEnter(v, f) { (enterFns[v] = enterFns[v] || []).push(f); }
+
+  /* Put the current test in the address bar so a refresh lands you back where
+     you were instead of at the Bench, and so a page can be bookmarked.
+     replaceState rather than pushState: it keeps history.state intact, which the
+     mouse page relies on for its back/forward button trap, and it stops the
+     browser's back button turning into a tour of every tab you clicked. */
+  var viewIds = null;
+  function knownView(v) {
+    if (!viewIds) viewIds = $$(".tb-view").map(function (s) { return s.id.replace(/^view-/, ""); });
+    return viewIds.indexOf(v) !== -1;
+  }
+  function hashView() { return (location.hash || "").replace(/^#\/?/, ""); }
+  function writeHash(v) { try { history.replaceState(history.state, "", "#" + v); } catch (e) {} }
+  window.addEventListener("hashchange", function () {
+    var v = hashView();
+    if (v && knownView(v) && v !== currentView) go(v);
+  });
+  /* on load, after every module has registered its onEnter handlers */
+  window.addEventListener("load", function () {
+    var v = hashView();
+    if (v && knownView(v) && v !== currentView) go(v);
+    else writeHash(currentView);
+  });
   function onLeave(v, f) { (leaveFns[v] = leaveFns[v] || []).push(f); }
   function view() { return currentView; }
   function badge(v, txt, on) { var b = $("#badge-" + v); if (!b) return; b.textContent = txt || ""; b.classList.toggle("on", !!on); }
@@ -191,8 +215,11 @@ var TB = (function () {
 
   var WHEEL_RE = /wheel|g25|g27|g29|g920|g923|driving force|momo|t150|t248|t300|t500|t818|tmx|tx racing|thrustmaster|fanatec|clubsport|csl|podium|simucube|moza|simagic|cammus|pro racing/i;
   function looksLikeWheel(gp) {
-    if (WHEEL_RE.test(gp.id)) return true;
-    return gp.mapping !== "standard" && gp.axes.length >= 3 && gp.buttons.length >= 8;
+    /* Only the name decides. The old rule was "non-standard mapping with a few
+       axes and buttons", which swallowed leverless pads, fight sticks, arcade
+       sticks and flight sticks and filed them all under Wheels. Anything the
+       name does not catch can still be picked by hand on the Wheels page. */
+    return WHEEL_RE.test(gp.id || "");
   }
   function shortName(rec) {
     var id = (rec.id || "").replace(/\((?:STANDARD )?GAMEPAD[^)]*\)/i, "").replace(/\((?:Vendor|Product):[^)]*\)/ig, "").trim();
@@ -207,7 +234,8 @@ var TB = (function () {
       seenBtn: {}, axMin: [], axMax: [],
       btnMin: [], btnMax: [],
       rest: null, sampling: null, score: null, flags: [],
-      returnErr: 0, resolution: {}
+      returnErr: 0, resolution: {}, seenAxis: {}, active: false,
+      standard: gp.mapping === "standard"
     };
   }
   function beginRestSample(rec) { rec.sampling = { t0: performance.now(), samples: [], btn: [] }; rec.score = null; rec.flags = []; }
@@ -281,7 +309,12 @@ var TB = (function () {
         var bv = rec.buttons[b2];
         if (rec.btnMin[b2] == null || bv < rec.btnMin[b2]) rec.btnMin[b2] = bv;
         if (rec.btnMax[b2] == null || bv > rec.btnMax[b2]) rec.btnMax[b2] = bv;
-        if (rec.pressed[b2]) rec.seenBtn[b2] = true;
+        if (rec.pressed[b2]) { rec.seenBtn[b2] = true; rec.active = true; }
+      }
+      /* Wireless pads often appear twice — once as the dongle, once as the pad
+         itself — and only one of them ever sends anything. Remember which. */
+      for (var a2 = 0; a2 < rec.axes.length; a2++) {
+        if ((rec.axMax[a2] - rec.axMin[a2]) > 0.25) { rec.seenAxis[a2] = true; rec.active = true; }
       }
       if (rec.sampling) {
         rec.sampling.samples.push(rec.axes.slice());
@@ -300,9 +333,24 @@ var TB = (function () {
     badge("gamepad", n ? String(n) : "", n > 0);
     badge("wheel", wheels.length ? String(wheels.length) : "", wheels.length > 0);
     padListeners.forEach(function (f) { try { f(); } catch (e) {} });
-    requestAnimationFrame(poll);
   }
-  requestAnimationFrame(poll);
+
+  /* poll() only reads — scheduling lives in loop(). Keeping them apart means
+     calling poll() from an event handler cannot start a second animation loop
+     running alongside the first. */
+  function loop() { poll(); requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+
+  /* The loop above runs on requestAnimationFrame, which the browser slows right
+     down whenever this tab is not the one in front. These catch a controller the
+     moment the browser admits it exists, and keep the status chip honest while
+     the loop is throttled. */
+  window.addEventListener("gamepadconnected", function (e) {
+    watch("PAD", "browser reported " + (e.gamepad && e.gamepad.id ? e.gamepad.id : "a controller"));
+    poll();
+  });
+  window.addEventListener("gamepaddisconnected", function () { poll(); });
+  setInterval(function () { if (!document.hidden) poll(); }, 400);
 
   /* ---------- rail + clock ---------- */
   $$("#rail .tb-nav").forEach(function (b) { b.onclick = function () { go(b.dataset.view); }; });

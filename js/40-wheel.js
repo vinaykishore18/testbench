@@ -4,7 +4,7 @@
 var $ = TB.$, el = TB.el, clamp = TB.clamp, toast = TB.toast;
 var PADS = TB.pads(), shortName = TB.shortName;
 
-var sel = $("#wh-sel"), body = $("#wh-body"), activeIdx = null, ui = null, sig = "";
+var sel = $("#wh-sel"), body = $("#wh-body"), activeIdx = null, ui = null, sig = null;   /* null, not "" — see note in tick() */
 var rest = {}, steerAxis = 0, pedalAxis = { throttle: 1, brake: 2, clutch: 3 }, learning = null;
 
 function buildSel() {
@@ -18,7 +18,7 @@ function buildSel() {
     var rec = PADS[k];
     var b = el("button", "tb-btn" + (k === activeIdx ? " on" : ""), shortName(rec) + (rec.wheel ? " ◆" : ""));
     b.title = rec.wheel ? "Detected as a wheel" : "Not detected as a wheel — select it anyway if this is your device";
-    b.onclick = function () { activeIdx = k; sig = ""; buildSel(); build(); };
+    b.onclick = function () { activeIdx = k; sig = null; buildSel(); build(); };
     sel.appendChild(b);
   });
 }
@@ -34,7 +34,15 @@ function pedal(name, cls) {
 function build() {
   var rec = PADS[activeIdx];
   body.innerHTML = "";
-  if (!rec) { body.appendChild(el("p", "tb-empty", "Connect a wheel and turn it, or press a button on it, so the browser hands it over.")); ui = null; return; }
+  if (!rec) {
+    var p0 = el("div", "tb-panel accent");
+    var h0 = el("h2", null, "Listening for a wheel");
+    h0.style.cssText = "font-family:var(--f-display);font-size:20px;font-weight:800;margin-bottom:8px";
+    p0.appendChild(h0);
+    p0.appendChild(el("p", "tb-sub", "Nothing connected yet. Plug the wheel in, then turn it or press one of its buttons \u2014 browsers hide a game device from a web page until it sends its first input, so until you move it the page cannot see it."));
+    body.appendChild(p0);
+    ui = null; return;
+  }
 
   var p0 = el("div", "tb-panel");
   var head = el("div"); head.style.cssText = "display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin-bottom:12px";
@@ -136,10 +144,13 @@ function startLearn(rec) {
 }
 function tick() {
   if (TB.view() !== "wheel") return;
-  var ks = Object.keys(PADS).join(",");
+  /* sig starts as null rather than "". With no controllers connected the key
+     list is also "", so "" !== "" was false and the page was never built at
+     all — you got a blank panel with not even the "press a button" hint on it. */
+  var ks = Object.keys(PADS).map(function (k) { return k + (PADS[k].active ? "!" : ""); }).join(",");
   if (ks !== sig) { sig = ks; buildSel(); build(); }
   if (!ui) return;
-  var rec = PADS[activeIdx]; if (!rec) { sig = ""; return; }
+  var rec = PADS[activeIdx]; if (!rec) { sig = null; return; }
   if (learning) {
     rec.axes.forEach(function (v, i) {
       var d = Math.abs(v - learning.base[i]);
@@ -182,6 +193,6 @@ function tick() {
   });
 }
 TB.onPads(tick);
-TB.onEnter("wheel", function () { sig = ""; tick(); });
+TB.onEnter("wheel", function () { sig = null; tick(); });
 $("#wh-reset").onclick = function () { var r = PADS[activeIdx]; if (r) { r.axMin = []; r.axMax = []; r.seenBtn = {}; rest = {}; } };
 })();

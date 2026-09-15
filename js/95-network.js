@@ -7,13 +7,28 @@ var $ = TB.$, $$ = TB.$$, el = TB.el, clamp = TB.clamp, verdict = TB.verdict, to
 
 var PING = "assets/ping.txt";
 var PAYLOAD = "assets/payload.bin";
-/* the single-file build has no assets folder — fall back to the page itself */
-fetch(PING, { cache: "no-store" }).then(function (r) {
-  if (!r.ok) throw 0;
-}).catch(function () {
-  PING = location.pathname;
-  PAYLOAD = location.pathname;
-});
+/* Opened as a local file there is no origin to fetch from, so none of this can
+   work — say so plainly rather than throwing errors at the console. */
+var OFFLINE_FILE = location.protocol === "file:";
+if (OFFLINE_FILE) {
+  TB.onEnter("network", function () {
+    var st = TB.$("#net-log");
+    if (st && !st.childElementCount) {
+      var d = TB.el("div");
+      d.appendChild(TB.el("b", null, "NOT AVAILABLE"));
+      d.appendChild(document.createTextNode("   These tests need the site properly hosted. Opened as a file on disk the browser blocks every request, so there is nothing to measure. Deploy it and this page works."));
+      st.appendChild(d);
+    }
+  });
+} else {
+  /* the single-file build has no assets folder — fall back to the page itself */
+  fetch(PING, { cache: "no-store" }).then(function (r) {
+    if (!r.ok) throw 0;
+  }).catch(function () {
+    PING = location.pathname;
+    PAYLOAD = location.pathname;
+  });
+}
 var running = null, t0 = 0, timer = null;
 var rtts = [], drops = 0, sent = 0, worst = 0, series = [];
 var runs = [];
@@ -245,13 +260,18 @@ function score() {
 }
 
 /* ---------------- wiring ---------------- */
+function fileGuard() {
+  if (OFFLINE_FILE) { toast("Not available from a file", "The router tests need the site hosted. Everything else on this page works from disk.", null); return true; }
+  return false;
+}
 $("#net-run").onclick = function () {
+  if (fileGuard()) return;
   if (running) { stop(false); return; }
   start("soak", (parseFloat($("#net-dur").value) || 300) * 1000);
 };
-$("#net-quick").onclick = function () { if (!running) start("quick", 30000); };
-$("#net-speed").onclick = function () { throughput(8); };
-$("#net-load").onclick = function () { loadTest(parseInt($("#net-conc-n").value, 10) || 120); };
+$("#net-quick").onclick = function () { if (fileGuard()) return; if (!running) start("quick", 30000); };
+$("#net-speed").onclick = function () { if (fileGuard()) return; throughput(8); };
+$("#net-load").onclick = function () { if (fileGuard()) return; loadTest(parseInt($("#net-conc-n").value, 10) || 120); };
 $("#net-clear").onclick = function () { runs = []; renderRuns(); $("#net-log").textContent = ""; };
 
 window.addEventListener("online", function () { log("LINK", "back online"); });

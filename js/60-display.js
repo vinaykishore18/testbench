@@ -6,6 +6,7 @@ var $ = TB.$, $$ = TB.$$, el = TB.el, clamp = TB.clamp, toast = TB.toast;
 var stage = $("#fullstage"), hud = null, cv = null, ctx = null, anim = null;
 var seq = [], seqI = 0, mode = null, auto = false, dwell = 6000, paused = false, hudEls = {};
 var elapsed = 0, lastT = 0, checker = null;
+var hadFs = false, watchdog = null, cursorTimer = null;
 
 var SOLIDS = [["#000000", "Black"], ["#FFFFFF", "White"], ["#FF0000", "Red"], ["#00FF00", "Green"], ["#0000FF", "Blue"],
               ["#00FFFF", "Cyan"], ["#FF00FF", "Magenta"], ["#FFFF00", "Yellow"], ["#808080", "50% grey"], ["#C0C0C0", "75% grey"], ["#404040", "25% grey"]];
@@ -43,25 +44,59 @@ $("#mn-runquick").onclick = function () {
 };
 
 function open() {
-  stage.innerHTML = "";
+  close(true);                       /* never stack two overlays */
+  stage.textContent = "";
   cv = document.createElement("canvas"); cv.className = "fill"; stage.appendChild(cv); ctx = cv.getContext("2d");
   hud = el("div", "tb-fullhud"); stage.appendChild(hud);
   stage.classList.add("on");
-  paused = false;
-  if (stage.requestFullscreen) stage.requestFullscreen().catch(function () {});
+  paused = false; hadFs = false;
+  if (stage.requestFullscreen) {
+    stage.requestFullscreen().then(function () { hadFs = true; }).catch(function () {});
+  }
   resize(); render();
   document.addEventListener("keydown", keys, true);
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("visibilitychange", onHidden);
   stage.addEventListener("click", onClick);
+  stage.addEventListener("mousemove", showCursor);
   window.addEventListener("resize", resize);
+  /* Belt and braces: if full screen ends by any route the browser does not tell
+     us about, this notices within a second and takes the overlay down. Being
+     stranded behind a full-screen layer with no way out is worse than any
+     missed test. */
+  watchdog = setInterval(function () {
+    if (!stage.classList.contains("on")) return;
+    if (hadFs && !document.fullscreenElement) close();
+  }, 700);
   if (auto) requestAnimationFrame(step);
 }
-function close() {
-  stage.classList.remove("on"); stage.innerHTML = "";
+/* Pressing Escape inside full screen is swallowed by the browser to exit full
+   screen — the page never sees the key. That left the overlay up with the
+   taskbar showing behind it. This is the fix. */
+function onFsChange() {
+  if (document.fullscreenElement) { hadFs = true; return; }
+  if (hadFs && stage.classList.contains("on")) close();
+}
+function onHidden() { if (document.hidden && stage.classList.contains("on")) close(); }
+function showCursor() {
+  stage.classList.add("showcursor");
+  if (cursorTimer) clearTimeout(cursorTimer);
+  cursorTimer = setTimeout(function () { stage.classList.remove("showcursor"); }, 2200);
+}
+function close(quiet) {
+  stage.classList.remove("on", "showcursor");
+  stage.textContent = "";
   if (anim) { cancelAnimationFrame(anim); anim = null; }
-  auto = false;
+  if (watchdog) { clearInterval(watchdog); watchdog = null; }
+  if (cursorTimer) { clearTimeout(cursorTimer); cursorTimer = null; }
+  auto = false; mode = null; cv = null; ctx = null; hud = null; hudEls = {};
   document.removeEventListener("keydown", keys, true);
+  document.removeEventListener("fullscreenchange", onFsChange);
+  document.removeEventListener("visibilitychange", onHidden);
+  stage.removeEventListener("click", onClick);
+  stage.removeEventListener("mousemove", showCursor);
   window.removeEventListener("resize", resize);
-  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  if (!quiet && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
 }
 function onClick(e) { if (e.target.closest && e.target.closest(".tb-fullhud")) return; next(); }
 function keys(e) {
@@ -79,7 +114,7 @@ function next() {
   seqI = (seqI + 1) % seq.length; render();
 }
 function step() {
-  if (!stage.classList.contains("on") || !auto) return;
+  if (!stage.classList.contains("on") || !auto || !ctx) return;
   requestAnimationFrame(step);
   var now = performance.now();
   if (!paused) elapsed += now - lastT;
@@ -89,15 +124,18 @@ function step() {
   if (p >= 1) next();
 }
 function resize() {
-  if (!cv) return;
+  if (!cv || !ctx) return;
   var d = window.devicePixelRatio || 1;
   cv.width = Math.round(window.innerWidth * d); cv.height = Math.round(window.innerHeight * d);
   if (mode) render();
 }
 function updateHud() {
   if (!hud) return;
-  hud.innerHTML = "";
+  hud.textContent = "";
   var s = seq[seqI];
+  var x = el("button", "exit", "\u2715 Exit");
+  x.onclick = function (ev) { ev.stopPropagation(); close(); };
+  hud.appendChild(x);
   hud.appendChild(el("b", null, s.name));
   hud.appendChild(el("span", null, (seqI + 1) + " of " + seq.length));
   if (auto) {
@@ -107,6 +145,7 @@ function updateHud() {
   hud.appendChild(el("span", null, auto ? "Space pauses · → skip · ← back · H hides · Esc stops" : "Click or → next · ← back · H hides · Esc exits"));
 }
 function render() {
+  if (!ctx) return;
   if (anim) { cancelAnimationFrame(anim); anim = null; }
   var s = seq[seqI]; mode = s.kind;
   var W = cv.width, H = cv.height;
@@ -203,6 +242,7 @@ function render() {
   if (s.kind === "ghosting") {
     var t0 = performance.now();
     (function frame() {
+      if (!ctx || !stage.classList.contains("on")) { anim = null; return; }
       anim = requestAnimationFrame(frame);
       var t = (performance.now() - t0) / 1000;
       ctx.fillStyle = "#111"; ctx.fillRect(0, 0, W, H);
@@ -222,6 +262,7 @@ function render() {
        subpixel loose, well clear of the 15-25 Hz band that provokes seizures. */
     var lastSwap = 0, f = 0;
     (function frame() {
+      if (!ctx || !stage.classList.contains("on")) { anim = null; return; }
       anim = requestAnimationFrame(frame);
       var now = performance.now();
       if (now - lastSwap < 200) return;

@@ -97,7 +97,7 @@ function padSVG(fam, nbtn, naxes) {
 }
 
 /* ---------------- view ---------------- */
-var sel = $("#gp-sel"), body = $("#gp-body"), activeIdx = null, ui = null, sig = "";
+var sel = $("#gp-sel"), body = $("#gp-body"), activeIdx = null, ui = null, sig = null, userPicked = false;   /* null, not "" — see note in tick() */
 
 function stickBlock(name) {
   var w = el("div");
@@ -112,21 +112,40 @@ function stickBlock(name) {
 }
 
 function buildSel() {
-  var ks = Object.keys(PADS); sel.innerHTML = "";
+  var ks = Object.keys(PADS); sel.textContent = "";
   if (!ks.length) return;
+  /* A wireless pad usually shows up twice — the dongle and the pad — and only
+     one of them ever sends anything. Land on the live one, not slot zero. */
+  var liveOne = ks.filter(function (k) { return PADS[k].active; })[0];
+  /* Until you choose one yourself, keep moving to whichever device is actually
+     sending input. A receiver enumerates before the pad wakes up, so picking
+     once at connect time would leave you staring at the silent half of the pair. */
+  if (!userPicked && liveOne && (activeIdx == null || !PADS[activeIdx] || !PADS[activeIdx].active)) {
+    activeIdx = liveOne;
+  }
   if (activeIdx == null || !PADS[activeIdx]) activeIdx = ks[0];
   ks.forEach(function (k) {
-    var rec = PADS[k], b = el("button", "tb-btn" + (k === activeIdx ? " on" : ""), shortName(rec));
-    b.onclick = function () { activeIdx = k; sig = ""; buildSel(); build(); };
+    var rec = PADS[k];
+    var b = el("button", "tb-btn" + (k === activeIdx ? " on" : ""), shortName(rec) + (rec.active ? "" : "  \u00b7 quiet"));
+    b.title = rec.active ? "This device is sending input" : "This device has not sent anything yet — it may be the wireless receiver rather than the controller";
+    b.onclick = function () { userPicked = true; activeIdx = k; sig = null; buildSel(); build(); };
     sel.appendChild(b);
   });
+  var hint = $("#gp-selhint");
+  if (hint) {
+    var quiet = ks.filter(function (k) { return !PADS[k].active; }).length;
+    hint.textContent = ks.length > 1
+      ? ks.length + " devices are connected. Wireless controllers often list their receiver separately" +
+        (quiet ? " — the one marked quiet has sent nothing, so it is probably the receiver." : ".")
+      : "";
+  }
 }
 
 function build() {
   var rec = PADS[activeIdx];
   body.innerHTML = "";
   if (!rec) {
-    body.appendChild(el("p", "tb-empty", "Connect a controller and press any button on it. USB is the most reliable; Bluetooth works too."));
+    body.appendChild(waitingPanel());
     ui = null; badge("gamepad", ""); return;
   }
   var fam = rec.brand.fam;
@@ -145,14 +164,26 @@ function build() {
   var idbar = el("div", "tb-idbar"); idbar.id = "gp-id"; pv.appendChild(idbar);
   body.appendChild(pv);
 
-  /* diagram */
+  /* diagram — only when the controller reports a standard layout */
   var pd = el("div", "tb-panel");
-  pd.appendChild(TB.ptitle("The controller"));
-  var dia = padSVG(fam, rec.buttons.length, rec.axes.length);
-  pd.appendChild(dia.node);
+  var dia = null;
+  if (rec.standard) {
+    pd.appendChild(TB.ptitle("The controller"));
+    dia = padSVG(fam, rec.buttons.length, rec.axes.length);
+    pd.appendChild(dia.node);
+  } else {
+    pd.appendChild(TB.ptitle("Every control, as reported"));
+    pd.appendChild(el("p", "tb-sub",
+      "This controller reports a non-standard layout \u2014 " + rec.buttons.length + " buttons and " +
+      rec.axes.length + " axes that do not map onto a normal gamepad. Leverless pads, fight sticks, " +
+      "flight sticks and arcade sticks all do this. Drawing a picture of an Xbox pad here would be a lie, " +
+      "so you get the raw numbers instead: press everything and watch every entry below turn green."));
+  }
   var cl = TB.checklist(rec.buttons.map(function (_, i) { return { key: i, label: labelFor(fam, i) }; }));
   pd.appendChild(cl.node);
-  pd.appendChild(el("p", "tb-note", "Press every control on the pad and watch it light up here. The list underneath turns green as each one reports in — anything still grey at the end is either untested or dead."));
+  pd.appendChild(el("p", "tb-note", rec.standard
+    ? "Press every control on the pad and watch it light up here. The list underneath turns green as each one reports in \u2014 anything still grey at the end is either untested or dead."
+    : "Every button this controller has is listed above, however many there are. Work along the whole thing until nothing is grey."));
   body.appendChild(pd);
 
   var grid = el("div", "tb-grid tb-cols2");
@@ -160,7 +191,13 @@ function build() {
   p1.appendChild(TB.ptitle("Sticks — drift, range and return"));
   var sticks = el("div"); sticks.style.cssText = "display:flex;gap:20px;flex-wrap:wrap";
   var L = stickBlock("Left stick"), Rt = stickBlock("Right stick");
-  sticks.appendChild(L.node); if (rec.axes.length >= 4) sticks.appendChild(Rt.node);
+  if (rec.standard) {
+    sticks.appendChild(L.node);
+    if (rec.axes.length >= 4) sticks.appendChild(Rt.node);
+  } else {
+    sticks.appendChild(el("p", "tb-empty",
+      "No stick drawing for a non-standard controller \u2014 axes 0 and 1 are not necessarily a stick on this device. Every axis is listed further down with its own bar."));
+  }
   p1.appendChild(sticks);
   var sstat = el("div", "tb-stats"); sstat.style.marginTop = "12px";
   function stat(k) { var s = el("div", "tb-stat"); s.appendChild(el("div", "k", k)); var v = el("div", "v", "—"); s.appendChild(v); sstat.appendChild(s); return v; }
@@ -172,9 +209,16 @@ function build() {
   var p2 = el("div", "tb-panel");
   p2.appendChild(TB.ptitle("Triggers, shoulders &amp; rumble"));
   var trigs = [];
-  [[6, "LT / L2"], [7, "RT / R2"], [4, "LB / L1"], [5, "RB / R1"]].forEach(function (t) {
-    if (rec.buttons.length > t[0]) { var m = TB.meterRow(t[1]); m.idx = t[0]; p2.appendChild(m.node); trigs.push(m); }
-  });
+  /* These names only mean anything on a standard pad. On a leverless or arcade
+     controller button 6 is not a trigger, so labelling it "LT" would be a lie —
+     those devices get their analog values in the button list instead. */
+  if (rec.standard) {
+    [[6, "LT / L2"], [7, "RT / R2"], [4, "LB / L1"], [5, "RB / R1"]].forEach(function (t) {
+      if (rec.buttons.length > t[0]) { var m = TB.meterRow(t[1]); m.idx = t[0]; p2.appendChild(m.node); trigs.push(m); }
+    });
+  } else {
+    p2.appendChild(el("p", "tb-empty", "No trigger readouts \u2014 this controller does not use the standard layout, so there is no way to know which of its buttons are triggers. Analog values for every button are in the list below."));
+  }
   var tstat = el("div", "tb-stats"); tstat.style.marginTop = "12px";
   function tstatCell(k) { var s = el("div", "tb-stat"); s.appendChild(el("div", "k", k)); var v = el("div", "v", "—"); s.appendChild(v); tstat.appendChild(s); return v; }
   var vLT = tstatCell("LT travel"), vRT = tstatCell("RT travel");
@@ -194,6 +238,7 @@ function build() {
   p4.appendChild(TB.ptitle("Raw axes and buttons"));
   var axes = [];
   rec.axes.forEach(function (_, i) { var m = TB.meterRow("Axis " + i); m.idx = i; p4.appendChild(m.node); axes.push(m); });
+  p4.appendChild(el("p", "tb-note", "An axis label turns green once that axis has actually moved, so you can work through all " + rec.axes.length + " of them and see which ones are dead. Triggers usually rest at -1.000 and a hat switch can report values outside -1 to +1 \u2014 both are normal."));
   var bl = el("div", "tb-btnlist"); bl.style.marginTop = "12px";
   var btns = [];
   rec.buttons.forEach(function (_, i) {
@@ -212,6 +257,52 @@ function build() {
     : "This controller does not expose rumble to the browser. Over Bluetooth most PlayStation and Xbox pads do not — plug it in over USB and try again.";
   TB.hidMount("#gp-id", "Press this to read the pad's USB product name. Most controllers show up; a few Bluetooth ones do not.");
 }
+
+/* The blank page people saw used to be this, and it never rendered. It is the
+   most important screen on the page: nobody can be expected to know that a
+   browser hides a controller until the controller sends something. */
+function waitingPanel() {
+  var p = el("div", "tb-panel accent");
+  var top = el("div");
+  top.style.cssText = "display:flex;align-items:center;gap:12px;margin-bottom:6px";
+  var dot = el("span", "tb-dot");
+  dot.style.cssText = "background:var(--red);box-shadow:0 0 0 4px var(--red-glow);animation:tb-pulse 1.4s ease-in-out infinite";
+  top.appendChild(dot);
+  var h = el("h2", null, "Listening for a controller");
+  h.style.cssText = "font-family:var(--f-display);font-size:20px;font-weight:800";
+  top.appendChild(h);
+  p.appendChild(top);
+
+  var lead = el("p", "tb-sub", "Nothing is connected yet. This page is checking several times a second, so the moment one appears it shows up here on its own.");
+  p.appendChild(lead);
+
+  var ol = el("ol", "tb-steps");
+  [["1", "Plug it in by USB, or pair it over Bluetooth"],
+   ["2", "Press any button on the controller — A, or a trigger"],
+   ["3", "Leave it flat on the bench for a second while it scores itself"]]
+    .forEach(function (st, i) {
+      var li = el("li"); if (i === 1) li.className = "on";
+      li.appendChild(el("b", null, st[0]));
+      li.appendChild(el("span", null, st[1]));
+      ol.appendChild(li);
+    });
+  p.appendChild(ol);
+
+  var flags = el("ul", "tb-flags");
+  [["warn", "press a button", "Browsers hide a controller from a web page until it sends its first input. That is a deliberate browser rule, not a fault with the pad and not a fault here \u2014 until you press something, the page genuinely cannot see it."],
+   ["ok", "xbox by usb", "Plug in, press A, and it appears straight away."],
+   ["ok", "bluetooth", "Pair it in Windows settings first, then press a button. Pairing alone is not enough."],
+   ["warn", "this tab", "Keep this tab in front while you press the button. A background tab is slowed down by the browser and may miss it."]]
+    .forEach(function (f) {
+      var li = el("li", f[0]);
+      li.appendChild(el("span", "tag", f[1]));
+      li.appendChild(el("span", null, f[2]));
+      flags.appendChild(li);
+    });
+  p.appendChild(flags);
+  return p;
+}
+
 function rumble(rec, strong, weak) {
   var a = rec && rec.raw && rec.raw.vibrationActuator; if (!a) return;
   try { a.playEffect("dual-rumble", { startDelay: 0, duration: 700, strongMagnitude: strong, weakMagnitude: weak }); } catch (e) {}
@@ -252,10 +343,17 @@ function drawStick(blk, x, y, pressed) {
 
 function tick() {
   if (TB.view() !== "gamepad") return;
-  var ks = Object.keys(PADS).join(",");
+  /* sig starts as null rather than "". With no controllers connected the key
+     list is also "", so "" !== "" was false and the page was never built at
+     all — you got a blank panel with not even the "press a button" hint on it. */
+  var keys = Object.keys(PADS);
+  if (!keys.length) userPicked = false;
+  /* the signature carries each device's liveness, so the page rebuilds the
+     moment a quiet device starts talking */
+  var ks = keys.map(function (k) { return k + (PADS[k].active ? "!" : ""); }).join(",");
   if (ks !== sig) { sig = ks; buildSel(); build(); }
   if (!ui) return;
-  var rec = PADS[activeIdx]; if (!rec) { sig = ""; return; }
+  var rec = PADS[activeIdx]; if (!rec) { sig = null; return; }
   ui.rec = rec;
   if (rec.score !== ui.lastScore) {
     ui.lastScore = rec.score;
@@ -264,17 +362,17 @@ function tick() {
   }
   /* diagram */
   var d = ui.dia;
-  Object.keys(d.btn).forEach(function (k) {
+  if (d) Object.keys(d.btn).forEach(function (k) {
     var i = parseInt(k, 10), down = !!rec.pressed[i];
     d.btn[k].classList.toggle("on", down);
     d.btn[k].classList.toggle("seen", !!rec.seenBtn[i]);
     if (d.labels[k]) d.labels[k].classList.toggle("on", down);
   });
-  Object.keys(d.trig).forEach(function (k) {
+  if (d) Object.keys(d.trig).forEach(function (k) {
     var v = rec.buttons[parseInt(k, 10)] || 0;
     d.trig[k].setAttribute("width", (62 * clamp(v, 0, 1)).toFixed(1));
   });
-  d.knob.forEach(function (kn) {
+  if (d) d.knob.forEach(function (kn) {
     var x = rec.axes[kn.ax] || 0, y = rec.axes[kn.ay] || 0;
     kn.node.setAttribute("cx", (kn.cx + x * 12).toFixed(1));
     kn.node.setAttribute("cy", (kn.cy + y * 12).toFixed(1));
@@ -286,8 +384,10 @@ function tick() {
   });
   rec.buttons.forEach(function (_, i) { ui.cl.set(i, !!rec.seenBtn[i]); });
 
-  drawStick(ui.L, rec.axes[0] || 0, rec.axes[1] || 0, rec.pressed[10]);
-  if (rec.axes.length >= 4) drawStick(ui.R, rec.axes[2] || 0, rec.axes[3] || 0, rec.pressed[11]);
+  if (rec.standard) {
+    drawStick(ui.L, rec.axes[0] || 0, rec.axes[1] || 0, rec.pressed[10]);
+    if (rec.axes.length >= 4) drawStick(ui.R, rec.axes[2] || 0, rec.axes[3] || 0, rec.pressed[11]);
+  }
   ui.vRetL.textContent = (ui.L.ret * 100).toFixed(1) + "%";
   ui.vRetL.className = "v " + (ui.L.ret > 0.09 ? "fail" : ui.L.ret > 0.05 ? "warn" : "pass");
   ui.vRetR.textContent = (ui.R.ret * 100).toFixed(1) + "%";
@@ -307,7 +407,7 @@ function tick() {
     node.textContent = t.toFixed(0) + "%";
     node.className = "v " + (t > 95 ? "pass" : t > 40 ? "warn" : "");
   }
-  travel(6, ui.vLT); travel(7, ui.vRT);
+  if (rec.standard) { travel(6, ui.vLT); travel(7, ui.vRT); }
 
   ui.btns.forEach(function (b, i) {
     var v = rec.buttons[i] || 0, down = !!rec.pressed[i];
@@ -317,12 +417,15 @@ function tick() {
   });
   ui.axes.forEach(function (m, i) {
     var v = rec.axes[i] || 0;
-    m.fill.style.width = (((v + 1) / 2) * 100) + "%";
+    m.fill.style.width = (clamp((v + 1) / 2, 0, 1) * 100) + "%";
     m.val.textContent = v.toFixed(3);
+    var moved = !!rec.seenAxis[i];
+    m.node.classList.toggle("seen", moved);
+    m.fill.className = moved ? "pass" : "";
   });
 }
 TB.onPads(tick);
-TB.onEnter("gamepad", function () { sig = ""; tick(); });
+TB.onEnter("gamepad", function () { sig = null; tick(); });
 $("#gp-rescore").onclick = function () {
   var r = PADS[activeIdx];
   if (r) { TB.beginRestSample(r); if (ui) ui.lastScore = undefined; toast("Re-scoring", "Hands off the controller for one second.", null); }
