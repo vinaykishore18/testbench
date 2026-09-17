@@ -245,7 +245,7 @@
               <button data-s="five" aria-pressed="true">5-button</button>
               <button data-s="mmo" aria-pressed="false">MMO 12-side</button>
             </div>
-            <button class="tb-btn" id="ms-armmacro">Capture macro keys: off</button>
+            <button class="tb-btn" id="ms-armmacro">Swallow macro keys: off</button>
             <button class="tb-btn on" id="ms-navtrap">Hold back/forward: on</button>
           </div>
           <div class="tb-stats" style="margin-bottom:14px">
@@ -264,8 +264,10 @@
             <div class="tb-stat"><div class="k">Macro keys</div><div class="v" id="ms-macros">0</div></div>
           </div>
           <div class="tb-btngrid" id="ms-grid"></div>
-          <div class="tb-log" id="ms-keylog" data-empty="Macro keys will appear here once capture is on." style="height:120px;margin-top:12px"></div>
-          <p class="tb-note">Side buttons on MMO mice usually send keyboard macros, not mouse buttons. Turn on macro capture, press them, and they appear here — capture stays off by default so copy and paste keep working.</p>
+          <h2 class="tb-ptitle" style="margin-top:18px">Remapped buttons<span class="tb-rule"></span></h2>
+          <div class="tb-btngrid" id="ms-remap"></div>
+          <div class="tb-log" id="ms-keylog" data-empty="Nothing yet. Press a side button that the diagram ignores." style="height:110px;margin-top:12px"></div>
+          <p class="tb-note">A side button bound to a shortcut in Synapse, G HUB or Armoury does not send a mouse button at all — Windows and this page both see a keystroke. Those are picked up automatically and named above; no toggle needed. <b>Swallow macro keys</b> only stops them reaching the browser, which is useful if a macro keeps opening tabs while you test. To grade the switches as buttons 4 and 5, clear the bindings in the mouse software first.</p>
         </div>
       </div>
     </div>

@@ -25,11 +25,13 @@
     box = document.createElement("div");
     box.id = "tb-boot-error";
     box.setAttribute("role", "alert");
+    /* In the flow, not over it. An overlay here would sit on top of the
+       navigation and swallow the clicks needed to reach the broken page —
+       which is exactly what it did the first time it fired. */
     box.style.cssText =
-      "position:fixed;left:0;right:0;top:0;z-index:99999;max-height:46vh;overflow:auto;" +
+      "position:relative;max-height:46vh;overflow:auto;" +
       "background:#1A0509;border-bottom:2px solid #FF2D46;color:#FFE8EB;" +
-      "font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px 46px 14px 16px;" +
-      "box-shadow:0 10px 30px rgba(0,0,0,.6)";
+      "font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px 46px 14px 16px";
     var h = document.createElement("div");
     h.style.cssText = "font-weight:700;color:#FF2D46;letter-spacing:.06em;margin-bottom:8px";
     h.textContent = "BOOT FAILURE — a script did not run";
@@ -49,7 +51,7 @@
       "font-size:22px;line-height:1;cursor:pointer;padding:4px 8px";
     x.onclick = function () { box.remove(); box = null; };
     box.appendChild(x);
-    document.body.appendChild(box);
+    document.body.insertBefore(box, document.body.firstChild);
     return box;
   }
 
@@ -82,7 +84,10 @@
       return;
     }
     if (t && t !== window && t.tagName === "LINK") {
-      show("NOT LOADED", short(t.href) + "   — stylesheet missing");
+      /* Only our own stylesheets are fatal. A Google Fonts sheet blocked by a
+         proxy, an extension or a machine that is offline costs you the typeface
+         and nothing else — a BOOT FAILURE for that would be crying wolf. */
+      if (sameOrigin(t.href)) show("NOT LOADED", short(t.href) + "   — stylesheet missing");
       return;
     }
     /* a real thrown error: e.message / e.filename / e.lineno are set */
@@ -101,6 +106,10 @@
     if (t && t.tagName === "SCRIPT" && t.src) loaded[short(t.src)] = true;
   }, true);
 
+  function sameOrigin(u) {
+    try { return new URL(u, location.href).origin === location.origin; }
+    catch (err) { return true; }
+  }
   function short(u) {
     if (!u) return "(inline script)";
     try { return new URL(u, location.href).pathname.replace(/^.*\/(?=(js|css)\/)/, ""); }

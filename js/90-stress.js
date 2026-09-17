@@ -5,7 +5,7 @@
 var $ = TB.$, el = TB.el, clamp = TB.clamp, verdict = TB.verdict, toast = TB.toast;
 
 var running = false, workers = [], ops = 0, t0 = 0, raf = null, timer = null;
-var samples = [], frames = 0, lastFrame = 0, worstStall = 0, durMs = 60000;
+var samples = [], frames = 0, lastFrame = 0, worstStall = 0, durMs = 60000, lastTick = 0;
 var gl = null, glProg = null, glStart = 0;
 
 /* ---------------- CPU load ---------------- */
@@ -142,7 +142,16 @@ function second() {
   $("#st-time").textContent = "";
   $("#st-time").appendChild(document.createTextNode(String(Math.floor(elapsed))));
   $("#st-time").appendChild(el("small", null, "s"));
-  var fps = frames; frames = 0;
+  /* setInterval is starved by the very load this test creates, so a tick can
+     land 1.3 s late. Counting frames per tick then reports 78 "fps" on a locked
+     60 Hz machine — and that drift is indistinguishable from the thermal
+     throttling this test exists to detect. Divide by the time that actually
+     passed. */
+  var tickNow = performance.now();
+  var dt = (tickNow - lastTick) / 1000;
+  lastTick = tickNow;
+  var fps = dt > 0.05 ? Math.round(frames / dt) : frames;
+  frames = 0;
   samples.push(fps);
   if (samples.length > 600) samples.shift();
   $("#st-fps").textContent = fps;
@@ -177,7 +186,7 @@ function score() {
 function start() {
   if (running) return;
   running = true;
-  samples = []; frames = 0; ops = 0; worstStall = 0; lastFrame = 0;
+  samples = []; frames = 0; ops = 0; worstStall = 0; lastFrame = 0; lastTick = performance.now();
   durMs = (parseFloat($("#st-dur").value) || 60) * 1000;
   var mode = $("#st-mode").value;
   t0 = performance.now();

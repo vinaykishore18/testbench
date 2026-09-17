@@ -29,7 +29,7 @@ if (OFFLINE_FILE) {
     PAYLOAD = location.pathname;
   });
 }
-var running = null, t0 = 0, timer = null;
+var running = null, t0 = 0, timer = null, runTimer = null;
 var rtts = [], drops = 0, sent = 0, worst = 0, series = [];
 var runs = [];
 
@@ -88,7 +88,9 @@ function stats() {
   jit = rtts.length > 1 ? jit / (rtts.length - 1) : 0;
   return {
     min: sorted[0], avg: avg, max: sorted[sorted.length - 1],
-    p95: sorted[Math.floor(sorted.length * 0.95)], jitter: jit,
+    /* ceil-1, not floor: with twenty samples or fewer, floor lands on the last
+       index and "95% under X ms" quietly becomes "the worst ping". */
+    p95: sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)], jitter: jit,
     loss: sent ? drops / sent * 100 : 0
   };
 }
@@ -150,6 +152,11 @@ function throughput(seconds) {
     fetch(nocache(PAYLOAD), { cache: "no-store" })
       .then(function (r) { return r.arrayBuffer(); })
       .then(function (b) {
+        /* Four chains run at once. Without this guard the three still in
+           flight when the fourth calls finish() kept writing to the readout
+           afterwards, so the final number changed a second after the test
+           said it was done and no longer matched its own pass/fail colour. */
+        if (done) return;
         bytes += b.byteLength;
         var secs = (performance.now() - start) / 1000;
         $("#net-mbps").textContent = (bytes * 8 / 1e6 / secs).toFixed(1);
@@ -201,12 +208,15 @@ function start(kind, ms) {
   TB.badge("network", "live", true);
   timer = setInterval(tickProbe, 1000);
   tickProbe();
-  window.setTimeout(function () { if (running) stop(true); }, ms);
+  /* Keep the handle. An abandoned run used to leave this timer alive, and it
+     would later fire against whatever run happened to be going at the time. */
+  runTimer = window.setTimeout(function () { runTimer = null; if (running) stop(true); }, ms);
 }
 function stop(finished) {
   if (!running) return;
   var s = stats();
   clearInterval(timer); timer = null;
+  if (runTimer) { clearTimeout(runTimer); runTimer = null; }
   var dur = (performance.now() - t0) / 1000;
   running = null;
   $("#net-run").textContent = "Start soak test";
@@ -275,7 +285,12 @@ $("#net-load").onclick = function () { if (fileGuard()) return; loadTest(parseIn
 $("#net-clear").onclick = function () { runs = []; renderRuns(); $("#net-log").textContent = ""; };
 
 window.addEventListener("online", function () { log("LINK", "back online"); });
-window.addEventListener("offline", function () { log("LINK", "offline — the machine lost the network entirely"); drops++; paint(); });
+window.addEventListener("offline", function () {
+  log("LINK", "offline — the machine lost the network entirely");
+  /* Only count it against a run that is actually happening. Losing Wi-Fi on
+     another page used to post phantom dropouts against a stale sample count. */
+  if (running) { drops++; paint(); }
+});
 
 function envInfo() {
   var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;

@@ -284,11 +284,16 @@ function stats() {
   var hdr = matchMedia("(dynamic-range: high)").matches ? "yes" : "no";
   var h = $("#mn-hdr"); h.textContent = hdr; h.className = "v " + (hdr === "yes" ? "pass" : "");
   TB.chip("scr", true, window.screen.width + "×" + window.screen.height);
-  var n = 0, t0 = performance.now();
+  /* One probe at a time. stats() runs on load and on every visit to Monitor,
+     and each call used to start another second-long rAF loop of its own. */
+  if (probing) return;
+  probing = true;
+  var n = -1, t0 = performance.now();   /* -1: the first call is not a frame */
   (function f() {
     n++;
     if (performance.now() - t0 < 1000) requestAnimationFrame(f);
     else {
+      probing = false;
       var hz = Math.round(n / ((performance.now() - t0) / 1000));
       var snap = [60, 75, 90, 100, 120, 144, 165, 180, 240, 360].reduce(function (p, c) { return Math.abs(c - hz) < Math.abs(p - hz) ? c : p; });
       var use = Math.abs(snap - hz) <= 3 ? snap : hz;
@@ -298,6 +303,7 @@ function stats() {
     }
   })();
 }
+var probing = false;
 TB.onEnter("monitor", stats);
 stats();
 })();

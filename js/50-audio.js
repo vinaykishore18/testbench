@@ -6,7 +6,7 @@
 var AUDIO = (function () {
 var $ = TB.$, $$ = TB.$$, el = TB.el, clamp = TB.clamp, toast = TB.toast, verdict = TB.verdict;
 
-var ac = null, micStream = null, micNode = null, ana = null, sink = null;
+var ac = null, micStream = null, micNode = null, ana = null, sink = null, recTimer = null;
 var buf = null, freqBuf = null, raf = null;
 var peak = 0, floor = 1, clips = 0, frames = 0;
 var rec = null, chunks = [], blobUrl = null, audioEl = new Audio();
@@ -212,7 +212,13 @@ $("#au-rec").onclick = function () {
   };
   rec.start();
   $("#au-rec").textContent = "Recording… stop";
-  setTimeout(function () { if (rec && rec.state === "recording") rec.stop(); }, 6000);
+  /* Hold the handle. Without it, stopping a clip early leaves a timer that
+     fires six seconds later and cuts the NEXT recording short. */
+  if (recTimer) clearTimeout(recTimer);
+  recTimer = setTimeout(function () {
+    recTimer = null;
+    if (rec && rec.state === "recording") rec.stop();
+  }, 6000);
 };
 $("#au-play").onclick = function () { audioEl.currentTime = 0; applySink(audioEl); audioEl.play(); };
 
@@ -354,7 +360,14 @@ $("#au-outdev").onchange = function () { applySink(audioEl); };
 listDevices();
 stepTo(1);
 verdict($("#au-verdict"), null, [], "Start the microphone to see level, noise floor and clipping.");
-TB.onLeave("audio", function () { stopTone(); });
+TB.onLeave("audio", function () {
+  stopTone();
+  /* Leaving the page must release the microphone. Otherwise the OS recording
+     light stays on for the rest of the session and the analyser keeps running
+     an FFT every frame, which quietly skews the Stress test's fps figure. */
+  if (micStream) stopMic();
+  if (recTimer) { clearTimeout(recTimer); recTimer = null; }
+});
 /* never leave a microphone open on a machine that is walking out the door */
 window.addEventListener("pagehide", function () { stopTone(); if (micStream) stopMic(); });
 return { listDevices: listDevices };

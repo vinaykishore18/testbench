@@ -325,6 +325,8 @@ if (TB.isCoarse()) {
       out.appendChild(sp);
     }
   }
+  /* The clock ran on after you navigated away mid-sentence. */
+  TB.onLeave("keyboard", function () { if (timer) { clearInterval(timer); timer = null; } });
   input.addEventListener("input", function () {
     var typed = input.value;
     if (!started && typed.length) {

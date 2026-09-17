@@ -72,7 +72,12 @@ function build() {
   readout.appendChild(stats);
   var axSel = el("select");
   rec.axes.forEach(function (_, i) { var o = el("option", null, "Axis " + i); o.value = i; axSel.appendChild(o); });
-  axSel.value = String(Math.min(steerAxis, rec.axes.length - 1));
+  /* Clamp the variable, not just what the dropdown shows. Picking axis 5 on a
+     six-axis wheel and then plugging in a three-axis one used to leave
+     steerAxis at 5 while the dropdown read "Axis 2" — tick() then read an
+     undefined axis, so the wheel sat dead centre at 0° and looked broken. */
+  steerAxis = rec.axes.length ? Math.min(steerAxis, rec.axes.length - 1) : 0;
+  axSel.value = String(steerAxis);
   axSel.onchange = function () { steerAxis = parseInt(this.value, 10); };
   var lab = el("label", "tb-lab", "Steering axis "); lab.appendChild(axSel);
   readout.appendChild(lab);
@@ -135,7 +140,7 @@ function startLearn(rec) {
   learning = { base: rec.axes.slice(), best: -1, delta: 0 };
   ui.lstat.textContent = "Hold a pedal down now…";
   setTimeout(function () {
-    if (!learning) return;
+    if (!learning || !ui || !ui.lstat) return;   /* wheel unplugged mid-learn */
     var d = learning; learning = null;
     if (d.best < 0 || d.delta < 0.15) { ui.lstat.textContent = "Nothing moved far enough to assign. Hold the pedal all the way down and try again."; return; }
     ui.lstat.textContent = "Axis " + d.best + " moved " + d.delta.toFixed(2) + " — set that axis in the dropdown under the pedal you were pressing.";

@@ -105,21 +105,14 @@ function fill() {
   $("#sy-net").textContent = c ? (c.effectiveType || "—") + (c.downlink ? " · " + c.downlink + " Mb/s" : "") : (navigator.onLine ? "online" : "offline");
 
   var dl = $("#sy-gpu"); dl.innerHTML = "";
-  try {
-    var cvs = document.createElement("canvas");
-    var gl = cvs.getContext("webgl2") || cvs.getContext("webgl");
-    if (gl) {
-      var dbg = gl.getExtension("WEBGL_debug_renderer_info");
-      kv(dl, "Graphics", dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-      kv(dl, "Vendor", dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR));
-      kv(dl, "WebGL", gl.getParameter(gl.VERSION));
-      kv(dl, "Max texture", gl.getParameter(gl.MAX_TEXTURE_SIZE) + " px");
-    } else kv(dl, "Graphics", "WebGL is not available in this browser");
-  } catch (e) { kv(dl, "Graphics", "could not be read"); }
+  gpuInfo().forEach(function (row) { kv(dl, row[0], row[1]); });
   kv(dl, "User agent", navigator.userAgent);
 
   if (navigator.getBattery) {
     navigator.getBattery().then(function (b) {
+      /* getBattery() hands back the same BatteryManager every time, so wiring
+         the four listeners on each visit to this page meant n visits fired
+         paint() 4n times per level change. Bind once. */
       function paint() {
         var pct = Math.round(b.level * 100);
         var bar = $("#sy-battbar");
@@ -134,7 +127,12 @@ function fill() {
         TB.badge("system", pct + "%", pct > 40);
       }
       paint();
-      ["levelchange", "chargingchange", "chargingtimechange", "dischargingtimechange"].forEach(function (ev) { b.addEventListener(ev, paint); });
+      if (!battBound) {
+        battBound = true;
+        ["levelchange", "chargingchange", "chargingtimechange", "dischargingtimechange"]
+          .forEach(function (ev) { b.addEventListener(ev, function () { if (lastPaint) lastPaint(); }); });
+      }
+      lastPaint = paint;
     }).catch(noBatt);
   } else noBatt();
   function noBatt() {
@@ -143,6 +141,35 @@ function fill() {
     kv(d, "Battery", "This browser does not expose battery information, or the machine has no battery.");
   }
 }
+/* Read the GPU once and keep the answer.
+
+   Every call to getContext("webgl") creates a live context, and browsers cap
+   how many a page may hold (Chrome drops the oldest past about sixteen). The
+   System page used to make a fresh one on every visit and never release it, so
+   after enough visits getContext returned null and the panel announced
+   "WebGL is not available in this browser" on a machine where it plainly was. */
+var gpuCache = null;
+function gpuInfo() {
+  if (gpuCache) return gpuCache;
+  var rows = [];
+  try {
+    var cvs = document.createElement("canvas");
+    var gl = cvs.getContext("webgl2") || cvs.getContext("webgl");
+    if (gl) {
+      var dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      rows.push(["Graphics", dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)]);
+      rows.push(["Vendor", dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)]);
+      rows.push(["WebGL", gl.getParameter(gl.VERSION)]);
+      rows.push(["Max texture", gl.getParameter(gl.MAX_TEXTURE_SIZE) + " px"]);
+      var lose = gl.getExtension("WEBGL_lose_context");
+      if (lose) lose.loseContext();
+    } else rows.push(["Graphics", "WebGL is not available in this browser"]);
+  } catch (e) { rows.push(["Graphics", "could not be read"]); }
+  gpuCache = rows;
+  return rows;
+}
+var battBound = false, lastPaint = null;
+
 TB.onEnter("system", fill);
 window.addEventListener("online", function () { TB.watch("NETWORK", "back online"); });
 window.addEventListener("offline", function () { TB.watch("NETWORK", "dropped"); });

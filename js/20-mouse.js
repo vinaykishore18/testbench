@@ -13,7 +13,7 @@ function fresh() {
   return {
     seen: bare(), down: bare(), clicks: 0, dbl: 0, minGap: null, lastUp: bare(), gaps: [],
     up: 0, dn: 0, tl: 0, tr: 0, deltas: [],
-    keys: bare(), keyDown: bare(),
+    keys: bare(), keyDown: bare(), macros: bare(),
     pollPeak: 0, reports: 0
   };
 }
@@ -75,7 +75,6 @@ function buildSVG() {
   paintSVG();
 }
 function arm(i) {
-  if (!macroOn) { toast("Macro capture is off", "Turn on “Capture macro keys” first, then click a thumb key to bind it.", null); return; }
   arming = i;
   cells.forEach(function (c, idx) { c.g.classList.toggle("arm", idx === i); });
   toast("Waiting for that button", "Press thumb key " + (i + 1) + " on the mouse now.", null);
@@ -88,8 +87,8 @@ function paintSVG() {
   });
   cells.forEach(function (c, idx) {
     var lit = !!st.down[c.btn], seen = !!st.seen[c.btn];
-    Object.keys(binds).forEach(function (code) {
-      if (binds[code] === idx) { if (st.keyDown[code]) lit = true; if (st.keys[code]) seen = true; }
+    Object.keys(binds).forEach(function (sig) {
+      if (binds[sig] === idx) { if (st.keyDown[sig]) lit = true; if (st.macros[sig]) seen = true; }
     });
     c.rect.classList.toggle("on", lit);
     c.rect.classList.toggle("seen", seen);
@@ -104,8 +103,8 @@ $$("#ms-shape button").forEach(function (b) {
 });
 function note() {
   $("#ms-mmonote").textContent = shape === "mmo"
-    ? "Press each button and watch it light up. Thumb-pad keys on MMO mice normally send keyboard macros — turn on macro capture, click a pad key here, then press it on the mouse to bind it."
-    : "Press every button on the mouse and watch it light up. Buttons 3 and 4 are the side buttons; the page holds them so the browser does not go back a page.";
+    ? "Press each button and watch it light up. Thumb-pad keys on MMO mice send keystrokes instead of mouse buttons \u2014 those are detected automatically and listed under Remapped buttons. To place one on the diagram, click a pad key here, then press it on the mouse."
+    : "Press every button on the mouse and watch it light up. Buttons 3 and 4 are the side buttons. If a side button is remapped in Synapse or G HUB it sends a keystroke rather than a mouse button \u2014 it is still detected, and appears under Remapped buttons.";
 }
 
 /* ============================================================
@@ -127,7 +126,8 @@ function paint() {
   var seen = Object.keys(st.seen).length;
   $("#ms-btnseen").textContent = seen;
   $("#ms-clicks").textContent = st.clicks;
-  $("#ms-macros").textContent = Object.keys(st.keys).length;
+  $("#ms-macros").textContent = Object.keys(st.macros).length;
+  paintRemap();
   $("#dbl-clicks").textContent = st.clicks;
   var d = $("#dbl-count"); d.textContent = st.dbl;
   d.style.color = st.dbl ? "var(--red)" : "var(--pass)";
@@ -154,7 +154,7 @@ function hist() {
 }
 function score() {
   var seen = Object.keys(st.seen).length;
-  if (!st.clicks && !seen) {
+  if (!st.clicks && !seen && !Object.keys(st.macros).length) {
     verdict($("#ms-verdict"), null, [], "Press every button, spin the wheel both ways, then drag on the trace pad.");
     badge("mouse", ""); return;
   }
@@ -165,13 +165,19 @@ function score() {
   } else if (st.clicks > 8) {
     f.push({ level: "ok", tag: "double-click", text: "No re-fires across " + st.clicks + " clicks. Closest gap " + (st.minGap == null ? "—" : st.minGap + " ms") + "." });
   }
-  if (seen < 3) { s -= 15; f.push({ level: "warn", tag: "buttons", text: "Only " + seen + " button" + (seen === 1 ? "" : "s") + " tested so far." }); }
-  else f.push({ level: "ok", tag: "buttons", text: seen + " mouse buttons responded" + (Object.keys(st.keys).length ? ", plus " + Object.keys(st.keys).length + " macro keys" : "") + "." });
+  var mac = Object.keys(st.macros).length;
+  if (seen + mac < 3) { s -= 15; f.push({ level: "warn", tag: "buttons", text: "Only " + (seen + mac) + " button" + (seen + mac === 1 ? "" : "s") + " tested so far." }); }
+  else f.push({ level: "ok", tag: "buttons", text: seen + " mouse buttons responded" + (mac ? ", plus " + mac + " remapped to shortcuts" : "") + "." });
+  if (mac) {
+    var named = [];
+    Object.keys(st.macros).forEach(function (k) { named.push(st.macros[k].name ? k + " (" + st.macros[k].name + ")" : k); });
+    f.push({ level: "ok", tag: "remapped", text: "Sending keystrokes instead of mouse buttons: " + named.join(", ") + ". The switches work \u2014 the driver is remapping them. Reset the profile in the mouse software to test them as buttons 4 and 5." });
+  }
   if (!st.up || !st.dn) { s -= 10; f.push({ level: "warn", tag: "scroll", text: "Wheel not tested both ways yet (" + st.up + " up, " + st.dn + " down)." }); }
   else f.push({ level: "ok", tag: "scroll", text: "Wheel scrolls both ways (" + st.up + " up, " + st.dn + " down)." });
   if (st.pollPeak > 60) f.push({ level: "ok", tag: "polling", text: "Reports at about " + st.pollPeak + " Hz while moving." });
   verdict($("#ms-verdict"), clamp(s, 0, 100), f);
-  badge("mouse", seen + " btn", s >= 90);
+  badge("mouse", (seen + mac) + " btn", s >= 90);
 }
 
 /* ============================================================
@@ -241,38 +247,135 @@ function logLine(sel, tag, txt) {
   while (box.childElementCount > 90) box.lastChild.remove();
 }
 
-/* ---------- macro key capture: OFF unless armed ---------- */
+/* ---------- remapped buttons ------------------------------------------------
+   A side button that has been given a shortcut in Synapse, G HUB or Armoury
+   does not send a mouse button at all. Windows sees a keystroke, and so does
+   this page — button 4 bound to Copy arrives as Ctrl+C and nothing else.
+
+   So detection runs all the time and needs no toggle. What the toggle controls
+   is whether the keystroke is *swallowed*: off by default, because swallowing
+   Ctrl+C on a page that tells you about Ctrl+C is a good way to lose your
+   clipboard. Turn it on when a macro is doing something disruptive — opening a
+   tab, closing the window — while you test. */
 var macroOn = false;
 var NEVER_BLOCK = /^(KeyC|KeyV|KeyX|KeyA|KeyZ|KeyY|KeyR|KeyT|KeyW|KeyN|KeyP|KeyS|KeyF|KeyL)$/;
+var MODIFIER = /^(Control|Shift|Alt|Meta|OS)/;
+
+/* what the mouse vendors actually bind by default */
+var KNOWN = {
+  "Ctrl+C": "Copy", "Ctrl+V": "Paste", "Ctrl+X": "Cut",
+  "Ctrl+Z": "Undo", "Ctrl+Y": "Redo", "Ctrl+A": "Select all",
+  "Ctrl+S": "Save", "Ctrl+F": "Find", "Ctrl+P": "Print",
+  "Ctrl+T": "New tab", "Ctrl+W": "Close tab", "Ctrl+N": "New window",
+  "Ctrl+Shift+T": "Reopen closed tab", "Ctrl+Tab": "Next tab",
+  "Ctrl+Shift+Tab": "Previous tab", "Ctrl+Shift+N": "New private window",
+  "Alt+F4": "Close window", "Alt+Tab": "Switch window",
+  "Alt+ArrowLeft": "Back", "Alt+ArrowRight": "Forward",
+  "F5": "Refresh", "Escape": "Escape", "Enter": "Enter", "Space": "Space",
+  "Delete": "Delete", "Backspace": "Backspace", "PrintScreen": "Screenshot",
+  "AudioVolumeUp": "Volume up", "AudioVolumeDown": "Volume down",
+  "AudioVolumeMute": "Mute", "MediaPlayPause": "Play / pause",
+  "MediaTrackNext": "Next track", "MediaTrackPrevious": "Previous track",
+  "BrowserBack": "Back", "BrowserForward": "Forward", "BrowserRefresh": "Refresh"
+};
+
+function keyLabel(e) {
+  var c = e.code || "";
+  if (/^Key([A-Z])$/.test(c)) return c.slice(3);
+  if (/^Digit(\d)$/.test(c)) return c.slice(5);
+  if (/^Numpad/.test(c)) return "Num " + c.slice(6);
+  if (/^F\d{1,2}$/.test(c)) return c;
+  if (c) return c;
+  return e.key || ("keyCode " + e.keyCode);
+}
+function comboSig(e) {
+  var m = [];
+  if (e.ctrlKey) m.push("Ctrl");
+  if (e.altKey) m.push("Alt");
+  if (e.shiftKey) m.push("Shift");
+  if (e.metaKey) m.push("Meta");
+  m.push(keyLabel(e));
+  return m.join("+");
+}
+
+/* ---------- the panel ---------- */
+var remapHost = $("#ms-remap"), hinted = false;
+function paintRemap() {
+  if (!remapHost) return;
+  var sigs = Object.keys(st.macros);
+  remapHost.textContent = "";
+  if (!sigs.length) {
+    remapHost.appendChild(el("p", "tb-note", "None yet. If a side button does nothing on the diagram, press it now — if it is remapped to a shortcut it will be named here."));
+    return;
+  }
+  sigs.sort(function (a, b) { return st.macros[b].n - st.macros[a].n; });
+  sigs.forEach(function (sig) {
+    var m = st.macros[sig];
+    var row = el("div", "tb-btnchip seen");
+    if (st.keyDown[sig]) row.classList.add("down");
+    row.style.textAlign = "left";
+    row.appendChild(el("div", null, m.name || "shortcut"));
+    var b = el("b", null, sig);
+    b.style.fontSize = "13px";
+    row.appendChild(b);
+    row.appendChild(el("small", null, m.n + (m.n === 1 ? " press" : " presses")));
+    remapHost.appendChild(row);
+  });
+}
+
 $("#ms-armmacro").onclick = function () {
   macroOn = !macroOn;
-  this.textContent = "Capture macro keys: " + (macroOn ? "on" : "off");
+  this.textContent = "Swallow macro keys: " + (macroOn ? "on" : "off");
   this.classList.toggle("on", macroOn);
-  if (macroOn) toast("Macro capture on", "Extra mouse buttons that send keystrokes will be listed. Copy and paste are still passed through to the browser.", "ok");
+  if (macroOn) toast("Macros held on the page", "Remapped buttons no longer reach the browser, so a macro cannot open or close a tab while you test. Copy, paste and F5 are still let through.", "ok");
   else { arming = -1; cells.forEach(function (c) { c.g.classList.remove("arm"); }); }
 };
+
+var sigByCode = Object.create(null);
 window.addEventListener("keydown", function (e) {
-  if (!macroOn || TB.view() !== "mouse") return;
-  var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) return;
-  var isEditCombo = (e.ctrlKey || e.metaKey) && NEVER_BLOCK.test(e.code);
-  if (!isEditCombo && e.key !== "F5" && e.key !== "F12" && e.key !== "Tab") e.preventDefault();
-  if (e.repeat) return;
-  var code = e.code || ("k" + e.keyCode);
-  st.keyDown[code] = true;
-  if (!st.keys[code]) {
-    st.keys[code] = true;
-    logLine("#ms-keylog", "MACRO KEY", code + "  (key “" + (e.key || "") + "”, keyCode " + e.keyCode + ")");
+  if (TB.view() !== "mouse") return;
+  var t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) return;
+  if (MODIFIER.test(e.key || "")) return;   /* a bare Ctrl press is not a macro */
+
+  if (macroOn) {
+    var isEditCombo = (e.ctrlKey || e.metaKey) && NEVER_BLOCK.test(e.code);
+    if (!isEditCombo && e.key !== "F5" && e.key !== "F12" && e.key !== "Tab") e.preventDefault();
   }
+  if (e.repeat) return;
+
+  var sig = comboSig(e);
+  sigByCode[e.code || e.key] = sig;
+  st.keyDown[sig] = true;
+  st.keys[e.code || ("k" + e.keyCode)] = true;
+
+  var rec = st.macros[sig];
+  if (!rec) {
+    rec = st.macros[sig] = { n: 0, name: KNOWN[sig] || null };
+    logLine("#ms-keylog", "REMAPPED", sig + (rec.name ? "  — " + rec.name : "") +
+      "   (code " + (e.code || "?") + ", keyCode " + e.keyCode + ")");
+    if (!hinted) {
+      hinted = true;
+      toast("That button is remapped",
+        "It sent " + sig + (rec.name ? " (" + rec.name + ")" : "") +
+        " instead of a mouse button, so the diagram cannot light it up. The button itself works — it is listed under Remapped buttons.", "ok");
+    }
+  }
+  rec.n++;
+
   if (arming >= 0) {
-    binds[code] = arming;
+    binds[sig] = arming;
     cells.forEach(function (c) { c.g.classList.remove("arm"); });
-    toast("Bound", code + " is now thumb key " + (arming + 1) + ".", "ok");
+    toast("Bound", sig + " is now thumb key " + (arming + 1) + ".", "ok");
     arming = -1;
   }
   paint();
 }, true);
+
 window.addEventListener("keyup", function (e) {
   if (TB.view() !== "mouse") return;
+  var sig = sigByCode[e.code || e.key];
+  if (sig) st.keyDown[sig] = false;
   st.keyDown[e.code || ("k" + e.keyCode)] = false;
   paint();
 }, true);
@@ -326,9 +429,13 @@ var navArmed = false, navBusy = false, navOK = true;
 function armNav() {
   if (navArmed || !navOK) return;
   try {
-    history.replaceState({ tb: 0 }, "");
-    history.pushState({ tb: 1 }, "");
-    history.pushState({ tb: 2 }, "");
+    /* Pass the current URL explicitly. pushState with an omitted url keeps the
+       current one today, but stepping back through these entries must never
+       change the hash — that would look like a page change to the router. */
+    var here = location.href;
+    history.replaceState({ tb: 0 }, "", here);
+    history.pushState({ tb: 1 }, "", here);
+    history.pushState({ tb: 2 }, "", here);
     navBusy = true;
     history.go(-1);
     setTimeout(function () { navBusy = false; }, 120);

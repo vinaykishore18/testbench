@@ -255,7 +255,6 @@ function build() {
   rn.textContent = (rec.raw && rec.raw.vibrationActuator)
     ? "Rumble runs for 700 ms. Listen for one motor being weaker or silent."
     : "This controller does not expose rumble to the browser. Over Bluetooth most PlayStation and Xbox pads do not — plug it in over USB and try again.";
-  TB.hidMount("#gp-id", "Press this to read the pad's USB product name. Most controllers show up; a few Bluetooth ones do not.");
 }
 
 /* The blank page people saw used to be this, and it never rendered. It is the
@@ -388,10 +387,18 @@ function tick() {
     drawStick(ui.L, rec.axes[0] || 0, rec.axes[1] || 0, rec.pressed[10]);
     if (rec.axes.length >= 4) drawStick(ui.R, rec.axes[2] || 0, rec.axes[3] || 0, rec.pressed[11]);
   }
-  ui.vRetL.textContent = (ui.L.ret * 100).toFixed(1) + "%";
-  ui.vRetL.className = "v " + (ui.L.ret > 0.09 ? "fail" : ui.L.ret > 0.05 ? "warn" : "pass");
-  ui.vRetR.textContent = (ui.R.ret * 100).toFixed(1) + "%";
-  ui.vRetR.className = "v " + (ui.R.ret > 0.09 ? "fail" : ui.R.ret > 0.05 ? "warn" : "pass");
+  /* drawStick, which is what moves .ret, only runs for standard pads. A
+     leverless or arcade stick was being handed a green "0.0%" for a figure the
+     panel had just finished saying it could not measure. */
+  if (rec.standard) {
+    ui.vRetL.textContent = (ui.L.ret * 100).toFixed(1) + "%";
+    ui.vRetL.className = "v " + (ui.L.ret > 0.09 ? "fail" : ui.L.ret > 0.05 ? "warn" : "pass");
+    ui.vRetR.textContent = (ui.R.ret * 100).toFixed(1) + "%";
+    ui.vRetR.className = "v " + (ui.R.ret > 0.09 ? "fail" : ui.R.ret > 0.05 ? "warn" : "pass");
+  } else {
+    ui.vRetL.textContent = "n/a"; ui.vRetL.className = "v";
+    ui.vRetR.textContent = "n/a"; ui.vRetR.className = "v";
+  }
   var steps = rec.resolution[0] ? Object.keys(rec.resolution[0]).length : 0;
   ui.vRes.textContent = steps ? String(steps) : "—";
 
@@ -430,6 +437,12 @@ $("#gp-rescore").onclick = function () {
   var r = PADS[activeIdx];
   if (r) { TB.beginRestSample(r); if (ui) ui.lastScore = undefined; toast("Re-scoring", "Hands off the controller for one second.", null); }
 };
+/* Mounted once, at module level. TB.hidMount only appends, and build() runs on
+   every signature change, every visit to the page and every device-picker
+   click — calling it from in there stacked a duplicate identity box per
+   rebuild, forever. */
+TB.hidMount("#gp-id", "Press this to read the pad's USB product name. Most controllers show up; a few Bluetooth ones do not.");
+
 $("#gp-clear").onclick = function () {
   var r = PADS[activeIdx];
   if (r) { r.seenBtn = {}; r.btnMin = []; r.btnMax = []; r.resolution = {}; }

@@ -81,8 +81,13 @@ var TB = (function () {
     $$(".tb-view").forEach(function (s) { s.classList.toggle("on", s.id === "view-" + view); });
     $$("#rail .tb-nav").forEach(function (b) { b.setAttribute("aria-current", String(b.dataset.view === view)); });
     $("#main").scrollTop = 0;
-    if (enterFns[view]) enterFns[view].forEach(function (f) { try { f(); } catch (e) {} });
+    /* Address bar first, then the view's own setup. A module's onEnter may push
+       history entries of its own (the mouse page's back/forward trap does), and
+       if the hash were still on the previous view at that moment, stepping back
+       through those entries would fire a hashchange and bounce you straight back
+       to the page you just left. */
     writeHash(view);
+    if (enterFns[view]) enterFns[view].forEach(function (f) { try { f(); } catch (e) {} });
   }
   function onEnter(v, f) { (enterFns[v] = enterFns[v] || []).push(f); }
 

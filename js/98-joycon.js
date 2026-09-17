@@ -145,7 +145,7 @@ function onReport(e) {
   stick.rx = d[8] | ((d[9] & 0x0F) << 8);
   stick.ry = (d[9] >> 4) | (d[10] << 4);
 
-  if (d.length > 20) {
+  if (d.length >= 24) {   /* the gyro fields run to d[23]; a short report has none */
     imu.ax = int16(d, 12); imu.ay = int16(d, 14); imu.az = int16(d, 16);
     imu.gx = int16(d, 18); imu.gy = int16(d, 20); imu.gz = int16(d, 22);
   }
@@ -252,6 +252,7 @@ function rest() {
   state("Hands off — measuring the resting position…");
   setTimeout(function () {
     resting = false;
+    if (!model) return;            /* controller switched off mid-measurement */
     state("Ready — " + model.name);
     paint();
   }, 1200);
@@ -410,9 +411,16 @@ function paint() {
     b.classList.toggle("seen", !!seenBtn[k]);
   });
 
-  score(maxShift);
+  /* onReport fires about sixty times a second and score() empties and rebuilds
+     the verdict box. Doing that every report made the panel flicker, put text
+     out of reach of the mouse, and burned CPU to redraw identical words. Rebuild
+     only when the numbers behind it actually move. */
+  var sig = [resting ? 1 : 0, Math.round(maxShift * 1000)].join("|") +
+            ui.sticks.map(function (st) { return "|" + st.drift.textContent; }).join("");
+  if (sig !== lastScoreSig) { lastScoreSig = sig; score(maxShift); }
 }
 
+var lastScoreSig = null;
 function score(maxShift) {
   var f = [], s = 100;
   var worst = 0;

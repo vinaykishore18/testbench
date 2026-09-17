@@ -317,8 +317,11 @@ function score(cmp, r) {
   var t0 = 0, timer = null, watching = false, seen = "";
   function names() {
     return navigator.mediaDevices.enumerateDevices().then(function (ds) {
+      /* deviceId, not label. Labels are empty strings until microphone
+         permission is granted, so running a measurement mid-soak used to fill
+         them in and raise a false "a bud dropped out" alarm. */
       return ds.filter(function (d) { return d.kind === "audiooutput"; })
-               .map(function (d) { return d.label; }).join("|");
+               .map(function (d) { return d.deviceId; }).sort().join("|");
     });
   }
   $("#ap-soakrun").onclick = function () {
