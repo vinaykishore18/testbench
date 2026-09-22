@@ -5,6 +5,16 @@
 var $ = TB.$, $$ = TB.$$, el = TB.el, svgEl = TB.svgEl, clamp = TB.clamp;
 var verdict = TB.verdict, badge = TB.badge, toast = TB.toast;
 
+/* setPointerCapture throws InvalidStateError whenever the pointer is not in an
+   active button state — most often because the pointer is locked, which is
+   exactly what the CPI test does to this same pad. Capture is a nicety here
+   (it keeps a drag alive past the edge of the box); failing to get it is not
+   worth an exception, let alone one per click. */
+function capture(node, e) {
+  if (document.pointerLockElement) return;
+  try { node.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
 var NAMES = ["Left", "Middle", "Right", "Back", "Forward"];
 var MAX = 20;
 var st = fresh();
@@ -506,7 +516,7 @@ TB.onLeave("mouse", disarmNav);
     upd();
   }
   pad.addEventListener("pointerdown", function (e) {
-    e.preventDefault(); pad.setPointerCapture(e.pointerId);
+    e.preventDefault(); capture(pad, e);
     dragging = true; t0 = performance.now(); reset(true);
     logD("START", "button held down");
   });
@@ -655,7 +665,7 @@ $("#dbl-reset").onclick = function () {
   }
   new ResizeObserver(resize).observe(pad); resize();
 
-  pad.addEventListener("pointerdown", function (e) { drawing = true; last = null; pad.setPointerCapture(e.pointerId); });
+  pad.addEventListener("pointerdown", function (e) { drawing = true; last = null; capture(pad, e); });
   document.addEventListener("mousemove", function (e) { if (TB.view() === "mouse") showHeld(e); }, true);
   window.addEventListener("pointerup", function () { drawing = false; last = null; });
 

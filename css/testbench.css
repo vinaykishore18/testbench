@@ -566,3 +566,58 @@ body.tb-locked .tb-app{padding-top:44px}
 
 /* an axis that has actually moved */
 .tb-meterrow.seen .lbl{color:var(--pass)}
+
+/* ---------- guided bench run ----------
+   Docked to the bottom of the work area. It has to be readable at arm's length
+   while you are holding a device, so the instruction is set larger than
+   anything else on the page and the progress bar is the full width of the
+   panel rather than a token strip. */
+.tb-run{
+  position:sticky; bottom:0; z-index:40;
+  display:grid; grid-template-columns:auto minmax(0,1fr) 180px auto auto;
+  align-items:center; gap:18px;
+  margin:22px -22px -22px; padding:16px 22px calc(16px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border-top:2px solid var(--red);
+  box-shadow:0 -14px 34px rgba(0,0,0,.5);
+  transition:border-color .2s,box-shadow .2s;
+}
+.tb-run.pass{border-top-color:var(--pass); box-shadow:0 -14px 34px var(--pass-glow)}
+
+.tb-run-dots{display:flex; gap:6px}
+.tb-run-dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block;transition:background .2s,transform .2s}
+.tb-run-dots i.now{background:var(--red);transform:scale(1.25)}
+.tb-run-dots i.done{background:var(--pass)}
+
+.tb-run-kick{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.tb-run-title{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1.25;margin-top:3px;text-wrap:balance}
+.tb-run-hint{font-size:13px;color:var(--ink-2);margin-top:3px;max-width:62ch}
+
+.tb-run-meter{height:10px;border-radius:6px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden}
+.tb-run-meter i{display:block;height:100%;width:0;background:var(--red);transition:width .18s ease-out}
+.tb-run.pass .tb-run-meter i{background:var(--pass)}
+.tb-run-count{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+.tb-run-acts{display:flex;gap:8px}
+
+@media (max-width:900px){
+  /* No negative side margins here: the work area's own padding is narrower
+     than the desktop value, so bleeding past it pushed the bar wider than the
+     screen and clipped the count off the right edge. */
+  .tb-run{grid-template-columns:minmax(0,1fr) auto; gap:10px 12px; margin-inline:0; padding-inline:0}
+  .tb-run-dots{grid-column:1/-1}
+  .tb-run-body{grid-column:1/-1}
+  .tb-run-meter{grid-column:1}
+  .tb-run-count{grid-column:2;text-align:right}
+  .tb-run-acts{grid-column:1/-1}
+  .tb-run-title{font-size:17px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tb-run,.tb-run-dots i,.tb-run-meter i{transition:none}
+}
+
+/* The hidden attribute loses to any rule that sets display — and this sheet
+   sets display on almost everything. Put it back. */
+[hidden]{display:none !important}
+
+#run-start{white-space:nowrap}

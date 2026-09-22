@@ -65,7 +65,7 @@ function upd() {
   TB.badge("touch", maxN ? maxN + " pt" : "", maxN >= 5);
 }
 pad.addEventListener("pointerdown", function (e) {
-  pad.setPointerCapture(e.pointerId);
+  try { pad.setPointerCapture(e.pointerId); } catch (err) {}
   active[e.pointerId] = { c: COL[Object.keys(active).length % COL.length] };
   $("#tc-type").textContent = e.pointerType; upd();
 });

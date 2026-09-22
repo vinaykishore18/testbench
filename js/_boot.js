@@ -14,7 +14,14 @@
    loads it puts the site back exactly as it was. */
 "use strict";
 (function () {
-  var seen = [];            /* every failure, in order */
+  /* Distinct failures, in order, each with a count. The first version listed
+     every occurrence, so one throw per mouse click filled the screen with
+     twenty identical lines and pushed the app off the bottom. A failure that
+     happens two hundred times is still one failure. */
+  var seen = [];
+  var byKey = Object.create(null);
+  var MAX_ROWS = 6;
+  var redrawQueued = false;
   var loaded = Object.create(null);
   var box = null;
 
@@ -29,7 +36,7 @@
        navigation and swallow the clicks needed to reach the broken page —
        which is exactly what it did the first time it fired. */
     box.style.cssText =
-      "position:relative;max-height:46vh;overflow:auto;" +
+      "position:relative;max-height:34vh;overflow:auto;" +
       "background:#1A0509;border-bottom:2px solid #FF2D46;color:#FFE8EB;" +
       "font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;padding:14px 46px 14px 16px";
     var h = document.createElement("div");
@@ -41,7 +48,7 @@
     box.appendChild(list);
     var tip = document.createElement("div");
     tip.style.cssText = "margin-top:10px;color:#C98F97";
-    tip.textContent = "Scripts load in numbered order. The first line below is the one to fix — everything after it is fallout.";
+    tip.textContent = "Scripts load in numbered order. Fix the first line — the rest is usually fallout. A × count is the same failure repeating, not new ones.";
     box.appendChild(tip);
     var x = document.createElement("button");
     x.type = "button";
@@ -56,21 +63,43 @@
   }
 
   function show(kind, detail) {
-    seen.push(kind + "  " + detail);
-    var b = ensure();
-    if (!b) { document.addEventListener("DOMContentLoaded", redraw); return; }
-    redraw();
+    var key = kind + "\u0000" + detail;
+    if (byKey[key]) { byKey[key].n++; }
+    else { var row = { kind: kind, detail: detail, n: 1 }; byKey[key] = row; seen.push(row); }
+    if (!document.body) { document.addEventListener("DOMContentLoaded", redraw); return; }
+    queue();
+  }
+  /* Coalesce redraws. An error firing every frame would otherwise rebuild this
+     list every frame, on top of whatever is already going wrong. */
+  function queue() {
+    if (redrawQueued) return;
+    redrawQueued = true;
+    setTimeout(function () { redrawQueued = false; redraw(); }, 200);
   }
   function redraw() {
     var b = ensure(); if (!b) return;
     var list = b.querySelector("#tb-boot-list");
     list.textContent = "";
-    seen.forEach(function (line, i) {
+    seen.slice(0, MAX_ROWS).forEach(function (row, i) {
       var d = document.createElement("div");
-      d.style.cssText = "padding:3px 0;" + (i === 0 ? "color:#FFE8EB" : "color:#C98F97");
-      d.textContent = (i === 0 ? "▶ " : "   ") + line;
+      d.style.cssText = "padding:3px 0;white-space:pre-wrap;word-break:break-word;" +
+        (i === 0 ? "color:#FFE8EB" : "color:#C98F97");
+      d.textContent = (i === 0 ? "\u25b6 " : "   ") + row.kind + "  " + row.detail;
+      if (row.n > 1) {
+        var tag = document.createElement("span");
+        tag.textContent = "  \u00d7" + row.n;
+        tag.style.cssText = "color:#FF2D46;font-weight:700";
+        d.appendChild(tag);
+      }
       list.appendChild(d);
     });
+    if (seen.length > MAX_ROWS) {
+      var more = document.createElement("div");
+      more.style.cssText = "padding:3px 0;color:#8A5A62";
+      more.textContent = "   \u2026 and " + (seen.length - MAX_ROWS) + " other failure" +
+        (seen.length - MAX_ROWS === 1 ? "" : "s");
+      list.appendChild(more);
+    }
   }
 
   /* ---------- catch a script that never arrived ----------
@@ -132,7 +161,10 @@
         show("NOT LOADED", "js/00-core.js never defined TB — nothing else can run");
       }
       /* expose a summary so you can read it from the console in one line */
-      window.TBBOOT = { failures: seen.slice(), loaded: Object.keys(loaded) };
+      window.TBBOOT = {
+        failures: seen.map(function (r) { return r.kind + "  " + r.detail + (r.n > 1 ? "  x" + r.n : ""); }),
+        loaded: Object.keys(loaded)
+      };
     }, 60);
   });
 })();
