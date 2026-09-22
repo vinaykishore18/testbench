@@ -354,9 +354,16 @@ function tick() {
   if (!ui) return;
   var rec = PADS[activeIdx]; if (!rec) { sig = null; return; }
   ui.rec = rec;
-  if (rec.score !== ui.lastScore) {
-    ui.lastScore = rec.score;
-    verdict(ui.vnode, rec.score, rec.flags, "Sampling at rest…");
+  /* The phase is part of the signature, not just the score: while the pad is
+     settling the score stays null, and without this the panel would never
+     update from "let go" to "reading". */
+  var vsig = String(rec.score) + "|" + TB.restPhase(rec);
+  if (vsig !== ui.lastScore) {
+    ui.lastScore = vsig;
+    verdict(ui.vnode, rec.score, rec.flags,
+      TB.restPhase(rec) === "settle"
+        ? "Let go of the controller — waiting for it to sit still."
+        : "Reading it at rest…");
     badge("gamepad", rec.score != null ? String(Math.round(rec.score)) : "", rec.score >= 90);
   }
   /* diagram */
@@ -435,7 +442,7 @@ TB.onPads(tick);
 TB.onEnter("gamepad", function () { sig = null; tick(); });
 $("#gp-rescore").onclick = function () {
   var r = PADS[activeIdx];
-  if (r) { TB.beginRestSample(r); if (ui) ui.lastScore = undefined; toast("Re-scoring", "Hands off the controller for one second.", null); }
+  if (r) { TB.beginRestSample(r); if (ui) ui.lastScore = undefined; toast("Re-scoring", "Let go of the controller. It reads once everything is still.", null); }
 };
 /* Mounted once, at module level. TB.hidMount only appends, and build() runs on
    every signature change, every visit to the page and every device-picker

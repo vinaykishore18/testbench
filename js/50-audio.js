@@ -228,38 +228,102 @@ function applySink(node) {
 }
 
 /* ---------------- output tests ---------------- */
+/* ---------------- tones ----------------
+
+   Everything here is shaped by one rule: the only thing you should hear is the
+   headphone. Any click, thump or seam the page itself makes is a fault you will
+   go looking for in the hardware.
+
+   Three things used to make noise of their own:
+     - the gain jumped straight to full and the oscillator was cut dead, so
+       every tone began and ended with a click;
+     - the pink-noise buffer looped at exactly two seconds with no match across
+       the seam, so it ticked once every two seconds forever;
+     - the sweep was stopped by a wall clock while the sound is driven by the
+       audio clock. Under load the two drift apart, and the sweep was being cut
+       off before it reached the top.
+   All three are dealt with below. */
 var osc = null, noiseSrc = null, gain = null, panner = null, outRaf = null, sweepT = null;
-function stopTone() {
+var ATTACK = 0.02, RELEASE = 0.05;
+var SWEEP_HINT = "Left and right tell you a dead earcup instantly. The sweep finds blown drivers and rattles — listen for a gap, a buzz or a sudden drop.";
+
+function fadeOutAndStop(g, node, a) {
+  /* Ramp the level down before stopping the source. Stopping a sine mid-cycle
+     is a step discontinuity, and a step is a click. */
+  try {
+    var t = a.currentTime;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t);
+    g.gain.linearRampToValueAtTime(0.0001, t + RELEASE);
+  } catch (e) {}
+  try { node.stop(a.currentTime + RELEASE + 0.01); } catch (e) {}
+  setTimeout(function () { try { node.disconnect(); } catch (e) {} }, (RELEASE + 0.1) * 1000);
+}
+
+function stopTone(immediate) {
   if (sweepT) { clearInterval(sweepT); sweepT = null; }
-  if (osc) { try { osc.stop(); } catch (e) {} try { osc.disconnect(); } catch (e) {} osc = null; }
-  if (noiseSrc) { try { noiseSrc.stop(); } catch (e) {} try { noiseSrc.disconnect(); } catch (e) {} noiseSrc = null; }
+  var a = ac;
+  if (a && gain && !immediate) {
+    if (osc) fadeOutAndStop(gain, osc, a);
+    if (noiseSrc) fadeOutAndStop(gain, noiseSrc, a);
+  } else {
+    if (osc) { try { osc.stop(); } catch (e) {} try { osc.disconnect(); } catch (e) {} }
+    if (noiseSrc) { try { noiseSrc.stop(); } catch (e) {} try { noiseSrc.disconnect(); } catch (e) {} }
+  }
+  osc = null; noiseSrc = null; gain = null;
   if (outRaf) { cancelAnimationFrame(outRaf); outRaf = null; }
   $("#au-outl").style.width = "0%"; $("#au-outr").style.width = "0%";
   $("#au-outlv").textContent = "0"; $("#au-outrv").textContent = "0";
 }
+
 function pinkNoise(a) {
-  var len = a.sampleRate * 2, b = a.createBuffer(1, len, a.sampleRate), d = b.getChannelData(0);
+  /* Four seconds, with the last 80 ms crossfaded into the first 80 ms so the
+     loop point is continuous. Without that the seam is a step, and a step
+     repeating every loop is the faint tick people hear and blame on the cans. */
+  var xf = Math.round(a.sampleRate * 0.08);
+  var len = Math.round(a.sampleRate * 4) + xf;
+  var raw = new Float32Array(len);
   var b0 = 0, b1 = 0, b2 = 0;
   for (var i = 0; i < len; i++) {
     var w = Math.random() * 2 - 1;
     b0 = 0.99765 * b0 + w * 0.0990460;
     b1 = 0.96300 * b1 + w * 0.2965164;
     b2 = 0.57000 * b2 + w * 1.0526913;
-    d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.16;
+    raw[i] = (b0 + b1 + b2 + w * 0.1848) * 0.16;
+  }
+  var outLen = len - xf;
+  var b = a.createBuffer(1, outLen, a.sampleRate), d = b.getChannelData(0);
+  for (var j = 0; j < outLen; j++) d[j] = raw[j];
+  for (var k = 0; k < xf; k++) {
+    var t = k / xf;                       /* equal-power crossfade */
+    d[k] = d[k] * Math.sqrt(t) + raw[outLen + k] * Math.sqrt(1 - t);
   }
   var src = a.createBufferSource(); src.buffer = b; src.loop = true; return src;
 }
+
+function level() { return (parseInt($("#au-vol").value, 10) / 100) * 0.3; }
+
 function tone(mode) {
   stopTone();
   if (mode === "stop") return;
   var a = ctx();
+  /* Schedule against the audio clock, and only after the context is awake.
+     A suspended context has a frozen currentTime, and anything scheduled
+     against a frozen clock plays late or not at all. */
+  var go = function () { build(mode, a); };
+  if (a.state === "suspended" && a.resume) { a.resume().then(go, go); } else go();
+}
+
+function build(mode, a) {
+  var t0 = a.currentTime + 0.03;          /* a beat of headroom to schedule into */
   gain = a.createGain();
-  gain.gain.value = (parseInt($("#au-vol").value, 10) / 100) * 0.3;
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(level(), t0 + ATTACK);
   panner = a.createStereoPanner ? a.createStereoPanner() : null;
 
-  var src;
-  if (mode === "noise") { src = pinkNoise(a); noiseSrc = src; }
-  else { src = a.createOscillator(); src.type = "sine"; src.frequency.value = 440; osc = src; }
+  var src, dur;
+  if (mode === "noise") { src = pinkNoise(a); noiseSrc = src; dur = 12; }
+  else { src = a.createOscillator(); src.type = "sine"; osc = src; dur = 12; }
 
   var splitter = a.createChannelSplitter(2);
   var aL = a.createAnalyser(), aR = a.createAnalyser();
@@ -272,34 +336,49 @@ function tone(mode) {
   tail.connect(splitter);
   splitter.connect(aL, 0); splitter.connect(aR, 1);
 
-  if (panner) panner.pan.value = mode === "left" ? -1 : mode === "right" ? 1 : 0;
-  var t0 = performance.now();
+  if (panner) panner.pan.setValueAtTime(mode === "left" ? -1 : mode === "right" ? 1 : 0, t0);
+  /* the running frequency readout belongs to the sweep and nothing else */
+  if (mode !== "sweep") $("#au-sweeplbl").textContent = SWEEP_HINT;
 
+  var lo = 20, hi = 20000;
   if (osc) {
-    if (mode === "sweep") osc.frequency.value = 20;
-    if (mode === "bass") osc.frequency.value = 30;
-    osc.start();
+    /* Anchor the start value with setValueAtTime. A ramp with no preceding
+       event interpolates from whatever the parameter happens to hold, which is
+       how a sweep meant to start at 20 Hz can begin at the 440 Hz default. */
     if (mode === "sweep") {
-      osc.frequency.exponentialRampToValueAtTime(20000, a.currentTime + 14);
-      sweepT = setInterval(function () {
-        var fr = osc ? osc.frequency.value : 0;
-        $("#au-sweeplbl").textContent = "Sweeping — " + (fr < 1000 ? Math.round(fr) + " Hz" : (fr / 1000).toFixed(1) + " kHz") + ". Listen for a gap, a buzz or a rattle.";
-        if (performance.now() - t0 > 14500) { stopTone(); $("#au-sweeplbl").textContent = "Sweep finished."; }
-      }, 120);
+      dur = 14;
+      osc.frequency.setValueAtTime(lo, t0);
+      osc.frequency.exponentialRampToValueAtTime(hi, t0 + dur);
+    } else if (mode === "bass") {
+      lo = 30; hi = 120; dur = 8;
+      osc.frequency.setValueAtTime(lo, t0);
+      osc.frequency.exponentialRampToValueAtTime(hi, t0 + dur);
+    } else {
+      osc.frequency.setValueAtTime(440, t0);
     }
-    if (mode === "bass") {
-      osc.frequency.exponentialRampToValueAtTime(120, a.currentTime + 8);
-      sweepT = setInterval(function () { if (performance.now() - t0 > 8500) stopTone(); }, 200);
-    }
+    osc.start(t0);
   } else {
-    src.start();
-    sweepT = setInterval(function () { if (performance.now() - t0 > 12000) stopTone(); }, 300);
+    src.start(t0);
   }
+
   if (mode === "pan" && panner) {
-    panner.pan.setValueAtTime(-1, a.currentTime);
-    panner.pan.linearRampToValueAtTime(1, a.currentTime + 5);
-    sweepT = setInterval(function () { if (performance.now() - t0 > 5400) stopTone(); }, 150);
+    dur = 5;
+    panner.pan.setValueAtTime(-1, t0);
+    panner.pan.linearRampToValueAtTime(1, t0 + dur);
   }
+
+  var endAt = t0 + dur;
+  sweepT = setInterval(function () {
+    var left = endAt - a.currentTime;
+    if (mode === "sweep") {
+      var el2 = Math.max(0, Math.min(dur, dur - left));
+      var fr = lo * Math.pow(hi / lo, el2 / dur);
+      $("#au-sweeplbl").textContent = left <= 0 ? "Sweep finished."
+        : "Sweeping — " + (fr < 1000 ? Math.round(fr) + " Hz" : (fr / 1000).toFixed(1) + " kHz") +
+          ". Listen for a gap, a buzz or a rattle.";
+    }
+    if (left <= 0) stopTone();
+  }, 100);
 
   var bl = new Uint8Array(aL.frequencyBinCount), br = new Uint8Array(aR.frequencyBinCount);
   (function m() {
@@ -315,7 +394,11 @@ function tone(mode) {
   })();
 }
 $$("[data-tone]").forEach(function (b) { b.onclick = function () { tone(b.dataset.tone); }; });
-$("#au-vol").oninput = function () { if (gain) gain.gain.value = (parseInt(this.value, 10) / 100) * 0.3; };
+$("#au-vol").oninput = function () {
+  /* Glide, do not jump. Writing .value on every input event steps the gain once
+     per pixel of travel, and a staircase of steps is zipper noise. */
+  if (gain && ac) { try { gain.gain.setTargetAtTime(level(), ac.currentTime, 0.02); } catch (e) { gain.gain.value = level(); } }
+};
 
 /* ---------------- loopback ---------------- */
 $("#lb-run").onclick = function () {
@@ -369,6 +452,6 @@ TB.onLeave("audio", function () {
   if (recTimer) { clearTimeout(recTimer); recTimer = null; }
 });
 /* never leave a microphone open on a machine that is walking out the door */
-window.addEventListener("pagehide", function () { stopTone(); if (micStream) stopMic(); });
+window.addEventListener("pagehide", function () { stopTone(true); if (micStream) stopMic(); });
 return { listDevices: listDevices };
 })();

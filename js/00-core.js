@@ -243,7 +243,59 @@ var TB = (function () {
       standard: gp.mapping === "standard"
     };
   }
-  function beginRestSample(rec) { rec.sampling = { t0: performance.now(), samples: [], btn: [] }; rec.score = null; rec.flags = []; }
+  /* Resting measurement.
+
+     A browser hides a gamepad until you press something, so the pad appears at
+     the exact instant a button is down — and the old sampler started counting
+     right then, took the highest value each button reached, and duly reported
+     "Held down with no one touching it: A" and docked twenty points. The test
+     was failing pads for the press that made them visible.
+
+     So there are two phases now. settle: wait until nothing is pressed and no
+     axis is being moved, for a continuous stretch. measure: take the reading,
+     and throw it away and go back to settling if anything is touched. If the
+     pad never goes quiet — a genuinely stuck button, which is worth knowing —
+     it gives up after eight seconds and says so in the verdict. */
+  var SETTLE_MS = 450, MEASURE_MS = 850, PATIENCE_MS = 8000;
+  var BTN_QUIET = 0.08;   /* above this a button counts as held */
+  var AXIS_MOVE = 0.08;   /* per-poll change above this means a hand is on it */
+
+  function beginRestSample(rec) {
+    rec.sampling = { phase: "settle", t0: performance.now(), quietSince: 0,
+                     samples: [], btn: [], prev: null, gaveUp: false };
+    rec.score = null; rec.flags = []; rec.restGaveUp = false;
+  }
+  function padIsQuiet(rec, s) {
+    for (var i = 0; i < rec.buttons.length; i++) if (rec.buttons[i] > BTN_QUIET) return false;
+    if (s.prev) {
+      for (var a = 0; a < rec.axes.length && a < s.prev.length; a++) {
+        if (Math.abs(rec.axes[a] - s.prev[a]) > AXIS_MOVE) return false;
+      }
+    }
+    return true;
+  }
+  function stepRestSample(rec) {
+    var s = rec.sampling, now = performance.now();
+    var quiet = padIsQuiet(rec, s);
+    s.prev = rec.axes.slice();
+
+    if (s.phase === "settle") {
+      if (!quiet) s.quietSince = 0;
+      else if (!s.quietSince) s.quietSince = now;
+      if (s.quietSince && now - s.quietSince >= SETTLE_MS) { s.phase = "measure"; s.t0 = now; }
+      else if (now - s.t0 > PATIENCE_MS) { s.phase = "measure"; s.t0 = now; s.gaveUp = true; }
+      return;
+    }
+    /* something was touched mid-reading — discard it and wait again */
+    if (!quiet && !s.gaveUp) {
+      s.phase = "settle"; s.quietSince = 0; s.samples = []; s.btn = []; s.t0 = now;
+      return;
+    }
+    s.samples.push(rec.axes.slice());
+    if (!s.btn.length) s.btn = rec.buttons.slice();
+    else rec.buttons.forEach(function (v, bi) { if (v > s.btn[bi]) s.btn[bi] = v; });
+    if (now - s.t0 > MEASURE_MS) { rec.restGaveUp = s.gaveUp; finishRestSample(rec); }
+  }
   function finishRestSample(rec) {
     var s = rec.sampling; rec.sampling = null;
     if (!s || !s.samples.length) return;
@@ -277,7 +329,13 @@ var TB = (function () {
     }
     var stuck = [];
     r.btn.forEach(function (v, i) { if (i !== 6 && i !== 7 && v > 0.5) stuck.push(labelFor(fam, i)); });
-    if (stuck.length) { score -= 20; flags.push({ level: "bad", tag: "stuck", text: "Held down with no one touching it: " + stuck.join(", ") + "." }); }
+    if (stuck.length) {
+      score -= 20;
+      flags.push({ level: "bad", tag: "stuck",
+        text: rec.restGaveUp
+          ? "Held down for eight seconds straight without being touched: " + stuck.join(", ") + ". Either it is stuck, or something was resting on the pad."
+          : "Held down with no one touching it: " + stuck.join(", ") + "." });
+    }
     if (!flags.some(function (f) { return f.level !== "ok"; })) flags.push({ level: "ok", tag: "rest", text: "Triggers at zero, no buttons stuck, sticks quiet." });
     flags.push({ level: "ok", tag: "reported", text: rec.buttons.length + " buttons and " + rec.axes.length + " axes, mapping “" + rec.mapping + "”." });
     rec.score = clamp(score, 0, 100); rec.flags = flags;
@@ -321,12 +379,7 @@ var TB = (function () {
       for (var a2 = 0; a2 < rec.axes.length; a2++) {
         if ((rec.axMax[a2] - rec.axMin[a2]) > 0.25) { rec.seenAxis[a2] = true; rec.active = true; }
       }
-      if (rec.sampling) {
-        rec.sampling.samples.push(rec.axes.slice());
-        if (!rec.sampling.btn.length) rec.sampling.btn = rec.buttons.slice();
-        else rec.buttons.forEach(function (v, bi) { if (v > rec.sampling.btn[bi]) rec.sampling.btn[bi] = v; });
-        if (performance.now() - rec.sampling.t0 > 850) finishRestSample(rec);
-      }
+      if (rec.sampling) stepRestSample(rec);
     }
     Object.keys(PADS).forEach(function (k) {
       if (!live[k]) { watch(PADS[k].wheel ? "WHEEL DISCONNECTED" : "PAD DISCONNECTED", shortName(PADS[k])); delete PADS[k]; }
@@ -415,6 +468,7 @@ var TB = (function () {
     go: go, onEnter: onEnter, onLeave: onLeave, view: view, badge: badge, chip: chip,
     hidMount: hidMount, watch: watch,
     pads: pads, onPads: onPads, shortName: shortName, labelFor: labelFor, glyphFor: glyphFor,
-    beginRestSample: beginRestSample
+    beginRestSample: beginRestSample,
+    restPhase: function (rec) { return rec && rec.sampling ? rec.sampling.phase : null; }
   };
 })();
