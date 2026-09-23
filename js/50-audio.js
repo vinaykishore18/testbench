@@ -419,54 +419,19 @@ $("#au-vol").oninput = function () {
    seconds without being able to say why. That is worth more on a bench than
    any meter.
 
-   The tracks are a reference list, not files. This page ships no music and
-   never will: those recordings belong to the people who made them, and putting
-   them on a public site would be distributing them. The list says which track
-   exposes which fault; play it from wherever you already listen.
+   Two sources, both of them legitimate. The patterns below are synthesised
+   here, note by note, so they carry no licence and play the instant you press
+   Play. Your own files are held in this browser's database on this machine and
+   never leave it — the same thing a desktop player does with a playlist.
 
-   A file you own is different, and that is what the player is for. Drop it in
-   and it runs through the same graph as the test tones, so you get the meters
-   and the left/right isolation as well as the sound. It never leaves the
-   machine — the browser reads it straight off the disk. */
-var TRACKS = [
-  { t: "Animals", a: "Martin Garrix", k: "Sub-bass and kick weight",
-    w: "The drop is built on a low synth kick. A healthy driver gives a round thump you feel in the cup; one that is blown or has come unglued turns the same note into a papery rattle." },
-  { t: "Blinding Lights", a: "The Weeknd", k: "Balance, top to bottom",
-    w: "Synth bass, bright leads and a clear vocal all at once. If the treble is harsh or the bass swamps the voice, this is where a headset shows it." },
-  { t: "Believer", a: "Imagine Dragons", k: "Transients and midrange punch",
-    w: "Hard percussive stabs with space around them. A damaged driver smears the hit into a thud instead of a snap." },
-  { t: "bad guy", a: "Billie Eilish", k: "Deep bass in an empty mix",
-    w: "So sparse that any buzz is completely naked. Small drivers reproduce almost none of the low line — that is the size of the headphone, not a fault." },
-  { t: "Bohemian Rhapsody", a: "Queen", k: "Dynamic range and layering",
-    w: "Goes from a single voice to a wall of them. Quiet passages should stay clean and loud ones should not collapse into mush." },
-  { t: "Hotel California (Hell Freezes Over)", a: "Eagles", k: "Detail and depth",
-    w: "Live acoustic recording where strings, percussion and crowd sit at different distances. On a faulty cup the image flattens into one plane." },
-  { t: "Money", a: "Pink Floyd", k: "Stereo imaging",
-    w: "The intro loop walks deliberately around your head. The fastest way to catch a channel wired backwards or one side running weak." },
-  { t: "Chandelier", a: "Sia", k: "Sibilance and treble strain",
-    w: "A pushed vocal sitting right at the edge. Harshness or a hiss riding the S sounds points at a strained or torn diaphragm." },
-  { t: "Why So Serious?", a: "Hans Zimmer", k: "Sustained sub-bass",
-    w: "Holds a very low note for far longer than music normally does. If a driver is going to buzz, it buzzes here." },
-  { t: "Royals", a: "Lorde", k: "Clean low end and placement",
-    w: "Almost nothing in the mix to hide behind. Snaps should be tight and dead centre; the bass should be deep with no overhang after it stops." }
-];
-
-/* ---------- built-in bench tracks ----------
-
-   Synthesised here, note by note, so Play does something the moment you press
-   it instead of opening a file dialog. They are not songs and are not trying to
-   be: each one is a short musical figure built around exactly one fault, looped
-   until you stop it. Because the page makes them, they carry no licence and can
-   sit on a commercial site without a second thought.
-
-   Every voice gets an attack and a release. A note that starts or stops at full
-   amplitude is a step, a step is a click, and a click on a headphone test is
-   indistinguishable from the rattle you are listening for. */
+   What is deliberately absent is a set of commercial recordings. Those belong
+   to the artists and labels who made them, and a site that serves them is
+   distributing them, however convenient that would be. */
 var BENCH = [
   { id: "drop",   name: "Sub-bass drop",   hint: "Kick plus a low slide from 60 Hz down to 32. A blown or unglued driver turns the slide into a rattle." },
   { id: "snap",   name: "Transient snap",  hint: "Short, hard hits with silence between them. A damaged driver smears the hit into a thud." },
   { id: "walk",   name: "Stereo walk",     hint: "A note that steps left, centre, right and back. Catches a channel wired backwards or one side running weak." },
-  { id: "air",    name: "Treble and air",  hint: "Bursts up in the 6–10 kHz band where sibilance lives. Listen for harshness or a hiss that rides on." },
+  { id: "air",    name: "Treble and air",  hint: "Bursts up in the 6\u201310 kHz band where sibilance lives. Listen for harshness or a hiss that rides on." },
   { id: "swing",  name: "Loud and quiet",  hint: "Alternating heavy and near-silent bars. The quiet ones should stay clean, the loud ones should not collapse." }
 ];
 
@@ -527,11 +492,20 @@ var bus = null;
 function benchBus(a) {
   if (!bus) {
     bus = a.createGain();
+    /* An oscillator is mono. Feed a mono signal to a channel splitter and
+       output 1 — the right channel — is silent, so the meters showed every
+       pattern playing hard left when it was actually centred. Widening to two
+       real channels first makes the meter tell the truth. */
+    var wide = a.createGain();
+    wide.channelCount = 2;
+    wide.channelCountMode = "explicit";
+    wide.channelInterpretation = "speakers";
     var split = a.createChannelSplitter(2);
     var aL = a.createAnalyser(), aR = a.createAnalyser();
     aL.fftSize = 512; aR.fftSize = 512;
-    bus.connect(a.destination);
-    bus.connect(split);
+    bus.connect(wide);
+    wide.connect(a.destination);
+    wide.connect(split);
     split.connect(aL, 0); split.connect(aR, 1);
     benchMeter(aL, aR);
   }
@@ -705,36 +679,10 @@ function niceSize(n) {
   var audioEl2 = new Audio();
   audioEl2.preload = "metadata";
   var srcNode = null, mGain = null, mPan = null, mRaf = null, objURL = null;
-  var rack = $("#mu-rack"), note = $("#mu-racknote"), listEl = $("#mu-list");
+  var rack = $("#mu-rack"), note = $("#mu-racknote");
   var playingId = null;
-  if (!rack || !listEl) return;
+  if (!rack) return;
   audioEl2Pause = function () { audioEl2.pause(); };
-
-  /* ---------- the reference list ---------- */
-  TRACKS.forEach(function (tr, i) {
-    var li = el("li", "tb-track");
-    li.appendChild(el("span", "n", String(i + 1).padStart(2, "0")));
-    var body = el("div", "body");
-    var head = el("div", "head");
-    head.appendChild(el("b", null, tr.t));
-    head.appendChild(el("span", "by", tr.a));
-    body.appendChild(head);
-    body.appendChild(el("span", "k", tr.k));
-    body.appendChild(el("p", null, tr.w));
-    /* Search links, not deep links. A search URL is always valid and always
-       lands on the real thing; a hand-written track id is a guess that rots. */
-    var q = encodeURIComponent(tr.t + " " + tr.a);
-    var links = el("div", "find");
-    [["YouTube", "https://www.youtube.com/results?search_query=" + q],
-     ["Spotify", "https://open.spotify.com/search/" + q]].forEach(function (L) {
-      var a2 = el("a", null, L[0]);
-      a2.href = L[1]; a2.target = "_blank"; a2.rel = "noopener noreferrer";
-      links.appendChild(a2);
-    });
-    body.appendChild(links);
-    li.appendChild(body);
-    listEl.appendChild(li);
-  });
 
   /* ---------- one row: your tracks, the built-in patterns, and Add ---------- */
   function refreshLib() {

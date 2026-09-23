@@ -81,7 +81,7 @@ console.log('\n5. no dangerous sinks anywhere in the source');
 console.log('\n6. internal notes and tooling are not served');
 {
   const redir = existsSync('_redirects') ? readFileSync('_redirects', 'utf8') : '';
-  for (const f of ['SWITCH-RIG.md', 'build.py', 'README.md', 'LEARN.md']) {
+  for (const f of ['SWITCH-RIG.md', 'build.py', 'README.md', 'LEARN.md', 'WORKFLOW.md']) {
     redir.includes('/' + f) ? pass(f + ' is blocked') : fail(f + ' would be served from the live domain');
   }
   redir.includes('/test/*') ? pass('the test suite is blocked') : fail('/test/ would be served');

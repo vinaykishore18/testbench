@@ -46,23 +46,7 @@ await page.waitForTimeout(1300);
 await page.click('button[data-view="audio"]');
 await page.waitForTimeout(400);
 
-console.log('\n2. ten tracks, each saying what it catches');
-{
-  const rows = await page.evaluate(() =>
-    [...document.querySelectorAll('#mu-list .tb-track')].map(li => ({
-      title: li.querySelector('b').textContent,
-      what: (li.querySelector('.k') || {}).textContent || '',
-      why: (li.querySelector('p') || {}).textContent || ''
-    })));
-  rows.length === 10 ? pass('ten tracks') : fail('found ' + rows.length);
-  rows.every(r => r.what && r.why.length > 40)
-    ? pass('every track says what it exposes and what a fault sounds like')
-    : fail('a track is missing its cue: ' + JSON.stringify(rows.find(r => !r.what || r.why.length <= 40)));
-  const kinds = new Set(rows.map(r => r.what));
-  kinds.size >= 8 ? pass(kinds.size + ' distinct things covered') : fail('only ' + kinds.size + ' distinct cues — the list is repeating itself');
-}
-
-console.log('\n3. the transport is visible but inert before a track is loaded');
+console.log('\n2. the transport is visible but inert before a track is loaded');
 {
   /* It used to be hidden entirely, and the panel read as having no player at
      all — the first thing anyone said about it was "there is no play button". */
@@ -79,7 +63,7 @@ console.log('\n3. the transport is visible but inert before a track is loaded');
   /play/i.test(st.hint) ? pass('says what to do: "' + st.hint + '"') : fail('no hint: ' + st.hint);
 }
 
-console.log('\n4. Play works with no file at all');
+console.log('\n3. Play works with no file at all');
 {
   /* "pressing play takes me to the files" — a button called Play must play
      something, not open a dialog. */
@@ -90,27 +74,20 @@ console.log('\n4. Play works with no file at all');
   const st = await page.evaluate(() => ({
     label: document.querySelector('#mu-play').textContent,
     lit: [...document.querySelectorAll('#mu-rack [data-bench].on .go')].map(b => b.textContent),
-    meter: parseFloat(document.querySelector('#mu-l').style.width) || 0
+    meter: parseFloat(document.querySelector('#mu-l').style.width) || 0,
+    meterR: parseFloat(document.querySelector('#mu-r').style.width) || 0
   }));
   st.label === 'Stop' ? pass('Play started something and became Stop') : fail('button says ' + st.label);
   st.lit.length === 1 ? pass('pattern lit: ' + st.lit[0]) : fail('lit patterns: ' + JSON.stringify(st.lit));
   st.meter > 5 ? pass('meters moving at ' + st.meter.toFixed(0) + '%') : fail('meters flat at ' + st.meter);
+  /* A mono oscillator through a channel splitter leaves the right output
+     silent, which looked exactly like a half-dead player. */
+  st.meterR > 5 ? pass('both channels registering') : fail('right channel flat at ' + st.meterR + ' — the bus went mono again');
   await page.click('#mu-play');
   await page.waitForTimeout(400);
 }
 
-console.log('\n5. every reference track links out to a search');
-{
-  const links = await page.evaluate(() =>
-    [...document.querySelectorAll('#mu-list .tb-track')].map(li =>
-      [...li.querySelectorAll('.find a')].map(a => a.href)));
-  links.length === 10 && links.every(l => l.length === 2)
-    ? pass('two search links on each of the ten') : fail('links per track: ' + JSON.stringify(links.map(l => l.length)));
-  links.every(l => l.every(h => /^https:\/\/(www\.youtube\.com\/results|open\.spotify\.com\/search)/.test(h)))
-    ? pass('all are search URLs, not guessed track ids') : fail('a link was not a search URL');
-}
-
-console.log('\n6. a track added once is still there after a reload');
+console.log('\n4. a track added once is still there after a reload');
 {
   /* The whole point: "can we just play the tracks in the site". You add your
      own copies once and they live in this browser from then on. */
@@ -136,7 +113,8 @@ console.log('\n6. a track added once is still there after a reload');
     name: document.querySelector('#mu-name').textContent,
     label: document.querySelector('#mu-play').textContent,
     lit: document.querySelectorAll('.tb-chiprow[data-saved].on').length,
-    meter: parseFloat(document.querySelector('#mu-l').style.width) || 0
+    meter: parseFloat(document.querySelector('#mu-l').style.width) || 0,
+    meterR: parseFloat(document.querySelector('#mu-r').style.width) || 0
   }));
   st.name === 'Animals' ? pass('one click played it straight from storage') : fail('played ' + st.name);
   st.label === 'Stop' && st.lit === 1 ? pass('chip marked as playing') : fail('label ' + st.label + ', lit ' + st.lit);
@@ -148,7 +126,7 @@ console.log('\n6. a track added once is still there after a reload');
   JSON.stringify(left) === JSON.stringify(['Money']) ? pass('removing one leaves the rest') : fail('left with ' + JSON.stringify(left));
 }
 
-console.log('\n7. a local file plays through the meters');
+console.log('\n5. a local file plays through the meters');
 await page.setInputFiles('#mu-file', { name: 'bench-tone.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) });
 await page.waitForTimeout(1400);
 {
@@ -165,7 +143,7 @@ await page.waitForTimeout(1400);
   /0:0\d \/ 0:03/.test(st.time) ? pass('clock running: ' + st.time) : fail('clock read ' + st.time);
 }
 
-console.log('\n8. left-only really silences the right cup');
+console.log('\n6. left-only really silences the right cup');
 await page.click('[data-mupan="-1"]');
 await page.waitForTimeout(700);
 {
@@ -176,19 +154,19 @@ await page.waitForTimeout(700);
   rn < 10 ? pass('right meter down at ' + r) : fail('right still at ' + r);
 }
 
-console.log('\n9. starting a test tone stops the music');
+console.log('\n7. starting a test tone stops the music');
 await page.click('[data-tone="both"]');
 await page.waitForTimeout(400);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
   ? pass('music stopped when a tone started') : fail('music kept playing under the tone');
 
-console.log('\n10. leaving the page stops it too');
+console.log('\n8. leaving the page stops it too');
 await page.click('#mu-play'); await page.waitForTimeout(300);
 await page.click('button[data-view="home"]'); await page.waitForTimeout(500);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
   ? pass('stopped on navigation') : fail('still playing after leaving the page');
 
-console.log('\n11. no console errors');
+console.log('\n9. no console errors');
 errors.length ? errors.forEach(fail) : pass('clean');
 
 await browser.close();
