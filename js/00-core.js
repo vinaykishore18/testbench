@@ -72,6 +72,85 @@ var TB = (function () {
     return { node: ul, set: function (key, done) { if (map[key]) map[key].classList.toggle("done", !!done); } };
   }
 
+  /* ---------- theme ----------
+
+     Dark is the ground state, light is warm paper, and "System" follows the
+     operating system by stamping nothing on the root element — which leaves
+     the prefers-color-scheme media query in the stylesheet as the only thing
+     deciding. An explicit choice stamps data-theme and wins over the OS in
+     both directions.
+
+     Adding a theme is one CSS block and one line here: write
+     :root[data-theme="amber"]{ …tokens… } and call
+     TB.addTheme("amber","Amber"). Nothing else needs to know about it.
+
+     Canvases cannot use var(), so anything drawn with 2D or WebGL asks paint()
+     for the resolved value and redraws on a theme change. */
+  var THEMES = [
+    { id: "system", label: "System" },
+    { id: "dark", label: "Dark" },
+    { id: "light", label: "Light" }
+  ];
+  var KEY = "tb-theme", themeFns = [], swatch = Object.create(null), current = "system";
+
+  function paint(name) {
+    if (swatch[name] !== undefined) return swatch[name];
+    var v = "";
+    try { v = getComputedStyle(document.documentElement).getPropertyValue("--" + name).trim(); }
+    catch (e) {}
+    swatch[name] = v || "#888";
+    return swatch[name];
+  }
+  function repaint() {
+    swatch = Object.create(null);
+    themeFns.forEach(function (f) { try { f(current); } catch (e) {} });
+  }
+  function setTheme(id, quiet) {
+    if (!THEMES.some(function (t) { return t.id === id; })) id = "system";
+    current = id;
+    if (id === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", id);
+    try { localStorage.setItem(KEY, id); } catch (e) {}
+    $$("#themepick button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.theme === id));
+    });
+    repaint();
+    if (!quiet) watch("THEME", id);
+  }
+  function addTheme(id, label) {
+    if (THEMES.some(function (t) { return t.id === id; })) return;
+    THEMES.push({ id: id, label: label || id });
+    buildPicker();
+  }
+  function buildPicker() {
+    var host = $("#themepick"); if (!host) return;
+    host.textContent = "";
+    THEMES.forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.dataset.theme = t.id;
+      b.textContent = t.label;
+      b.title = t.id === "system" ? "Follow the operating system" : t.label + " theme";
+      b.setAttribute("aria-pressed", String(t.id === current));
+      b.onclick = function () { setTheme(t.id); };
+      host.appendChild(b);
+    });
+  }
+  function initTheme() {
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (e) {}
+    current = saved || "system";
+    buildPicker();
+    setTheme(current, true);
+    /* follow the OS while the choice is "System" */
+    try {
+      var mq = matchMedia("(prefers-color-scheme: light)");
+      var onOS = function () { if (current === "system") repaint(); };
+      if (mq.addEventListener) mq.addEventListener("change", onOS);
+      else if (mq.addListener) mq.addListener(onOS);
+    } catch (e) {}
+  }
+
   /* ---------- navigation ---------- */
   var currentView = "home", enterFns = {}, leaveFns = {};
   function go(view) {
@@ -410,8 +489,9 @@ var TB = (function () {
   window.addEventListener("gamepaddisconnected", function () { poll(); });
   setInterval(function () { if (!document.hidden) poll(); }, 400);
 
-  /* ---------- rail + clock ---------- */
+  /* ---------- rail, clock, theme ---------- */
   $$("#rail .tb-nav").forEach(function (b) { b.onclick = function () { go(b.dataset.view); }; });
+  initTheme();
   (function () { var c = $("#clock"); function tick() { c.textContent = stamp(); } tick(); setInterval(tick, 1000); })();
 
   /* ---------- environment ---------- */
@@ -469,6 +549,8 @@ var TB = (function () {
     hidMount: hidMount, watch: watch,
     pads: pads, onPads: onPads, shortName: shortName, labelFor: labelFor, glyphFor: glyphFor,
     beginRestSample: beginRestSample,
+    paint: paint, onTheme: function (f) { themeFns.push(f); }, setTheme: setTheme,
+    theme: function () { return current; }, addTheme: addTheme,
     restPhase: function (rec) { return rec && rec.sampling ? rec.sampling.phase : null; }
   };
 })();

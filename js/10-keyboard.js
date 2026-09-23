@@ -403,7 +403,7 @@ if (TB.isCoarse()) {
       var sp = el("span", null, sample[i]);
       if (i < typed.length) {
         var ok = typed[i] === sample[i];
-        sp.style.color = ok ? "var(--pass)" : "#140005";
+        sp.style.color = ok ? "var(--pass)" : "var(--on-red)";
         if (!ok) { sp.style.background = "var(--red)"; sp.style.borderRadius = "3px"; }
       } else if (i === typed.length) {
         sp.style.borderBottom = "2px solid var(--red)";

@@ -315,7 +315,12 @@ function paintRemap() {
   var sigs = Object.keys(st.macros);
   remapHost.textContent = "";
   if (!sigs.length) {
-    remapHost.appendChild(el("p", "tb-note", "None yet. If a side button does nothing on the diagram, press it now — if it is remapped to a shortcut it will be named here."));
+    /* the host is a chip grid, so an empty-state sentence has to span it or it
+       gets squeezed into one column's width */
+    var none = el("p", "tb-note", "None yet. If a side button does nothing on the diagram, press it now — if it is remapped to a shortcut it will be named here.");
+    none.style.gridColumn = "1 / -1";
+    none.style.margin = "0";
+    remapHost.appendChild(none);
     return;
   }
   sigs.sort(function (a, b) { return st.macros[b].n - st.macros[a].n; });
@@ -529,7 +534,7 @@ TB.onLeave("mouse", disarmNav);
       if (e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom) {
         z.hit = true; hitCount++;
         z.node.style.borderColor = "var(--pass)";
-        z.node.style.background = "rgba(34,224,123,.16)";
+        z.node.style.background = "var(--pass-t16)";
         z.node.style.color = "var(--pass)";
         upd();
       }
@@ -672,7 +677,7 @@ $("#dbl-reset").onclick = function () {
   function record(ts) { times.push(ts); }
   function drawTo(x, y) {
     if (last) {
-      ctx.strokeStyle = "#22E07B"; ctx.lineWidth = 1.8; ctx.lineCap = "round";
+      ctx.strokeStyle = TB.paint("pass"); ctx.lineWidth = 1.8; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(x, y); ctx.stroke();
     }
     last = [x, y];
@@ -756,7 +761,7 @@ $("#dbl-reset").onclick = function () {
   function set(cap, big, sub, colour) {
     $("#rt-cap").textContent = cap; $("#rt-big").textContent = big; $("#rt-sub").textContent = sub;
     pad.style.borderColor = colour || "";
-    pad.style.background = colour ? "rgba(34,224,123,.1)" : "";
+    pad.style.background = colour ? "var(--pass-t12)" : "";
   }
   function reset() {
     state = "idle"; if (timer) { clearTimeout(timer); timer = null; }

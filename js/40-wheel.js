@@ -55,14 +55,14 @@ function build() {
   var viz = el("div", "tb-wheelviz");
   var svgWrap = el("div");
   svgWrap.innerHTML = '<svg viewBox="0 0 200 200" aria-label="Steering position">' +
-    '<circle cx="100" cy="100" r="90" fill="none" stroke="#28333A" stroke-width="1"/>' +
+    '<circle cx="100" cy="100" r="90" fill="none" style="stroke:var(--dev-rim)" stroke-width="1"/>' +
     '<g id="whrot">' +
-      '<circle cx="100" cy="100" r="78" fill="none" stroke="#3A464C" stroke-width="14"/>' +
-      '<rect x="94" y="14" width="12" height="26" rx="3" fill="#3FD07E"/>' +
-      '<path d="M100 100 L100 26 M100 100 L36 138 M100 100 L164 138" stroke="#3A464C" stroke-width="9" stroke-linecap="round"/>' +
-      '<circle cx="100" cy="100" r="20" fill="#1B2226" stroke="#3A464C" stroke-width="3"/>' +
+      '<circle cx="100" cy="100" r="78" fill="none" style="stroke:var(--dev-spoke)" stroke-width="14"/>' +
+      '<rect x="94" y="14" width="12" height="26" rx="3" style="fill:var(--pass)"/>' +
+      '<path d="M100 100 L100 26 M100 100 L36 138 M100 100 L164 138" style="stroke:var(--dev-spoke)" stroke-width="9" stroke-linecap="round"/>' +
+      '<circle cx="100" cy="100" r="20" style="fill:var(--dev-hub);stroke:var(--dev-spoke)" stroke-width="3"/>' +
     '</g>' +
-    '<path d="M100 4 l-7 11 h14 z" fill="#35C3D4"/></svg>';
+    '<path d="M100 4 l-7 11 h14 z" style="fill:var(--dev-tip)"/></svg>';
   viz.appendChild(svgWrap);
 
   var readout = el("div"); readout.style.cssText = "display:flex;flex-direction:column;gap:12px;min-width:230px;flex:1";

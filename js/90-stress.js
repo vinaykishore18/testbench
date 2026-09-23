@@ -179,14 +179,14 @@ function drawGraph() {
   g.setTransform(d, 0, 0, d, 0, 0);
   g.clearRect(0, 0, w, h);
   var maxFps = Math.max(60, Math.max.apply(null, samples.concat([60])));
-  g.strokeStyle = "#191E26"; g.lineWidth = 1;
+  g.strokeStyle = TB.paint("line-soft"); g.lineWidth = 1;
   [0.25, 0.5, 0.75].forEach(function (f) {
     g.beginPath(); g.moveTo(0, h * f); g.lineTo(w, h * f); g.stroke();
   });
-  g.fillStyle = "#77828F"; g.font = "11px monospace";
+  g.fillStyle = TB.paint("ink-3"); g.font = "11px monospace";
   g.fillText(Math.round(maxFps) + " fps", 6, 13);
   if (samples.length < 2) return;
-  g.strokeStyle = "#FF2D46"; g.lineWidth = 2; g.beginPath();
+  g.strokeStyle = TB.paint("red"); g.lineWidth = 2; g.beginPath();
   samples.forEach(function (v, i) {
     var x = i / (samples.length - 1) * w;
     var y = h - (v / maxFps) * (h - 8) - 4;
@@ -194,7 +194,7 @@ function drawGraph() {
   });
   g.stroke();
   g.lineTo(w, h); g.lineTo(0, h); g.closePath();
-  g.fillStyle = "rgba(255,45,70,.12)"; g.fill();
+  g.fillStyle = TB.paint("red-t18"); g.fill();
 }
 
 /* ---------------- run ---------------- */
@@ -289,6 +289,9 @@ function stop(finished) {
   if (finished) toast("Stress test finished", "Check the graph — a flat line is a healthy machine.", "ok");
 }
 $("#st-run").onclick = function () { running ? stop(false) : start(); };
+/* the graph holds its last drawing after a run, so it has to be redrawn when
+   the palette changes underneath it */
+TB.onTheme(function () { if (samples.length) drawGraph(); });
 var glSel = $("#st-gpu");
 if (glSel) glSel.onchange = function () { applyLevel(this.value); };
 applyLevel(glSel ? glSel.value : "normal");

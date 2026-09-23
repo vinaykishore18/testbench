@@ -39,7 +39,8 @@
     <span class="tb-chip" id="chip-mic"><span class="tb-dot"></span>Mic <b>off</b></span>
     <span class="tb-chip" id="chip-cam"><span class="tb-dot"></span>Cam <b>off</b></span>
     <span class="tb-chip" id="chip-scr"><span class="tb-dot"></span>Screen <b>—</b></span>
-    <button class="tb-btn" id="run-start" style="margin-left:auto;min-height:30px;padding:5px 14px;font-size:11px">Run bench</button>
+    <div class="tb-themepick" id="themepick" role="group" aria-label="Theme" style="margin-left:auto"></div>
+    <button class="tb-btn" id="run-start" style="min-height:30px;padding:5px 14px;font-size:11px">Run bench</button>
     <span class="tb-clock" id="clock"></span>
   </div>
 
@@ -145,7 +146,7 @@
         <label class="tb-lab">Size <input type="range" id="kb-size" min="26" max="62" value="46"></label>
       </div>
       <div class="tb-locks" id="kb-locks"></div>
-      <p class="tb-note" id="kb-locknote">Caps, Num and Scroll Lock cannot be held inside the page &mdash; the keyboard and Windows flip them before any website sees the key, and the browser&rsquo;s key-hold deliberately leaves these three out. So the page grades them on what actually matters: the lock has to <b>change state</b>, not just send a keypress. A lock key that reports a press but never moves the light is dead, and that fault is invisible on sites that only watch for the press. Anything left on is called out in the verdict so the next unit does not start with Caps Lock stuck on.</p>
+      <p class="tb-note" id="kb-locknote">Caps, Num and Scroll Lock cannot be held inside the page &mdash; the keyboard flips them before any website sees the key. So they are graded on what matters: the lock has to <b>change state</b>, not just send a keypress. One that reports a press but never moves the light is dead. Anything left on is called out in the verdict.</p>
       <div class="tb-idbar" id="kb-id"></div>
       <p class="tb-note" id="kb-lockstate">Capture mode needs Chrome, Edge or Opera for the full key hold. In Firefox and Safari the page still reads every key, but the operating system may take Windows/Command and some F-keys.</p>
 
@@ -270,7 +271,7 @@
           <h2 class="tb-ptitle" style="margin-top:18px">Remapped buttons<span class="tb-rule"></span></h2>
           <div class="tb-btngrid" id="ms-remap"></div>
           <div class="tb-log" id="ms-keylog" data-empty="Nothing yet. Press a side button that the diagram ignores." style="height:110px;margin-top:12px"></div>
-          <p class="tb-note">A side button bound to a shortcut in Synapse, G HUB or Armoury does not send a mouse button at all — Windows and this page both see a keystroke. Those are picked up automatically and named above; no toggle needed. <b>Swallow macro keys</b> only stops them reaching the browser, which is useful if a macro keeps opening tabs while you test. To grade the switches as buttons 4 and 5, clear the bindings in the mouse software first.</p>
+          <p class="tb-note">A side button bound to a shortcut in Synapse, G HUB or Armoury sends a keystroke, not a mouse button &mdash; so it is detected automatically and named above. <b>Swallow macro keys</b> only stops it reaching the browser, useful when a macro keeps opening tabs. Clear the binding in the mouse software to grade the switch as button 4 or 5.</p>
         </div>
       </div>
     </div>
@@ -569,8 +570,14 @@
         <div class="tb-stat"><div class="k">Channels</div><div class="v" id="au-ch">—</div></div>
       </div>
       <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Input level</span><span class="tb-meter"><i id="au-inbar"></i></span><span class="val" id="au-inpct">0</span></div>
-      <canvas class="tb-scope" id="au-scope" style="margin-top:10px"></canvas>
-      <canvas class="tb-scope" id="au-spec" style="margin-top:8px;height:100px"></canvas>
+      <div class="tb-scopewrap" style="margin-top:10px">
+        <canvas class="tb-scope" id="au-scope"></canvas>
+        <span class="tb-scopeidle">Waveform &mdash; starts when the microphone does</span>
+      </div>
+      <div class="tb-scopewrap" style="margin-top:8px">
+        <canvas class="tb-scope" id="au-spec" style="height:100px"></canvas>
+        <span class="tb-scopeidle">Spectrum</span>
+      </div>
       <div id="au-verdict" style="margin-top:14px"></div>
     </div>
 
@@ -606,18 +613,18 @@
         <input type="file" id="mu-file" accept="audio/*" hidden>
       </div>
 
-      <div id="mu-controls" hidden>
+      <div id="mu-controls">
         <div class="tb-bar" style="margin-top:12px">
           <button class="tb-btn pri" id="mu-play">Play</button>
-          <span class="tb-lab" id="mu-name" style="text-transform:none;letter-spacing:0"></span>
+          <span class="tb-lab" id="mu-name" style="text-transform:none;letter-spacing:0">No track loaded &mdash; press Play to pick one</span>
           <span class="tb-lab" id="mu-time" style="margin-left:auto">0:00 / 0:00</span>
         </div>
-        <input type="range" id="mu-seek" min="0" max="1000" value="0" style="width:100%;margin-top:10px">
+        <input type="range" id="mu-seek" min="0" max="1000" value="0" style="width:100%;margin-top:10px" disabled>
         <div class="tb-bar" style="margin-top:10px">
-          <button class="tb-btn on" data-mupan="0">Both cups</button>
-          <button class="tb-btn" data-mupan="-1">Left only</button>
-          <button class="tb-btn" data-mupan="1">Right only</button>
-          <button class="tb-btn" id="mu-loop">Loop: off</button>
+          <button class="tb-btn on" data-mupan="0" disabled>Both cups</button>
+          <button class="tb-btn" data-mupan="-1" disabled>Left only</button>
+          <button class="tb-btn" data-mupan="1" disabled>Right only</button>
+          <button class="tb-btn" id="mu-loop" disabled>Loop: off</button>
         </div>
         <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Music L</span><span class="tb-meter"><i id="mu-l"></i></span></div>
         <div class="tb-meterrow"><span class="lbl">Music R</span><span class="tb-meter"><i id="mu-r"></i></span></div>
@@ -625,7 +632,7 @@
 
       <h3 class="tb-subhead">Ten tracks and what each one catches</h3>
       <ol class="tb-tracks" id="mu-list"></ol>
-      <p class="tb-note">These are a reference list, not files &mdash; the recordings belong to the artists and labels who made them, so the site does not host them and never will. Play them from wherever you already listen. Streaming through another app plays to your ears but not to this page: a browser cannot hear your system audio, so the meters above only move for a file you load here.</p>
+      <p class="tb-note">A reference list, not files: the recordings belong to the artists and labels who made them, so the site does not host them. Play them from wherever you listen. The meters above only move for a file you load here &mdash; a browser cannot hear your system audio.</p>
     </div>
 
 <div class="tb-panel">
@@ -1059,7 +1066,7 @@
           </div>
         </div>
         <div class="tb-glinfo" id="st-glinfo"></div>
-        <p class="tb-note">The picture is deliberately meaningless &mdash; an interference pattern recomputed for every pixel, every frame, purely to keep the graphics chip busy. What matters is that it keeps moving. If it stutters, tears, or freezes while the elapsed counter keeps climbing, the graphics chip is unstable under load. Raise <b>Graphics load</b> if a machine sails through: a discrete card will finish the light setting without spinning a fan.</p>
+        <p class="tb-note">The picture is meaningless on purpose &mdash; an interference pattern recomputed for every pixel, every frame, to keep the graphics chip busy. What matters is that it keeps moving. Stutter, tearing or a freeze while the clock keeps climbing means the chip is unstable under load. Raise <b>Graphics load</b> if a machine sails through.</p>
       </div>
       <div class="tb-panel">
         <h2 class="tb-ptitle">How to read it<span class="tb-rule"></span></h2>

@@ -62,9 +62,22 @@ console.log('\n2. ten tracks, each saying what it catches');
   kinds.size >= 8 ? pass(kinds.size + ' distinct things covered') : fail('only ' + kinds.size + ' distinct cues — the list is repeating itself');
 }
 
-console.log('\n3. the player stays hidden until a file is loaded');
-(await page.evaluate(() => document.querySelector('#mu-controls').hidden))
-  ? pass('controls hidden') : fail('controls showing with nothing loaded');
+console.log('\n3. the transport is visible but inert before a track is loaded');
+{
+  /* It used to be hidden entirely, and the panel read as having no player at
+     all — the first thing anyone said about it was "there is no play button". */
+  const st = await page.evaluate(() => ({
+    visible: !document.querySelector('#mu-controls').hidden,
+    disabled: [...document.querySelectorAll('#mu-controls button, #mu-controls input')]
+      .filter(n => n.id !== 'mu-play').every(n => n.disabled),
+    playEnabled: !document.querySelector('#mu-play').disabled,
+    hint: document.querySelector('#mu-name').textContent
+  }));
+  st.visible ? pass('transport is on screen') : fail('transport hidden — nobody will find it');
+  st.disabled ? pass('seek, panning and loop are inert') : fail('controls live with nothing loaded');
+  st.playEnabled ? pass('Play stays usable — it opens the file picker') : fail('Play was disabled, so there is no way in');
+  /track/i.test(st.hint) ? pass('says what to do: "' + st.hint + '"') : fail('no hint: ' + st.hint);
+}
 
 console.log('\n4. a local file plays through the meters');
 await page.setInputFiles('#mu-file', { name: 'bench-tone.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) });

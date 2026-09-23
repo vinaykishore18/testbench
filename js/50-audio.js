@@ -51,7 +51,11 @@ function fill(sel, list, word) {
 }
 
 /* ---------------- microphone ---------------- */
+function scopesLive(on) {
+  $$(".tb-scopewrap").forEach(function (n) { n.classList.toggle("live", !!on); });
+}
 function stopMic() {
+  scopesLive(false);
   if (raf) { cancelAnimationFrame(raf); raf = null; }
   if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
   if (micNode) { try { micNode.disconnect(); } catch (e) {} }
@@ -68,6 +72,7 @@ function startMic() {
   var c = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 } };
   if (id && id.length > 4) c.audio.deviceId = { exact: id };
   navigator.mediaDevices.getUserMedia(c).then(function (s) {
+    scopesLive(true);
     micStream = s;
     var a = ctx();
     micNode = a.createMediaStreamSource(s);
@@ -151,9 +156,9 @@ function loop() {
 
   var d = fit(scope), w = d[0], h = d[1];
   sctx.clearRect(0, 0, w, h);
-  sctx.strokeStyle = "#191E26"; sctx.lineWidth = 1;
+  sctx.strokeStyle = TB.paint("line-soft"); sctx.lineWidth = 1;
   sctx.beginPath(); sctx.moveTo(0, h / 2); sctx.lineTo(w, h / 2); sctx.stroke();
-  sctx.strokeStyle = peak > 0.985 ? "#FF2D46" : "#22E07B";
+  sctx.strokeStyle = peak > 0.985 ? TB.paint("red") : TB.paint("pass");
   sctx.lineWidth = 1.6; sctx.beginPath();
   for (var x = 0; x < w; x++) {
     var sv = buf[Math.floor(x / w * buf.length)];
@@ -171,7 +176,7 @@ function loop() {
     var hi = Math.max(lo + 1, Math.floor(Math.pow((b + 1) / bars, 2) * freqBuf.length));
     var m = 0; for (var k = lo; k < hi; k++) if (freqBuf[k] > m) m = freqBuf[k];
     var bh = (m / 255) * (h2 - 4);
-    pctx.fillStyle = m > 232 ? "#FFC53D" : "#FF2D46";
+    pctx.fillStyle = m > 232 ? TB.paint("warn") : TB.paint("red");
     pctx.fillRect(b * (w2 / bars) + 1, h2 - bh, (w2 / bars) - 2, bh);
   }
   if (frames % 12 === 0) micVerdict();
@@ -506,7 +511,10 @@ var TRACKS = [
     objURL = URL.createObjectURL(file);
     audioEl2.src = objURL;
     $("#mu-name").textContent = file.name;
-    $("#mu-controls").hidden = false;
+    /* The transport is visible from the start — hiding it until a file was
+       loaded made the panel look like it had no player at all. It is simply
+       inert until there is something to play. */
+    $$("#mu-controls button, #mu-controls input").forEach(function (n) { n.disabled = false; });
     drop.classList.add("loaded");
     stopTone();
     graph();

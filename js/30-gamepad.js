@@ -316,22 +316,22 @@ function drawStick(blk, x, y, pressed) {
   var ang = Math.atan2(y, x), mag = Math.min(1, Math.sqrt(x * x + y * y));
   var bi = Math.floor(((ang + Math.PI) / (Math.PI * 2)) * blk.trace.length) % blk.trace.length;
   if (mag > blk.trace[bi]) blk.trace[bi] = mag;
-  g.strokeStyle = "#28333A"; g.lineWidth = 1;
+  g.strokeStyle = TB.paint("dev-rim"); g.lineWidth = 1;
   g.beginPath(); g.arc(cx, cy, R2, 0, 7); g.stroke();
   g.beginPath(); g.arc(cx, cy, R2 * 0.5, 0, 7); g.stroke();
   g.beginPath(); g.moveTo(cx - R2, cy); g.lineTo(cx + R2, cy); g.moveTo(cx, cy - R2); g.lineTo(cx, cy + R2); g.stroke();
-  g.strokeStyle = "rgba(53,195,212,.85)"; g.lineWidth = 1.4; g.beginPath();
+  g.strokeStyle = TB.paint("dev-tip"); g.lineWidth = 1.4; g.beginPath();
   for (var i = 0; i < blk.trace.length; i++) {
     var a = (i / blk.trace.length) * Math.PI * 2 - Math.PI, r = blk.trace[i] * R2;
     var px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
     if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
   }
   g.closePath(); g.stroke();
-  g.fillStyle = "rgba(63,208,126,.16)"; g.beginPath(); g.arc(cx, cy, R2 * 0.08, 0, 7); g.fill();
+  g.fillStyle = TB.paint("pass-t16"); g.beginPath(); g.arc(cx, cy, R2 * 0.08, 0, 7); g.fill();
   var ddx = cx + x * R2, ddy = cy + y * R2;
-  g.fillStyle = pressed ? "#F5A524" : "#3FD07E";
+  g.fillStyle = pressed ? TB.paint("warn") : TB.paint("pass");
   g.beginPath(); g.arc(ddx, ddy, 6, 0, 7); g.fill();
-  g.strokeStyle = "rgba(63,208,126,.35)"; g.beginPath(); g.moveTo(cx, cy); g.lineTo(ddx, ddy); g.stroke();
+  g.strokeStyle = TB.paint("pass-l40"); g.beginPath(); g.moveTo(cx, cy); g.lineTo(ddx, ddy); g.stroke();
   blk.read.textContent = "X " + x.toFixed(3) + "   Y " + y.toFixed(3) + "   mag " + (mag * 100).toFixed(1) + "%";
 
   /* return-to-centre */
