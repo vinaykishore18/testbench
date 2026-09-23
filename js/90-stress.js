@@ -42,58 +42,132 @@ function stopCPU() {
   workers = [];
 }
 
-/* ---------------- GPU load ---------------- */
-var VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}";
-var FS = [
-  "precision highp float;",
-  "uniform float t;",
-  "uniform vec2 r;",
-  "void main(){",
-  "  vec2 uv=(gl_FragCoord.xy-0.5*r)/r.y;",
-  "  vec3 c=vec3(0.0);",
-  "  float a=0.0;",
-  "  for(int i=0;i<120;i++){",
-  "    float f=float(i);",
-  "    a+=sin(uv.x*f*0.35+t)*cos(uv.y*f*0.31-t*0.7)/(f+1.0);",
-  "    c+=vec3(abs(a))*0.012;",
-  "  }",
-  "  gl_FragColor=vec4(c.r*1.4,c.g*0.25,c.b*0.35+abs(a)*0.2,1.0);",
-  "}"
-].join("\n");
+/* ---------------- GPU load ----------------
 
-function startGPU() {
+   What the picture actually is: one triangle covering the whole viewport, and
+   for every pixel in it a loop of sines and cosines accumulated into an
+   interference pattern, tinted red. The image means nothing. It is a way to
+   give the graphics chip a large, unavoidable amount of floating-point work
+   per pixel per frame, and to make a stall visible — if the maths stops, the
+   picture stops, and you can see that from across the room.
+
+   The load is adjustable because a fixed one is either too light or too heavy
+   depending on the machine. 640x360 at 120 iterations is about 28 million
+   sine-cosine pairs a frame, which a modern discrete card will finish without
+   raising a fan; the higher levels are what make one work. The iteration count
+   has to be baked into the shader source rather than passed as a uniform,
+   because GLSL ES 1.0 requires loop bounds to be compile-time constants, so
+   changing level recompiles the program. */
+var GPU_LEVELS = {
+  light:  { w: 640,  h: 360,  it: 60,  label: "640×360" },
+  normal: { w: 1280, h: 720,  it: 120, label: "1280×720" },
+  heavy:  { w: 1920, h: 1080, it: 220, label: "1920×1080" },
+  max:    { w: 2560, h: 1440, it: 400, label: "2560×1440" }
+};
+var glLevel = "normal", glW = 1280, glH = 720, glIter = 120;
+
+var VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}";
+function fsSource(iter) {
+  return [
+    "precision highp float;",
+    "uniform float t;",
+    "uniform vec2 r;",
+    "void main(){",
+    "  vec2 uv=(gl_FragCoord.xy-0.5*r)/r.y;",
+    "  vec3 c=vec3(0.0);",
+    "  float a=0.0;",
+    "  for(int i=0;i<" + iter + ";i++){",
+    "    float f=float(i);",
+    "    a+=sin(uv.x*f*0.35+t)*cos(uv.y*f*0.31-t*0.7)/(f+1.0);",
+    "    c+=vec3(abs(a));",
+    "  }",
+    /* Tone-map rather than scale by a constant. The accumulator is not linear
+       in the iteration count — the later terms largely cancel each other — so a
+       fixed divisor that looked right at 120 iterations blew the picture out to
+       flat white at 60. x/(x+k) is bounded whatever comes in, which makes the
+       image look the same at every load level. */
+    "  c/=float(" + iter + ");",
+    "  vec3 m=c/(c+vec3(0.5));",
+    "  float g=abs(a); g=g/(g+1.0);",
+    "  gl_FragColor=vec4(m.r*1.25,m.g*0.22,m.b*0.32+g*0.18,1.0);",
+    "}"
+  ].join("\n");
+}
+
+/* One context for the life of the page. Browsers cap how many live WebGL
+   contexts a page may hold and drop the oldest past the limit, so making a
+   fresh one per run is a slow way to break the test. */
+function ensureGL() {
+  if (gl) return true;
   var cv = $("#st-gl");
-  cv.width = 640; cv.height = 360;
   gl = cv.getContext("webgl") || cv.getContext("experimental-webgl");
   if (!gl) return false;
-  function sh(type, src) {
-    var s = gl.createShader(type);
-    gl.shaderSource(s, src); gl.compileShader(s);
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) return null;
-    return s;
-  }
-  var v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, FS);
-  if (!v || !f) { gl = null; return false; }
-  glProg = gl.createProgram();
-  gl.attachShader(glProg, v); gl.attachShader(glProg, f); gl.linkProgram(glProg);
-  if (!gl.getProgramParameter(glProg, gl.LINK_STATUS)) { gl = null; return false; }
-  gl.useProgram(glProg);
   var buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  return true;
+}
+function compile(iter) {
+  function sh(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { gl.deleteShader(s); return null; }
+    return s;
+  }
+  var v = sh(gl.VERTEX_SHADER, VS), f = sh(gl.FRAGMENT_SHADER, fsSource(iter));
+  if (!v || !f) return false;
+  var prog = gl.createProgram();
+  gl.attachShader(prog, v); gl.attachShader(prog, f); gl.linkProgram(prog);
+  gl.deleteShader(v); gl.deleteShader(f);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl.deleteProgram(prog); return false; }
+  if (glProg) gl.deleteProgram(glProg);
+  glProg = prog;
+  gl.useProgram(glProg);
   var loc = gl.getAttribLocation(glProg, "p");
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  glStart = performance.now();
+  uT = gl.getUniformLocation(glProg, "t");
+  uR = gl.getUniformLocation(glProg, "r");
   return true;
 }
+var uT = null, uR = null;
+
+function applyLevel(name) {
+  var L = GPU_LEVELS[name] || GPU_LEVELS.normal;
+  glLevel = name; glW = L.w; glH = L.h; glIter = L.it;
+  var cv = $("#st-gl");
+  cv.width = glW; cv.height = glH;
+  if (gl && !compile(glIter)) { toast("Shader would not build", "Dropping the graphics load to the light setting.", "bad"); if (name !== "light") applyLevel("light"); return; }
+  glInfo();
+}
+function glInfo(fps) {
+  var n = $("#st-glinfo"); if (!n) return;
+  var L = GPU_LEVELS[glLevel];
+  var px = glW * glH * glIter;
+  var txt = L.label + " · " + glIter + " iterations · " + (px / 1e6).toFixed(0) + "M sin-cos per frame";
+  if (fps) txt += " · " + (px * fps / 1e9).toFixed(1) + "G per second";
+  n.textContent = txt;
+}
+
+function startGPU() {
+  if (!ensureGL()) return false;
+  if (!compile(glIter)) { return false; }
+  glStart = performance.now();
+  var idle = $("#st-glidle"); if (idle) idle.hidden = true;
+  return true;
+}
+function stopGPU() {
+  var idle = $("#st-glidle"); if (idle) idle.hidden = false;
+  if (gl) { gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT); }
+}
 function drawGPU() {
-  if (!gl) return;
-  gl.viewport(0, 0, 640, 360);
-  gl.uniform1f(gl.getUniformLocation(glProg, "t"), (performance.now() - glStart) / 1000);
-  gl.uniform2f(gl.getUniformLocation(glProg, "r"), 640, 360);
+  if (!gl || !glProg) return;
+  gl.viewport(0, 0, glW, glH);
+  gl.uniform1f(uT, (performance.now() - glStart) / 1000);
+  gl.uniform2f(uR, glW, glH);
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 }
+
 
 /* ---------------- graph ---------------- */
 function drawGraph() {
@@ -155,6 +229,7 @@ function second() {
   samples.push(fps);
   if (samples.length > 600) samples.shift();
   $("#st-fps").textContent = fps;
+  glInfo(fps);
   $("#st-fps").className = "v " + (fps >= 50 ? "pass" : fps >= 25 ? "warn" : "fail");
   var first = samples.slice(0, 5);
   if (first.length) {
@@ -206,7 +281,7 @@ function stop(finished) {
   stopCPU();
   if (raf) { cancelAnimationFrame(raf); raf = null; }
   if (timer) { clearInterval(timer); timer = null; }
-  gl = null;
+  stopGPU();
   $("#st-run").textContent = "Start stress test";
   $("#st-run").classList.add("pri"); $("#st-run").classList.remove("danger");
   score();
@@ -214,6 +289,9 @@ function stop(finished) {
   if (finished) toast("Stress test finished", "Check the graph — a flat line is a healthy machine.", "ok");
 }
 $("#st-run").onclick = function () { running ? stop(false) : start(); };
+var glSel = $("#st-gpu");
+if (glSel) glSel.onchange = function () { applyLevel(this.value); };
+applyLevel(glSel ? glSel.value : "normal");
 TB.onLeave("stress", function () { stop(false); });
 TB.onEnter("stress", function () { drawGraph(); });
 verdict($("#st-verdict"), null, [], "Pick a duration and press start. Keep this tab in front — a background tab is throttled by the browser and the numbers mean nothing.");

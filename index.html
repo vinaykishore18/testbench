@@ -144,6 +144,8 @@
         <button class="tb-btn" id="kb-reset">Reset</button>
         <label class="tb-lab">Size <input type="range" id="kb-size" min="26" max="62" value="46"></label>
       </div>
+      <div class="tb-locks" id="kb-locks"></div>
+      <p class="tb-note" id="kb-locknote">Caps, Num and Scroll Lock cannot be held inside the page &mdash; the keyboard and Windows flip them before any website sees the key, and the browser&rsquo;s key-hold deliberately leaves these three out. So the page grades them on what actually matters: the lock has to <b>change state</b>, not just send a keypress. A lock key that reports a press but never moves the light is dead, and that fault is invisible on sites that only watch for the press. Anything left on is called out in the verdict so the next unit does not start with Caps Lock stuck on.</p>
       <div class="tb-idbar" id="kb-id"></div>
       <p class="tb-note" id="kb-lockstate">Capture mode needs Chrome, Edge or Opera for the full key hold. In Firefox and Safari the page still reads every key, but the operating system may take Windows/Command and some F-keys.</p>
 
@@ -593,7 +595,40 @@
       <p class="tb-note" id="au-sweeplbl">Left and right tell you a dead earcup instantly. The sweep finds blown drivers and rattles — listen for a gap, a buzz or a sudden drop.</p>
     </div>
 
-    <div class="tb-panel">
+        <div class="tb-panel">
+      <h2 class="tb-ptitle">Music check<span class="tb-rule"></span></h2>
+      <p class="tb-sub">Tones find a dead driver. Music finds everything else, and finds it fast &mdash; someone who knows a track hears that something is wrong in about three seconds, long before they could say what. Below is what to play and what each one exposes. Drop in a file you own and it runs through the same meters as the test tones.</p>
+
+      <div class="tb-drop" id="mu-drop">
+        <b>Drop a track here</b>
+        <span>or <button class="tb-btn" id="mu-pick" style="min-height:32px;padding:6px 14px">choose a file</button></span>
+        <small>MP3, FLAC, WAV or M4A. The browser reads it straight off your disk &mdash; nothing is uploaded and nothing leaves this machine.</small>
+        <input type="file" id="mu-file" accept="audio/*" hidden>
+      </div>
+
+      <div id="mu-controls" hidden>
+        <div class="tb-bar" style="margin-top:12px">
+          <button class="tb-btn pri" id="mu-play">Play</button>
+          <span class="tb-lab" id="mu-name" style="text-transform:none;letter-spacing:0"></span>
+          <span class="tb-lab" id="mu-time" style="margin-left:auto">0:00 / 0:00</span>
+        </div>
+        <input type="range" id="mu-seek" min="0" max="1000" value="0" style="width:100%;margin-top:10px">
+        <div class="tb-bar" style="margin-top:10px">
+          <button class="tb-btn on" data-mupan="0">Both cups</button>
+          <button class="tb-btn" data-mupan="-1">Left only</button>
+          <button class="tb-btn" data-mupan="1">Right only</button>
+          <button class="tb-btn" id="mu-loop">Loop: off</button>
+        </div>
+        <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Music L</span><span class="tb-meter"><i id="mu-l"></i></span></div>
+        <div class="tb-meterrow"><span class="lbl">Music R</span><span class="tb-meter"><i id="mu-r"></i></span></div>
+      </div>
+
+      <h3 class="tb-subhead">Ten tracks and what each one catches</h3>
+      <ol class="tb-tracks" id="mu-list"></ol>
+      <p class="tb-note">These are a reference list, not files &mdash; the recordings belong to the artists and labels who made them, so the site does not host them and never will. Play them from wherever you already listen. Streaming through another app plays to your ears but not to this page: a browser cannot hear your system audio, so the meters above only move for a file you load here.</p>
+    </div>
+
+<div class="tb-panel">
       <h2 class="tb-ptitle">Loopback — the whole headset at once<span class="tb-rule"></span></h2>
       <p class="tb-sub">Plays a tone out of the headset while listening on its microphone. If the tone comes back, both halves of the headset work and the cable is good. Do it with the headset on the bench, not on your head.</p>
       <div class="tb-bar">
@@ -993,6 +1028,14 @@
         <label class="tb-lab">Duration
           <select id="st-dur"><option value="30">30 s</option><option value="60" selected>1 min</option><option value="180">3 min</option><option value="600">10 min</option></select>
         </label>
+        <label class="tb-lab">Graphics load
+          <select id="st-gpu">
+            <option value="light">Light &mdash; 640&times;360</option>
+            <option value="normal" selected>Normal &mdash; 1280&times;720</option>
+            <option value="heavy">Heavy &mdash; 1920&times;1080</option>
+            <option value="max">Punishing &mdash; 2560&times;1440</option>
+          </select>
+        </label>
       </div>
       <div class="tb-stats" style="margin-top:14px">
         <div class="tb-stat"><div class="k">Elapsed</div><div class="v" id="st-time">0<small>s</small></div></div>
@@ -1008,8 +1051,15 @@
     <div class="tb-grid tb-cols2">
       <div class="tb-panel">
         <h2 class="tb-ptitle">GPU load<span class="tb-rule"></span></h2>
-        <canvas id="st-gl" style="width:100%;aspect-ratio:16/9;border:1px solid var(--line);border-radius:10px;background:var(--bg);display:block"></canvas>
-        <p class="tb-note">A shader running flat out. If this stutters, tears or the image freezes while the counter keeps going, the graphics chip is unstable under load.</p>
+        <div class="tb-glwrap">
+          <canvas id="st-gl"></canvas>
+          <div class="tb-glidle" id="st-glidle">
+            <b>Idle</b>
+            <span>The shader draws here while the test runs.</span>
+          </div>
+        </div>
+        <div class="tb-glinfo" id="st-glinfo"></div>
+        <p class="tb-note">The picture is deliberately meaningless &mdash; an interference pattern recomputed for every pixel, every frame, purely to keep the graphics chip busy. What matters is that it keeps moving. If it stutters, tears, or freezes while the elapsed counter keeps climbing, the graphics chip is unstable under load. Raise <b>Graphics load</b> if a machine sails through: a discrete card will finish the light setting without spinning a fan.</p>
       </div>
       <div class="tb-panel">
         <h2 class="tb-ptitle">How to read it<span class="tb-rule"></span></h2>

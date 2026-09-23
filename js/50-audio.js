@@ -400,6 +400,180 @@ $("#au-vol").oninput = function () {
   if (gain && ac) { try { gain.gain.setTargetAtTime(level(), ac.currentTime, 0.02); } catch (e) { gain.gain.value = level(); } }
 };
 
+/* ---------------- music check ----------------
+
+   Tones find a dead driver. Music finds everything else, and finds it fast,
+   because a person who knows a track hears something wrong in about three
+   seconds without being able to say why. That is worth more on a bench than
+   any meter.
+
+   The tracks are a reference list, not files. This page ships no music and
+   never will: those recordings belong to the people who made them, and putting
+   them on a public site would be distributing them. The list says which track
+   exposes which fault; play it from wherever you already listen.
+
+   A file you own is different, and that is what the player is for. Drop it in
+   and it runs through the same graph as the test tones, so you get the meters
+   and the left/right isolation as well as the sound. It never leaves the
+   machine — the browser reads it straight off the disk. */
+var TRACKS = [
+  { t: "Animals", a: "Martin Garrix", k: "Sub-bass and kick weight",
+    w: "The drop is built on a low synth kick. A healthy driver gives a round thump you feel in the cup; one that is blown or has come unglued turns the same note into a papery rattle." },
+  { t: "Blinding Lights", a: "The Weeknd", k: "Balance, top to bottom",
+    w: "Synth bass, bright leads and a clear vocal all at once. If the treble is harsh or the bass swamps the voice, this is where a headset shows it." },
+  { t: "Believer", a: "Imagine Dragons", k: "Transients and midrange punch",
+    w: "Hard percussive stabs with space around them. A damaged driver smears the hit into a thud instead of a snap." },
+  { t: "bad guy", a: "Billie Eilish", k: "Deep bass in an empty mix",
+    w: "So sparse that any buzz is completely naked. Small drivers reproduce almost none of the low line — that is the size of the headphone, not a fault." },
+  { t: "Bohemian Rhapsody", a: "Queen", k: "Dynamic range and layering",
+    w: "Goes from a single voice to a wall of them. Quiet passages should stay clean and loud ones should not collapse into mush." },
+  { t: "Hotel California (Hell Freezes Over)", a: "Eagles", k: "Detail and depth",
+    w: "Live acoustic recording where strings, percussion and crowd sit at different distances. On a faulty cup the image flattens into one plane." },
+  { t: "Money", a: "Pink Floyd", k: "Stereo imaging",
+    w: "The intro loop walks deliberately around your head. The fastest way to catch a channel wired backwards or one side running weak." },
+  { t: "Chandelier", a: "Sia", k: "Sibilance and treble strain",
+    w: "A pushed vocal sitting right at the edge. Harshness or a hiss riding the S sounds points at a strained or torn diaphragm." },
+  { t: "Why So Serious?", a: "Hans Zimmer", k: "Sustained sub-bass",
+    w: "Holds a very low note for far longer than music normally does. If a driver is going to buzz, it buzzes here." },
+  { t: "Royals", a: "Lorde", k: "Clean low end and placement",
+    w: "Almost nothing in the mix to hide behind. Snaps should be tight and dead centre; the bass should be deep with no overhang after it stops." }
+];
+
+(function () {
+  var audioEl2 = new Audio();
+  audioEl2.preload = "metadata";
+  var srcNode = null, mGain = null, mPan = null, mRaf = null, objURL = null;
+  var listEl = $("#mu-list"), drop = $("#mu-drop");
+  if (!listEl || !drop) return;
+
+  /* ---------- the reference list ---------- */
+  TRACKS.forEach(function (tr, i) {
+    var li = el("li", "tb-track");
+    li.appendChild(el("span", "n", String(i + 1).padStart(2, "0")));
+    var body = el("div", "body");
+    var head = el("div", "head");
+    head.appendChild(el("b", null, tr.t));
+    head.appendChild(el("span", "by", tr.a));
+    body.appendChild(head);
+    body.appendChild(el("span", "k", tr.k));
+    body.appendChild(el("p", null, tr.w));
+    li.appendChild(body);
+    listEl.appendChild(li);
+  });
+
+  /* ---------- the player ---------- */
+  function graph() {
+    var a = ctx();
+    if (!srcNode) {
+      /* createMediaElementSource may only be called once for an element, so the
+         graph is built on first play and kept for the life of the page. */
+      srcNode = a.createMediaElementSource(audioEl2);
+      mGain = a.createGain();
+      mPan = a.createStereoPanner ? a.createStereoPanner() : null;
+      var split = a.createChannelSplitter(2);
+      var aL = a.createAnalyser(), aR = a.createAnalyser();
+      aL.fftSize = 512; aR.fftSize = 512;
+      srcNode.connect(mGain);
+      var tail = mGain;
+      if (mPan) { mGain.connect(mPan); tail = mPan; }
+      tail.connect(a.destination);
+      tail.connect(split);
+      split.connect(aL, 0); split.connect(aR, 1);
+      meter(aL, aR);
+    }
+    mGain.gain.value = level() * 2.6;   /* music is mastered far below a test tone */
+    return a;
+  }
+  function meter(aL, aR) {
+    var bl = new Uint8Array(aL.frequencyBinCount), br = new Uint8Array(aR.frequencyBinCount);
+    (function m() {
+      mRaf = requestAnimationFrame(m);
+      if (audioEl2.paused) { bar("#mu-l", 0); bar("#mu-r", 0); return; }
+      aL.getByteFrequencyData(bl); aR.getByteFrequencyData(br);
+      function pk(x) { var v = 0; for (var i = 0; i < x.length; i++) if (x[i] > v) v = x[i]; return v / 255; }
+      bar("#mu-l", pk(bl)); bar("#mu-r", pk(br));
+    })();
+  }
+  function bar(sel, v) {
+    var n = $(sel); if (!n) return;
+    n.style.width = (v * 100) + "%";
+    n.className = v > 0.02 ? "pass" : "";
+  }
+
+  function load(file) {
+    if (!file) return;
+    if (objURL) URL.revokeObjectURL(objURL);
+    objURL = URL.createObjectURL(file);
+    audioEl2.src = objURL;
+    $("#mu-name").textContent = file.name;
+    $("#mu-controls").hidden = false;
+    drop.classList.add("loaded");
+    stopTone();
+    graph();
+    audioEl2.play().then(paintPlay, function () { paintPlay(); });
+  }
+  function paintPlay() {
+    $("#mu-play").textContent = audioEl2.paused ? "Play" : "Pause";
+    $("#mu-play").classList.toggle("on", !audioEl2.paused);
+  }
+  audioEl2.addEventListener("play", paintPlay);
+  audioEl2.addEventListener("pause", paintPlay);
+  audioEl2.addEventListener("ended", paintPlay);
+  audioEl2.addEventListener("timeupdate", function () {
+    if (!audioEl2.duration) return;
+    $("#mu-seek").value = String(audioEl2.currentTime / audioEl2.duration * 1000);
+    $("#mu-time").textContent = clock(audioEl2.currentTime) + " / " + clock(audioEl2.duration);
+  });
+  function clock(s) {
+    if (!isFinite(s)) return "0:00";
+    var m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  $("#mu-pick").onclick = function () { $("#mu-file").click(); };
+  $("#mu-file").onchange = function () { load(this.files && this.files[0]); };
+  drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
+  drop.addEventListener("drop", function (e) {
+    e.preventDefault(); drop.classList.remove("over");
+    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f && /^audio\//.test(f.type || "")) load(f);
+    else toast("Not an audio file", "Drop an MP3, FLAC, WAV or M4A.", "bad");
+  });
+
+  $("#mu-play").onclick = function () {
+    if (!audioEl2.src) { $("#mu-file").click(); return; }
+    if (audioEl2.paused) { stopTone(); graph(); audioEl2.play().catch(function () {}); }
+    else audioEl2.pause();
+  };
+  $("#mu-seek").oninput = function () {
+    if (audioEl2.duration) audioEl2.currentTime = this.value / 1000 * audioEl2.duration;
+  };
+  $("#mu-loop").onclick = function () {
+    audioEl2.loop = !audioEl2.loop;
+    this.classList.toggle("on", audioEl2.loop);
+    this.textContent = "Loop: " + (audioEl2.loop ? "on" : "off");
+  };
+  $$("[data-mupan]").forEach(function (b) {
+    b.onclick = function () {
+      var v = parseFloat(b.dataset.mupan);
+      $$("[data-mupan]").forEach(function (x) { x.classList.toggle("on", x === b); });
+      if (mPan) mPan.pan.setTargetAtTime(v, ac ? ac.currentTime : 0, 0.02);
+      else toast("No channel split here", "This browser cannot pan, so both cups play together.", null);
+    };
+  });
+
+  function stopMusic() {
+    audioEl2.pause();
+    if (mRaf) { cancelAnimationFrame(mRaf); mRaf = null; }
+    bar("#mu-l", 0); bar("#mu-r", 0);
+  }
+  TB.onLeave("audio", stopMusic);
+  window.addEventListener("pagehide", stopMusic);
+  /* a test tone and a track should never fight each other */
+  $$("[data-tone]").forEach(function (b) { b.addEventListener("click", function () { audioEl2.pause(); }); });
+})();
+
 /* ---------------- loopback ---------------- */
 $("#lb-run").onclick = function () {
   if (!ana) return;

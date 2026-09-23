@@ -621,3 +621,69 @@ body.tb-locked .tb-app{padding-top:44px}
 [hidden]{display:none !important}
 
 #run-start{white-space:nowrap}
+
+/* ---------- stress: the GPU load picture ---------- */
+.tb-glwrap{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.tb-glwrap canvas{display:block;width:100%;aspect-ratio:16/9;max-width:100%}
+.tb-glidle{
+  position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:repeating-linear-gradient(135deg,var(--bg) 0 9px,var(--bg-2) 9px 18px);
+  color:var(--ink-3);text-align:center;padding:16px;
+}
+.tb-glidle b{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2)}
+.tb-glidle span{font-size:13px;max-width:34ch}
+.tb-glinfo{margin-top:8px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+
+/* ---------- keyboard: lock key state ----------
+   Read at arm's length while a unit is in your hands, so the state word is as
+   large as the key name and the lit state is carried by fill, not just colour. */
+.tb-locks{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 4px}
+.tb-lockpill{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:8px 14px;border:1px solid var(--line);border-radius:999px;
+  background:var(--panel-2);transition:border-color .15s,background .15s;
+}
+.tb-lockpill i{
+  width:9px;height:9px;border-radius:50%;background:var(--line-soft);
+  border:1px solid var(--line);display:block;flex:0 0 9px;
+}
+.tb-lockpill b{font-family:var(--f-display);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.tb-lockpill small{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);font-weight:400}
+.tb-lockpill.on{border-color:var(--warn);background:var(--warn-glow)}
+.tb-lockpill.on i{background:var(--warn);border-color:var(--warn);box-shadow:0 0 10px var(--warn)}
+.tb-lockpill.on small{color:var(--warn)}
+.tb-lockpill.unknown{opacity:.55}
+
+/* ---------- audio: music check ---------- */
+.tb-subhead{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--ink-3);margin:22px 0 10px;font-weight:400;
+}
+.tb-drop{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  padding:26px 20px;text-align:center;
+  border:2px dashed var(--line);border-radius:12px;background:var(--bg-2);
+  transition:border-color .15s,background .15s;
+}
+.tb-drop.over{border-color:var(--red);background:var(--red-glow)}
+.tb-drop.loaded{border-style:solid;border-color:var(--line-soft);padding:16px 20px}
+.tb-drop b{font-family:var(--f-display);font-size:15px;letter-spacing:.02em}
+.tb-drop span{font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.tb-drop small{font-size:12px;color:var(--ink-3);max-width:58ch}
+
+.tb-tracks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;
+  background:var(--line-soft);border:1px solid var(--line-soft);border-radius:10px;overflow:hidden}
+.tb-track{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;
+  padding:13px 16px;background:var(--panel)}
+.tb-track .n{font-family:var(--f-mono);font-size:12px;color:var(--ink-3);padding-top:2px;font-variant-numeric:tabular-nums}
+.tb-track .head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.tb-track .head b{font-family:var(--f-display);font-size:14.5px;letter-spacing:.01em}
+.tb-track .by{font-size:12.5px;color:var(--ink-3)}
+.tb-track .k{display:inline-block;margin-top:5px;font-family:var(--f-mono);font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--red);
+  border:1px solid var(--red-dim);border-radius:999px;padding:2px 9px}
+.tb-track p{margin:7px 0 0;font-size:13px;color:var(--ink-2);max-width:74ch;line-height:1.55}
+@media (max-width:640px){
+  .tb-track{grid-template-columns:1fr;gap:4px}
+  .tb-track .n{display:none}
+}

@@ -98,7 +98,8 @@ var KB=(function(){
   var wrap=$("#kbwrap"), kb=null, keyEls={}, layout="ansi_full", layoutMap=null;
   var state=fresh();
   function fresh(){ var b=function(){return Object.create(null);};
-    return {down:b(),downAt:b(),lastUp:b(),tested:b(),chatter:b(),presses:0,chat:0,stuck:b(),nkro:0,fastest:null}; }
+    return {down:b(),downAt:b(),lastUp:b(),tested:b(),chatter:b(),presses:0,chat:0,stuck:b(),nkro:0,fastest:null,
+            lockNow:b(),lockBase:null,lockWorks:b(),lockPressed:b()}; }
 
   function build(){
     wrap.innerHTML=""; keyEls={};
@@ -172,6 +173,19 @@ var KB=(function(){
     if(sc){ score-=40; flags.push({level:"bad",tag:"stuck",text:"Stuck: "+Object.keys(state.stuck).map(nice).join(", ")+"."}); }
     if(total&&done<total){ var miss=total-done; score-=Math.min(30,miss*1.2); flags.push({level:"warn",tag:"untested",text:miss+" key"+(miss>1?"s":"")+" not pressed yet. A dead key looks exactly like an untested one."}); }
     else if(total) flags.push({level:"ok",tag:"coverage",text:"Every key in this layout responded."});
+    var deadLocks=[], onNow=[];
+    LOCKS.forEach(function(L){
+      if(state.lockPressed[L[0]]&&state.lockNow[L[0]]!==undefined&&!state.lockWorks[L[0]]) deadLocks.push(L[1]);
+      if(state.lockNow[L[0]]===true) onNow.push(L[1]);
+    });
+    if(deadLocks.length){
+      score-=18;
+      flags.push({level:"bad",tag:"lock keys",text:deadLocks.join(" and ")+" sent a keypress but the lock never changed state. The switch reports, the lock does not follow — that is a dead lock key, and it will not show up on a site that only watches for the keypress."});
+    } else {
+      var good=LOCKS.filter(function(L){ return state.lockWorks[L[0]]; }).map(function(L){ return L[1]; });
+      if(good.length) flags.push({level:"ok",tag:"lock keys",text:good.join(", ")+" toggled the lock properly."});
+    }
+    if(onNow.length) flags.push({level:"warn",tag:"left on",text:onNow.join(" and ")+" "+(onNow.length>1?"are":"is")+" still on. Press "+(onNow.length>1?"them":"it")+" again before you pack the unit, or the next test starts from the wrong state."});
     if(state.nkro>=6) flags.push({level:"ok",tag:"rollover",text:state.nkro+" keys registered at once — full n-key rollover territory."});
     else if(state.nkro>0) flags.push({level:"ok",tag:"rollover",text:"Best simultaneous press so far: "+state.nkro+" keys."});
     verdict($("#kb-verdict"),clamp(score,0,100),flags);
@@ -209,6 +223,75 @@ var KB=(function(){
   $("#kb-lock").onclick=function(){ locked?exit():enter(); };
   document.addEventListener("fullscreenchange",function(){ if(!document.fullscreenElement&&locked) setLocked(false); });
 
+  /* ---------- lock keys ----------
+
+     Caps Lock, Num Lock and Scroll Lock cannot be held inside the page. The
+     toggle happens in the keyboard firmware and the operating system before
+     any browser sees the key, so preventDefault does nothing, and the Keyboard
+     Lock API deliberately leaves these three out of the keys it will capture.
+     Fighting it is not an option.
+
+     What is an option is turning it into the better test. A lock key is only
+     working if pressing it actually flips the light — so read the state on
+     every event, and pass the key on the flip rather than on the keypress.
+     A Caps Lock that reports a keydown but never changes state is a dead key,
+     and that is a fault this page can now catch and hardwaretester cannot.
+
+     The other half is bench hygiene: say plainly which locks are on, and shout
+     if one is left on at the end. Testing the next unit with Caps Lock stuck
+     on wastes ten minutes before anyone works out why. */
+  var LOCKS = [["CapsLock","Caps"],["NumLock","Num"],["ScrollLock","Scroll"]];
+  function readLocks(e, pressedCode){
+    if(!e.getModifierState) return;
+    var changed=false;
+    LOCKS.forEach(function(L){
+      var on;
+      try{ on=e.getModifierState(L[0]); }catch(err){ return; }
+      if(on===undefined||on===null) return;
+      var was=state.lockNow[L[0]];
+      state.lockNow[L[0]]=on;
+      if(was!==undefined&&was!==on){
+        changed=true;
+        /* the flip belongs to whichever lock key was pressed just now */
+        if(pressedCode&&pressedCode===L[0]) state.lockWorks[L[0]]=true;
+      }
+      if(state.lockBase&&state.lockBase[L[0]]===undefined) state.lockBase[L[0]]=on;
+    });
+    if(state.lockBase===null){
+      state.lockBase=Object.create(null);
+      LOCKS.forEach(function(L){ state.lockBase[L[0]]=state.lockNow[L[0]]; });
+    }
+    if(changed||pressedCode) paintLocks();
+  }
+  function paintLocks(){
+    var box=$("#kb-locks"); if(!box) return;
+    if(box.childElementCount!==LOCKS.length){
+      box.textContent="";
+      LOCKS.forEach(function(L){
+        var pill=el("span","tb-lockpill");
+        pill.dataset.k=L[0];
+        pill.appendChild(el("i"));
+        pill.appendChild(el("b",null,L[1]));
+        pill.appendChild(el("small",null,"\u2014"));
+        box.appendChild(pill);
+      });
+    }
+    Array.prototype.forEach.call(box.children,function(pill){
+      var k=pill.dataset.k, on=state.lockNow[k];
+      pill.classList.toggle("on",on===true);
+      pill.classList.toggle("unknown",on===undefined);
+      var small=pill.querySelector("small");
+      small.textContent = on===undefined ? "not reported"
+        : (on?"ON":"off") + (state.lockWorks[k]?" \u00b7 toggles":"");
+    });
+  }
+
+  paintLocks();
+  /* A MouseEvent carries getModifierState as well, so clicking onto the page
+     gives a reading before a single key has been pressed. */
+  document.addEventListener("mousedown",function(e){ if(TB.view()==="keyboard") readLocks(e,null); },true);
+  TB.onEnter("keyboard",paintLocks);
+
   function isTyping(e){ var t=e.target; return t&&(t.tagName==="INPUT"||t.tagName==="SELECT"||t.tagName==="TEXTAREA"); }
   window.addEventListener("keydown",function(e){
     if(isTyping(e)) return;
@@ -231,6 +314,10 @@ var KB=(function(){
       if(gap<35){ state.chat++; state.chatter[code]=true; log("CHATTER "+nice(code),"bounced "+Math.round(gap)+" ms after release"); }
     }
     state.down[code]=true; state.downAt[code]=now; state.tested[code]=true; state.presses++;
+    if(/^(CapsLock|NumLock|ScrollLock)$/.test(code)) state.lockPressed[code]=true;
+    /* the modifier state on this event still reflects the value BEFORE the
+       toggle, so the flip is read on the matching keyup a moment later */
+    readLocks(e,null);
     var n=Object.keys(state.down).length; if(n>state.nkro) state.nkro=n;
     if(!keyEls[code]) log("EXTRA","code "+code+" · key “"+(e.key||"")+"” · keyCode "+e.keyCode+" — not on this layout");
     repaint(); stats();
@@ -243,6 +330,7 @@ var KB=(function(){
     var code=e.code||("Key_"+e.keyCode);
     delete state.down[code]; delete state.stuck[code];
     state.lastUp[code]=performance.now();
+    readLocks(e,code);   /* by keyup the lock has flipped, so this is where it is caught */
     repaint(); stats();
   },true);
   setInterval(function(){
