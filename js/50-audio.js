@@ -622,6 +622,66 @@ function paintBench() {
 }
 var audioEl2Pause = function () {};
 
+/* ---------- your own library ----------
+
+   The site cannot ship those recordings. It can keep yours.
+
+   Add a track once and it is stored in this browser's own database on this
+   machine, and it is still there tomorrow — the file never gets uploaded
+   anywhere, it is simply held locally the way a desktop player holds a
+   playlist. So "play Animals on the site" works: you add your copy once, and
+   from then on it is one click, on every visit, offline included.
+
+   IndexedDB rather than localStorage because these are whole audio files, and
+   localStorage is a few megabytes of text. Every call is wrapped: private
+   windows, blocked site data and a full disk all throw here, and none of them
+   should take the page down with them. */
+var DB_NAME = "testbench-music", DB_STORE = "tracks", dbP = null;
+
+function db() {
+  if (dbP) return dbP;
+  dbP = new Promise(function (res, rej) {
+    var rq;
+    try { rq = indexedDB.open(DB_NAME, 1); } catch (e) { rej(e); return; }
+    rq.onupgradeneeded = function () {
+      var d = rq.result;
+      if (!d.objectStoreNames.contains(DB_STORE)) d.createObjectStore(DB_STORE, { keyPath: "id" });
+    };
+    rq.onsuccess = function () { res(rq.result); };
+    rq.onerror = function () { rej(rq.error); };
+  });
+  return dbP;
+}
+function tx(mode) {
+  return db().then(function (d) { return d.transaction(DB_STORE, mode).objectStore(DB_STORE); });
+}
+function libAll() {
+  return tx("readonly").then(function (st) {
+    return new Promise(function (res, rej) {
+      var rq = st.getAll();
+      rq.onsuccess = function () { res(rq.result || []); };
+      rq.onerror = function () { rej(rq.error); };
+    });
+  }).catch(function () { return []; });
+}
+function libPut(rec) {
+  return tx("readwrite").then(function (st) {
+    return new Promise(function (res, rej) {
+      var rq = st.put(rec);
+      rq.onsuccess = function () { res(); };
+      rq.onerror = function () { rej(rq.error); };
+    });
+  });
+}
+function libDel(id) {
+  return tx("readwrite").then(function (st) {
+    return new Promise(function (res) { var rq = st.delete(id); rq.onsuccess = rq.onerror = function () { res(); }; });
+  }).catch(function () {});
+}
+function niceSize(n) {
+  return n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.round(n / 1024) + " KB";
+}
+
 (function () {
   var audioEl2 = new Audio();
   audioEl2.preload = "metadata";
@@ -629,6 +689,76 @@ var audioEl2Pause = function () {};
   var listEl = $("#mu-list"), drop = $("#mu-drop");
   if (!listEl || !drop) return;
   audioEl2Pause = function () { audioEl2.pause(); };
+  var libHost = $("#mu-lib"), libNote = $("#mu-libnote"), playingId = null;
+
+  function refreshLib() {
+    if (!libHost) return Promise.resolve([]);
+    return libAll().then(function (rows) {
+      rows.sort(function (a, b) { return a.added - b.added; });
+      libHost.textContent = "";
+      if (!rows.length) {
+        libNote.textContent = "Nothing saved yet. Add the tracks you test with once and they stay here \u2014 in this browser, on this machine \u2014 ready on every visit, offline included.";
+        return rows;
+      }
+      var total = 0;
+      rows.forEach(function (r) {
+        total += r.size;
+        var chip = el("div", "tb-libchip" + (r.id === playingId ? " on" : ""));
+        var b = el("button", "play", r.name);
+        b.type = "button";
+        b.title = niceSize(r.size);
+        b.onclick = function () { playSaved(r.id); };
+        var x = el("button", "kill", "\u00d7");
+        x.type = "button";
+        x.title = "Remove " + r.name;
+        x.setAttribute("aria-label", "Remove " + r.name);
+        x.onclick = function () {
+          if (r.id === playingId) { audioEl2.pause(); playingId = null; }
+          libDel(r.id).then(refreshLib);
+        };
+        chip.appendChild(b); chip.appendChild(x);
+        libHost.appendChild(chip);
+      });
+      libNote.textContent = rows.length + (rows.length === 1 ? " track" : " tracks") + " saved, " +
+        niceSize(total) + ". Held in this browser on this machine \u2014 never uploaded.";
+      return rows;
+    });
+  }
+
+  function playSaved(id) {
+    libAll().then(function (rows) {
+      var r = rows.filter(function (x) { return x.id === id; })[0];
+      if (!r) return;
+      playingId = id;
+      startBlob(r.blob, r.name);
+      refreshLib();
+    });
+  }
+
+  function startBlob(blob, name) {
+    if (objURL) URL.revokeObjectURL(objURL);
+    objURL = URL.createObjectURL(blob);
+    audioEl2.src = objURL;
+    $("#mu-name").textContent = name;
+    $$("#mu-controls button, #mu-controls input").forEach(function (n) { n.disabled = false; });
+    drop.classList.add("loaded");
+    stopTone(); stopBench(); graph();
+    audioEl2.play().then(paintPlay, paintPlay);
+  }
+
+  function save(file) {
+    var rec = { id: file.name + ":" + file.size, name: file.name.replace(/\.[^.]+$/, ""),
+                size: file.size, added: Date.now(), blob: file };
+    return libPut(rec).then(function () {
+      playingId = rec.id;
+      return refreshLib();
+    }, function (err) {
+      toast("Could not save it", /quota/i.test(String(err && err.name))
+        ? "This browser is out of storage for the site. Remove a track and try again."
+        : "The browser refused to store it, so it will play now but will not be here next time.", "bad");
+      return null;
+    });
+  }
 
   /* built-in patterns: buttons, and the hint line under them */
   var benchBar2 = $("#mu-bench");
@@ -707,21 +837,14 @@ var audioEl2Pause = function () {};
     n.className = v > 0.02 ? "pass" : "";
   }
 
+  /* Adding a track both plays it and keeps it, so the next visit needs no
+     file picker at all. The transport itself is visible from the start —
+     hiding it until something loaded made the panel look like it had no
+     player, which is exactly how it read. */
   function load(file) {
     if (!file) return;
-    stopBench();
-    if (objURL) URL.revokeObjectURL(objURL);
-    objURL = URL.createObjectURL(file);
-    audioEl2.src = objURL;
-    $("#mu-name").textContent = file.name;
-    /* The transport is visible from the start — hiding it until a file was
-       loaded made the panel look like it had no player at all. It is simply
-       inert until there is something to play. */
-    $$("#mu-controls button, #mu-controls input").forEach(function (n) { n.disabled = false; });
-    drop.classList.add("loaded");
-    stopTone();
-    graph();
-    audioEl2.play().then(paintPlay, function () { paintPlay(); });
+    startBlob(file, file.name.replace(/\.[^.]+$/, ""));
+    save(file);
   }
   function paintPlay() {
     var going = !audioEl2.paused || !!benchId;
@@ -754,11 +877,22 @@ var audioEl2Pause = function () {};
     else toast("Not an audio file", "Drop an MP3, FLAC, WAV or M4A.", "bad");
   });
 
+  refreshLib();
+  TB.onEnter("audio", refreshLib);
+
   $("#mu-play").onclick = function () {
     /* With nothing loaded this used to throw you straight into a file dialog,
        which is a hostile thing for a button called Play to do. It starts the
        first built-in pattern instead; the file picker has its own button. */
-    if (!audioEl2.src) { benchId ? stopBench() : playBench(BENCH[0].id); return; }
+    if (!audioEl2.src) {
+      /* saved tracks first, then the built-in patterns */
+      libAll().then(function (rows) {
+        if (rows.length) playSaved(rows.sort(function (a, b) { return a.added - b.added; })[0].id);
+        else if (benchId) stopBench();
+        else playBench(BENCH[0].id);
+      });
+      return;
+    }
     if (audioEl2.paused) { stopTone(); stopBench(); graph(); audioEl2.play().catch(function () {}); }
     else audioEl2.pause();
   };

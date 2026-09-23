@@ -110,7 +110,45 @@ console.log('\n5. every reference track links out to a search');
     ? pass('all are search URLs, not guessed track ids') : fail('a link was not a search URL');
 }
 
-console.log('\n6. a local file plays through the meters');
+console.log('\n6. a track added once is still there after a reload');
+{
+  /* The whole point: "can we just play the tracks in the site". You add your
+     own copies once and they live in this browser from then on. */
+  await page.setInputFiles('#mu-file', [{ name: 'Animals.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) }]);
+  await page.waitForTimeout(1100);
+  await page.setInputFiles('#mu-file', [{ name: 'Money.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) }]);
+  await page.waitForTimeout(1100);
+  const before = await page.evaluate(() => [...document.querySelectorAll('.tb-libchip .play')].map(b => b.textContent));
+  JSON.stringify(before) === JSON.stringify(['Animals', 'Money'])
+    ? pass('both saved: ' + before.join(', ')) : fail('library held ' + JSON.stringify(before));
+
+  await page.reload();
+  await page.waitForTimeout(1400);
+  await page.click('button[data-view="audio"]');
+  await page.waitForTimeout(700);
+  const after = await page.evaluate(() => [...document.querySelectorAll('.tb-libchip .play')].map(b => b.textContent));
+  JSON.stringify(after) === JSON.stringify(before)
+    ? pass('survived a full reload') : fail('after reload the library held ' + JSON.stringify(after));
+
+  await page.click('.tb-libchip .play');
+  await page.waitForTimeout(1200);
+  const st = await page.evaluate(() => ({
+    name: document.querySelector('#mu-name').textContent,
+    label: document.querySelector('#mu-play').textContent,
+    lit: document.querySelectorAll('.tb-libchip.on').length,
+    meter: parseFloat(document.querySelector('#mu-l').style.width) || 0
+  }));
+  st.name === 'Animals' ? pass('one click played it straight from storage') : fail('played ' + st.name);
+  st.label === 'Stop' && st.lit === 1 ? pass('chip marked as playing') : fail('label ' + st.label + ', lit ' + st.lit);
+  st.meter > 5 ? pass('meters moving at ' + st.meter.toFixed(0) + '%') : fail('meters flat');
+
+  await page.click('.tb-libchip .kill');
+  await page.waitForTimeout(700);
+  const left = await page.evaluate(() => [...document.querySelectorAll('.tb-libchip .play')].map(b => b.textContent));
+  JSON.stringify(left) === JSON.stringify(['Money']) ? pass('removing one leaves the rest') : fail('left with ' + JSON.stringify(left));
+}
+
+console.log('\n7. a local file plays through the meters');
 await page.setInputFiles('#mu-file', { name: 'bench-tone.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) });
 await page.waitForTimeout(1400);
 {
@@ -121,12 +159,13 @@ await page.waitForTimeout(1400);
     time: document.querySelector('#mu-time').textContent
   }));
   !st.hidden ? pass('controls appeared') : fail('controls stayed hidden');
-  st.name === 'bench-tone.wav' ? pass('file named in the bar') : fail('name was ' + st.name);
+  /* the extension is dropped — it is a track name in the bar, not a filename */
+  st.name === 'bench-tone' ? pass('track named in the bar') : fail('name was ' + st.name);
   st.play === 'Stop' ? pass('started playing') : fail('play button says ' + st.play);
   /0:0\d \/ 0:03/.test(st.time) ? pass('clock running: ' + st.time) : fail('clock read ' + st.time);
 }
 
-console.log('\n7. left-only really silences the right cup');
+console.log('\n8. left-only really silences the right cup');
 await page.click('[data-mupan="-1"]');
 await page.waitForTimeout(700);
 {
@@ -137,19 +176,19 @@ await page.waitForTimeout(700);
   rn < 10 ? pass('right meter down at ' + r) : fail('right still at ' + r);
 }
 
-console.log('\n8. starting a test tone stops the music');
+console.log('\n9. starting a test tone stops the music');
 await page.click('[data-tone="both"]');
 await page.waitForTimeout(400);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
   ? pass('music stopped when a tone started') : fail('music kept playing under the tone');
 
-console.log('\n9. leaving the page stops it too');
+console.log('\n10. leaving the page stops it too');
 await page.click('#mu-play'); await page.waitForTimeout(300);
 await page.click('button[data-view="home"]'); await page.waitForTimeout(500);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
   ? pass('stopped on navigation') : fail('still playing after leaving the page');
 
-console.log('\n10. no console errors');
+console.log('\n11. no console errors');
 errors.length ? errors.forEach(fail) : pass('clean');
 
 await browser.close();
