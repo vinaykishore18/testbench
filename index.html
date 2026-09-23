@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090C">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
@@ -594,7 +594,7 @@
         <button class="tb-btn danger" data-tone="stop">Stop</button>
       </div>
       <div class="tb-bar" style="margin-top:10px">
-        <label class="tb-lab">Volume <input type="range" id="au-vol" min="0" max="100" value="35" style="width:130px"></label>
+        <label class="tb-lab">Volume <input type="range" id="au-vol" min="0" max="100" value="60" style="width:130px"></label>
         <label class="tb-lab" id="au-outwrap">Output <select id="au-outdev" style="min-width:210px"><option>System default</option></select></label>
       </div>
       <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Output L</span><span class="tb-meter"><i id="au-outl"></i></span><span class="val" id="au-outlv">0</span></div>
@@ -606,21 +606,10 @@
       <h2 class="tb-ptitle">Music check<span class="tb-rule"></span></h2>
       <p class="tb-sub">Tones find a dead driver. Music finds everything else, and finds it fast &mdash; someone who knows a track hears that something is wrong in about three seconds, long before they could say what. Below is what to play and what each one exposes. Drop in a file you own and it runs through the same meters as the test tones.</p>
 
-      <h3 class="tb-subhead">Built into the page &mdash; no file needed</h3>
-      <div class="tb-bar" id="mu-bench"></div>
-      <p class="tb-note" id="mu-benchhint" style="margin-top:8px"></p>
-
-      <h3 class="tb-subhead">Your tracks</h3>
-      <div class="tb-lib" id="mu-lib"></div>
-      <p class="tb-note" id="mu-libnote" style="margin-top:8px"></p>
-
-      <h3 class="tb-subhead">Add a track</h3>
-      <div class="tb-drop" id="mu-drop">
-        <b>Drop a track here</b>
-        <span>or <button class="tb-btn" id="mu-pick" style="min-height:32px;padding:6px 14px">choose a file</button></span>
-        <small>MP3, FLAC, WAV or M4A. Added once, it stays on this machine and is one click away on every visit &mdash; nothing is uploaded and nothing leaves this browser.</small>
-        <input type="file" id="mu-file" accept="audio/*" hidden>
-      </div>
+      <h3 class="tb-subhead">Play something</h3>
+      <div class="tb-rack" id="mu-rack"></div>
+      <p class="tb-note" id="mu-racknote" style="margin-top:9px"></p>
+      <input type="file" id="mu-file" accept="audio/*" multiple hidden>
 
       <div id="mu-controls">
         <div class="tb-bar" style="margin-top:12px">

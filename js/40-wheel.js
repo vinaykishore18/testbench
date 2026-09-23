@@ -199,5 +199,8 @@ function tick() {
 }
 TB.onPads(tick);
 TB.onEnter("wheel", function () { sig = null; tick(); });
-$("#wh-reset").onclick = function () { var r = PADS[activeIdx]; if (r) { r.axMin = []; r.axMax = []; r.seenBtn = {}; rest = {}; } };
+$("#wh-reset").onclick = function () {
+  var r = PADS[activeIdx];
+  if (r) { r.axMin = []; r.axMax = []; r.seenBtn = Object.create(null); rest = Object.create(null); }
+};
 })();

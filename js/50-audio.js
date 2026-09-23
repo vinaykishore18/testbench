@@ -399,10 +399,17 @@ function build(mode, a) {
   })();
 }
 $$("[data-tone]").forEach(function (b) { b.onclick = function () { tone(b.dataset.tone); }; });
+/* Every path that makes sound registers here, so one slider moves all of them.
+   It used to move the test-tone gain only — turn the music down and nothing
+   happened, which is its own kind of "not working". */
+var volFns = [];
+function onVolume(fn) { volFns.push(fn); }
 $("#au-vol").oninput = function () {
   /* Glide, do not jump. Writing .value on every input event steps the gain once
      per pixel of travel, and a staircase of steps is zipper noise. */
-  if (gain && ac) { try { gain.gain.setTargetAtTime(level(), ac.currentTime, 0.02); } catch (e) { gain.gain.value = level(); } }
+  var t = ac ? ac.currentTime : 0;
+  if (gain && ac) { try { gain.gain.setTargetAtTime(level(), t, 0.02); } catch (e) { gain.gain.value = level(); } }
+  volFns.forEach(function (f) { try { f(t); } catch (e) {} });
 };
 
 /* ---------------- music check ----------------
@@ -528,9 +535,21 @@ function benchBus(a) {
     split.connect(aL, 0); split.connect(aR, 1);
     benchMeter(aL, aR);
   }
-  bus.gain.value = level() * 1.8;
+  /* Stopping a pattern ramps this gain down with setTargetAtTime. Writing
+     .value afterwards does nothing — a scheduled automation outranks the
+     intrinsic value — so every play after the first came back quieter than the
+     last until it was silent. Cancel the schedule first, then set the level. */
+  setBus(ac ? ac.currentTime : 0);
   return bus;
 }
+function setBus(t) {
+  if (!bus) return;
+  try {
+    bus.gain.cancelScheduledValues(t);
+    bus.gain.setValueAtTime(level() * 1.6, t);
+  } catch (e) { bus.gain.value = level() * 1.6; }
+}
+onVolume(setBus);
 var benchRaf = null;
 function benchMeter(aL, aR) {
   var bl = new Uint8Array(aL.frequencyBinCount), br = new Uint8Array(aR.frequencyBinCount);
@@ -686,91 +705,10 @@ function niceSize(n) {
   var audioEl2 = new Audio();
   audioEl2.preload = "metadata";
   var srcNode = null, mGain = null, mPan = null, mRaf = null, objURL = null;
-  var listEl = $("#mu-list"), drop = $("#mu-drop");
-  if (!listEl || !drop) return;
+  var rack = $("#mu-rack"), note = $("#mu-racknote"), listEl = $("#mu-list");
+  var playingId = null;
+  if (!rack || !listEl) return;
   audioEl2Pause = function () { audioEl2.pause(); };
-  var libHost = $("#mu-lib"), libNote = $("#mu-libnote"), playingId = null;
-
-  function refreshLib() {
-    if (!libHost) return Promise.resolve([]);
-    return libAll().then(function (rows) {
-      rows.sort(function (a, b) { return a.added - b.added; });
-      libHost.textContent = "";
-      if (!rows.length) {
-        libNote.textContent = "Nothing saved yet. Add the tracks you test with once and they stay here \u2014 in this browser, on this machine \u2014 ready on every visit, offline included.";
-        return rows;
-      }
-      var total = 0;
-      rows.forEach(function (r) {
-        total += r.size;
-        var chip = el("div", "tb-libchip" + (r.id === playingId ? " on" : ""));
-        var b = el("button", "play", r.name);
-        b.type = "button";
-        b.title = niceSize(r.size);
-        b.onclick = function () { playSaved(r.id); };
-        var x = el("button", "kill", "\u00d7");
-        x.type = "button";
-        x.title = "Remove " + r.name;
-        x.setAttribute("aria-label", "Remove " + r.name);
-        x.onclick = function () {
-          if (r.id === playingId) { audioEl2.pause(); playingId = null; }
-          libDel(r.id).then(refreshLib);
-        };
-        chip.appendChild(b); chip.appendChild(x);
-        libHost.appendChild(chip);
-      });
-      libNote.textContent = rows.length + (rows.length === 1 ? " track" : " tracks") + " saved, " +
-        niceSize(total) + ". Held in this browser on this machine \u2014 never uploaded.";
-      return rows;
-    });
-  }
-
-  function playSaved(id) {
-    libAll().then(function (rows) {
-      var r = rows.filter(function (x) { return x.id === id; })[0];
-      if (!r) return;
-      playingId = id;
-      startBlob(r.blob, r.name);
-      refreshLib();
-    });
-  }
-
-  function startBlob(blob, name) {
-    if (objURL) URL.revokeObjectURL(objURL);
-    objURL = URL.createObjectURL(blob);
-    audioEl2.src = objURL;
-    $("#mu-name").textContent = name;
-    $$("#mu-controls button, #mu-controls input").forEach(function (n) { n.disabled = false; });
-    drop.classList.add("loaded");
-    stopTone(); stopBench(); graph();
-    audioEl2.play().then(paintPlay, paintPlay);
-  }
-
-  function save(file) {
-    var rec = { id: file.name + ":" + file.size, name: file.name.replace(/\.[^.]+$/, ""),
-                size: file.size, added: Date.now(), blob: file };
-    return libPut(rec).then(function () {
-      playingId = rec.id;
-      return refreshLib();
-    }, function (err) {
-      toast("Could not save it", /quota/i.test(String(err && err.name))
-        ? "This browser is out of storage for the site. Remove a track and try again."
-        : "The browser refused to store it, so it will play now but will not be here next time.", "bad");
-      return null;
-    });
-  }
-
-  /* built-in patterns: buttons, and the hint line under them */
-  var benchBar2 = $("#mu-bench");
-  if (benchBar2) {
-    BENCH.forEach(function (t) {
-      var b = el("button", "tb-btn", t.name);
-      b.type = "button"; b.dataset.bench = t.id;
-      b.onclick = function () { benchId === t.id ? stopBench() : playBench(t.id); };
-      benchBar2.appendChild(b);
-    });
-    paintBench();
-  }
 
   /* ---------- the reference list ---------- */
   TRACKS.forEach(function (tr, i) {
@@ -798,7 +736,124 @@ function niceSize(n) {
     listEl.appendChild(li);
   });
 
-  /* ---------- the player ---------- */
+  /* ---------- one row: your tracks, the built-in patterns, and Add ---------- */
+  function refreshLib() {
+    return libAll().then(function (rows) {
+      rows.sort(function (a, b) { return a.added - b.added; });
+      rack.textContent = "";
+
+      rows.forEach(function (r) {
+        var chip = el("div", "tb-chiprow" + (r.id === playingId ? " on" : ""));
+        chip.dataset.saved = r.id;
+        var b = el("button", "go", r.name);
+        b.type = "button"; b.title = niceSize(r.size);
+        b.onclick = function () { r.id === playingId && !audioEl2.paused ? stopAll() : playSaved(r.id); };
+        var x = el("button", "kill", "×");
+        x.type = "button"; x.title = "Remove " + r.name;
+        x.setAttribute("aria-label", "Remove " + r.name);
+        x.onclick = function () {
+          if (r.id === playingId) stopAll();
+          libDel(r.id).then(refreshLib);
+        };
+        chip.appendChild(b); chip.appendChild(x);
+        rack.appendChild(chip);
+      });
+
+      BENCH.forEach(function (t) {
+        var chip = el("div", "tb-chiprow pat" + (benchId === t.id ? " on" : ""));
+        chip.dataset.bench = t.id;   /* paintBench() lights it straight from here */
+        var b = el("button", "go", t.name);
+        b.type = "button"; b.title = t.hint;
+        b.onclick = function () { benchId === t.id ? stopAll() : playBench(t.id); };
+        chip.appendChild(b);
+        rack.appendChild(chip);
+      });
+
+      var add = el("button", "tb-chipadd", "+ Add a track");
+      add.type = "button";
+      add.onclick = function () { $("#mu-file").click(); };
+      rack.appendChild(add);
+
+      var total = 0; rows.forEach(function (r) { total += r.size; });
+      note.textContent = rows.length
+        ? rows.length + (rows.length === 1 ? " track" : " tracks") + " of yours (" + niceSize(total) +
+          ") kept in this browser, plus five built-in patterns. Drop a file anywhere on this panel to add one."
+        : "Five built-in patterns, ready now. Add your own with the button above or by dropping a file anywhere on this panel — it stays on this machine and is one click away on every visit.";
+      return rows;
+    });
+  }
+
+  function paintRack() {
+    $$("#mu-rack .tb-chiprow").forEach(function (c) { c.classList.remove("on"); });
+    refreshLib();
+  }
+
+  /* ---------- playing ---------- */
+  function stopAll() {
+    audioEl2.pause();
+    stopBench();
+    playingId = null;
+    paintPlay();
+    refreshLib();
+  }
+  function playSaved(id) {
+    return libAll().then(function (rows) {
+      var r = rows.filter(function (x) { return x.id === id; })[0];
+      if (!r) return;
+      playingId = id;
+      startBlob(r.blob, r.name);
+      refreshLib();
+    });
+  }
+  function startBlob(blob, name) {
+    if (objURL) URL.revokeObjectURL(objURL);
+    objURL = URL.createObjectURL(blob);
+    audioEl2.src = objURL;
+    $("#mu-name").textContent = name;
+    $$("#mu-controls button, #mu-controls input").forEach(function (n) { n.disabled = false; });
+    stopTone(); stopBench(); graph();
+    audioEl2.play().then(function () { paintPlay(); watchdog(); }, function () { paintPlay(); });
+  }
+
+  /* Nothing is worse than a player that looks like it is going and makes no
+     sound. If the meters are still flat a moment after something starts, say
+     why out loud instead of leaving you staring at it. */
+  var watchTimer = null;
+  function watchdog() {
+    if (watchTimer) clearTimeout(watchTimer);
+    watchTimer = setTimeout(function () {
+      watchTimer = null;
+      var l = parseFloat(($("#mu-l") || {}).style ? $("#mu-l").style.width : "0") || 0;
+      var r = parseFloat(($("#mu-r") || {}).style ? $("#mu-r").style.width : "0") || 0;
+      if (l > 1 || r > 1) return;
+      if (audioEl2.paused && !benchId) return;
+      var vol = parseInt($("#au-vol").value, 10);
+      toast("Playing, but silent",
+        vol < 10 ? "The volume slider on this page is almost at zero — push it up."
+                 : "Sound is reaching the page but not the meters. Check the Output device above, and that Windows is not muted for this browser.",
+        "bad");
+    }, 1200);
+  }
+
+  function save(files) {
+    var list = Array.prototype.slice.call(files || []).filter(function (f) { return /^audio\//.test(f.type || ""); });
+    if (!list.length) { toast("Not an audio file", "Drop an MP3, FLAC, WAV or M4A.", "bad"); return; }
+    var first = list[0];
+    startBlob(first, first.name.replace(/\.[^.]+$/, ""));
+    var jobs = list.map(function (f) {
+      var rec = { id: f.name + ":" + f.size, name: f.name.replace(/\.[^.]+$/, ""),
+                  size: f.size, added: Date.now(), blob: f };
+      if (f === first) playingId = rec.id;
+      return libPut(rec).catch(function (err) {
+        toast("Could not save " + rec.name, /quota/i.test(String(err && err.name))
+          ? "This browser is out of storage for the site. Remove a track and try again."
+          : "It will play now, but it will not be here next time.", "bad");
+      });
+    });
+    Promise.all(jobs).then(refreshLib);
+  }
+
+  /* ---------- graph and meters ---------- */
   function graph() {
     var a = ctx();
     if (!srcNode) {
@@ -807,54 +862,68 @@ function niceSize(n) {
       srcNode = a.createMediaElementSource(audioEl2);
       mGain = a.createGain();
       mPan = a.createStereoPanner ? a.createStereoPanner() : null;
+      /* A commercial track is mastered close to full scale. Multiply that by a
+         makeup gain and the sum runs past 1.0, where the output hard-clips —
+         which sounds like grit and fizz laid over the music, and is exactly the
+         thing a headphone test must not invent. This limiter catches the peaks
+         instead: a high ratio, a low knee and a fast attack, so it only ever
+         acts on what would have clipped. */
+      var lim = a.createDynamicsCompressor();
+      lim.threshold.setValueAtTime(-2, a.currentTime);
+      lim.knee.setValueAtTime(0, a.currentTime);
+      lim.ratio.setValueAtTime(20, a.currentTime);
+      lim.attack.setValueAtTime(0.002, a.currentTime);
+      lim.release.setValueAtTime(0.12, a.currentTime);
       var split = a.createChannelSplitter(2);
       var aL = a.createAnalyser(), aR = a.createAnalyser();
       aL.fftSize = 512; aR.fftSize = 512;
       srcNode.connect(mGain);
       var tail = mGain;
       if (mPan) { mGain.connect(mPan); tail = mPan; }
+      tail.connect(lim);
+      tail = lim;
       tail.connect(a.destination);
       tail.connect(split);
       split.connect(aL, 0); split.connect(aR, 1);
       meter(aL, aR);
     }
-    mGain.gain.value = level() * 2.6;   /* music is mastered far below a test tone */
+    setMusic(a.currentTime);
+    if (a.state === "suspended" && a.resume) a.resume();
     return a;
   }
   function meter(aL, aR) {
     var bl = new Uint8Array(aL.frequencyBinCount), br = new Uint8Array(aR.frequencyBinCount);
     (function m() {
       mRaf = requestAnimationFrame(m);
-      if (audioEl2.paused) { bar("#mu-l", 0); bar("#mu-r", 0); return; }
+      if (audioEl2.paused) { if (!benchId) { muBar("#mu-l", 0); muBar("#mu-r", 0); } return; }
       aL.getByteFrequencyData(bl); aR.getByteFrequencyData(br);
       function pk(x) { var v = 0; for (var i = 0; i < x.length; i++) if (x[i] > v) v = x[i]; return v / 255; }
-      bar("#mu-l", pk(bl)); bar("#mu-r", pk(br));
+      muBar("#mu-l", pk(bl)); muBar("#mu-r", pk(br));
     })();
   }
-  function bar(sel, v) {
-    var n = $(sel); if (!n) return;
-    n.style.width = (v * 100) + "%";
-    n.className = v > 0.02 ? "pass" : "";
-  }
 
-  /* Adding a track both plays it and keeps it, so the next visit needs no
-     file picker at all. The transport itself is visible from the start —
-     hiding it until something loaded made the panel look like it had no
-     player, which is exactly how it read. */
-  function load(file) {
-    if (!file) return;
-    startBlob(file, file.name.replace(/\.[^.]+$/, ""));
-    save(file);
+  /* Music is mastered far hotter than a test tone, so it needs less makeup,
+     not more. 2.6x was pushing peaks into the ceiling. */
+  function setMusic(t) {
+    if (!mGain) return;
+    try {
+      mGain.gain.cancelScheduledValues(t);
+      mGain.gain.setValueAtTime(level() * 1.5, t);
+    } catch (e) { mGain.gain.value = level() * 1.5; }
   }
+  onVolume(setMusic);
+
+  /* ---------- transport ---------- */
   function paintPlay() {
-    var going = !audioEl2.paused || !!benchId;
+    var going = (!audioEl2.paused && audioEl2.src) || !!benchId;
     $("#mu-play").textContent = going ? "Stop" : "Play";
     $("#mu-play").classList.toggle("on", going);
   }
-  window.__muPaint = paintPlay;
+  window.__muPaint = function () { paintPlay(); if (rack.childElementCount) refreshLib(); };
+
   audioEl2.addEventListener("play", paintPlay);
   audioEl2.addEventListener("pause", paintPlay);
-  audioEl2.addEventListener("ended", paintPlay);
+  audioEl2.addEventListener("ended", function () { paintPlay(); refreshLib(); });
   audioEl2.addEventListener("timeupdate", function () {
     if (!audioEl2.duration) return;
     $("#mu-seek").value = String(audioEl2.currentTime / audioEl2.duration * 1000);
@@ -866,35 +935,27 @@ function niceSize(n) {
     return m + ":" + (r < 10 ? "0" : "") + r;
   }
 
-  $("#mu-pick").onclick = function () { $("#mu-file").click(); };
-  $("#mu-file").onchange = function () { load(this.files && this.files[0]); };
-  drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
-  drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
-  drop.addEventListener("drop", function (e) {
-    e.preventDefault(); drop.classList.remove("over");
-    var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f && /^audio\//.test(f.type || "")) load(f);
-    else toast("Not an audio file", "Drop an MP3, FLAC, WAV or M4A.", "bad");
-  });
+  $("#mu-file").onchange = function () { save(this.files); this.value = ""; };
 
-  refreshLib();
-  TB.onEnter("audio", refreshLib);
+  /* drop anywhere on the panel, not just on a box */
+  var panel = rack.closest(".tb-panel");
+  if (panel) {
+    panel.addEventListener("dragover", function (e) { e.preventDefault(); panel.classList.add("dropping"); });
+    panel.addEventListener("dragleave", function (e) { if (e.target === panel) panel.classList.remove("dropping"); });
+    panel.addEventListener("drop", function (e) {
+      e.preventDefault(); panel.classList.remove("dropping");
+      save(e.dataTransfer && e.dataTransfer.files);
+    });
+  }
 
   $("#mu-play").onclick = function () {
-    /* With nothing loaded this used to throw you straight into a file dialog,
-       which is a hostile thing for a button called Play to do. It starts the
-       first built-in pattern instead; the file picker has its own button. */
-    if (!audioEl2.src) {
-      /* saved tracks first, then the built-in patterns */
-      libAll().then(function (rows) {
-        if (rows.length) playSaved(rows.sort(function (a, b) { return a.added - b.added; })[0].id);
-        else if (benchId) stopBench();
-        else playBench(BENCH[0].id);
-      });
-      return;
-    }
-    if (audioEl2.paused) { stopTone(); stopBench(); graph(); audioEl2.play().catch(function () {}); }
-    else audioEl2.pause();
+    if ((audioEl2.src && !audioEl2.paused) || benchId) { stopAll(); return; }
+    if (audioEl2.src) { stopTone(); stopBench(); graph(); audioEl2.play().then(watchdog, function () {}); paintPlay(); return; }
+    /* nothing loaded: your first saved track if there is one, else a pattern */
+    libAll().then(function (rows) {
+      if (rows.length) playSaved(rows.sort(function (a, b) { return a.added - b.added; })[0].id);
+      else { playBench(BENCH[0].id); watchdog(); }
+    });
   };
   $("#mu-seek").oninput = function () {
     if (audioEl2.duration) audioEl2.currentTime = this.value / 1000 * audioEl2.duration;
@@ -917,12 +978,15 @@ function niceSize(n) {
     audioEl2.pause();
     stopBench();
     if (mRaf) { cancelAnimationFrame(mRaf); mRaf = null; }
-    bar("#mu-l", 0); bar("#mu-r", 0);
+    muBar("#mu-l", 0); muBar("#mu-r", 0);
   }
   TB.onLeave("audio", stopMusic);
   window.addEventListener("pagehide", stopMusic);
-  /* a test tone and a track should never fight each other */
-  $$("[data-tone]").forEach(function (b) { b.addEventListener("click", function () { audioEl2.pause(); }); });
+  $$("[data-tone]").forEach(function (b) { b.addEventListener("click", function () { stopAll(); }); });
+
+  refreshLib();
+  TB.onEnter("audio", refreshLib);
+  paintPlay();
 })();
 
 /* ---------------- loopback ---------------- */

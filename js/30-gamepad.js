@@ -452,7 +452,7 @@ TB.hidMount("#gp-id", "Press this to read the pad's USB product name. Most contr
 
 $("#gp-clear").onclick = function () {
   var r = PADS[activeIdx];
-  if (r) { r.seenBtn = {}; r.btnMin = []; r.btnMax = []; r.resolution = {}; }
+  if (r) { r.seenBtn = Object.create(null); r.btnMin = []; r.btnMax = []; r.resolution = Object.create(null); }
   if (ui) { ui.L.trace.fill(0); ui.R.trace.fill(0); ui.L.ret = 0; ui.R.ret = 0; }
 };
 })();

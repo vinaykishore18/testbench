@@ -1,0 +1,9 @@
+# Internal notes and build tooling live in the repo but must not be served.
+# SWITCH-RIG.md in particular is an internal plan with shop network detail;
+# it has no business on a public domain just because it sits in the deploy root.
+/SWITCH-RIG.md   /404.html   404
+/LEARN.md        /404.html   404
+/README.md       /404.html   404
+/build.py        /404.html   404
+/source-vault.html /404.html 404
+/test/*          /404.html   404

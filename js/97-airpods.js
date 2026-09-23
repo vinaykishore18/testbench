@@ -278,7 +278,18 @@ function score(cmp, r) {
     for (var i = 0; i < n; i++) dv.setInt16(44 + i * 2, Math.sin(i / sr * 440 * 6.283) * 6000, true);
     return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
   }
-  au.src = toneUrl(); au.loop = true;
+  /* Built on first use, not at page load. This is roughly half a megabyte of
+     WAV held in a blob URL, and it was being made on every visit to the site
+     whether or not anyone opened the Earbuds page. */
+  var toneURL = null;
+  function armTone() {
+    if (!toneURL) { toneURL = toneUrl(); au.src = toneURL; }
+    return toneURL;
+  }
+  window.addEventListener("pagehide", function () {
+    if (toneURL) { try { URL.revokeObjectURL(toneURL); } catch (e) {} toneURL = null; }
+  });
+  au.loop = true;
   au.addEventListener("pause", function () {
     if (!armed || fired) return;
     fired = true;
@@ -288,6 +299,7 @@ function score(cmp, r) {
     toast("Ear detection works", "Playback paused when you took the bud out — that is real H1/H2 behaviour.", "ok");
   });
   $("#ap-earrun").onclick = function () {
+    armTone();
     fired = false; armed = true;
     au.currentTime = 0;
     au.play().then(function () {

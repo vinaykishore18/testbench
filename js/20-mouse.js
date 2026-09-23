@@ -601,7 +601,9 @@ TB.onLeave("mouse", disarmNav);
    5. DOUBLE-CLICK PAD
    ============================================================ */
 $("#dbl-reset").onclick = function () {
-  st.dbl = 0; st.gaps = []; st.minGap = null; st.clicks = 0; st.lastUp = {};
+  /* Object.create(null), not {} — these maps take their keys from input, and
+     resetting one to a plain object quietly undoes that everywhere else. */
+  st.dbl = 0; st.gaps = []; st.minGap = null; st.clicks = 0; st.lastUp = Object.create(null);
   $("#dbl-log").textContent = ""; paint();
 };
 
