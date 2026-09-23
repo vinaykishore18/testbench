@@ -75,11 +75,42 @@ console.log('\n3. the transport is visible but inert before a track is loaded');
   }));
   st.visible ? pass('transport is on screen') : fail('transport hidden — nobody will find it');
   st.disabled ? pass('seek, panning and loop are inert') : fail('controls live with nothing loaded');
-  st.playEnabled ? pass('Play stays usable — it opens the file picker') : fail('Play was disabled, so there is no way in');
-  /track/i.test(st.hint) ? pass('says what to do: "' + st.hint + '"') : fail('no hint: ' + st.hint);
+  st.playEnabled ? pass('Play stays usable with nothing loaded') : fail('Play was disabled, so there is no way in');
+  /play/i.test(st.hint) ? pass('says what to do: "' + st.hint + '"') : fail('no hint: ' + st.hint);
 }
 
-console.log('\n4. a local file plays through the meters');
+console.log('\n4. Play works with no file at all');
+{
+  /* "pressing play takes me to the files" — a button called Play must play
+     something, not open a dialog. */
+  const names = await page.evaluate(() => [...document.querySelectorAll('[data-bench]')].map(b => b.textContent));
+  names.length === 5 ? pass('five built-in patterns: ' + names.join(', ')) : fail('found ' + names.length);
+  await page.click('#mu-play');
+  await page.waitForTimeout(1800);
+  const st = await page.evaluate(() => ({
+    label: document.querySelector('#mu-play').textContent,
+    lit: [...document.querySelectorAll('[data-bench].on')].map(b => b.textContent),
+    meter: parseFloat(document.querySelector('#mu-l').style.width) || 0
+  }));
+  st.label === 'Stop' ? pass('Play started something and became Stop') : fail('button says ' + st.label);
+  st.lit.length === 1 ? pass('pattern lit: ' + st.lit[0]) : fail('lit patterns: ' + JSON.stringify(st.lit));
+  st.meter > 5 ? pass('meters moving at ' + st.meter.toFixed(0) + '%') : fail('meters flat at ' + st.meter);
+  await page.click('#mu-play');
+  await page.waitForTimeout(400);
+}
+
+console.log('\n5. every reference track links out to a search');
+{
+  const links = await page.evaluate(() =>
+    [...document.querySelectorAll('#mu-list .tb-track')].map(li =>
+      [...li.querySelectorAll('.find a')].map(a => a.href)));
+  links.length === 10 && links.every(l => l.length === 2)
+    ? pass('two search links on each of the ten') : fail('links per track: ' + JSON.stringify(links.map(l => l.length)));
+  links.every(l => l.every(h => /^https:\/\/(www\.youtube\.com\/results|open\.spotify\.com\/search)/.test(h)))
+    ? pass('all are search URLs, not guessed track ids') : fail('a link was not a search URL');
+}
+
+console.log('\n6. a local file plays through the meters');
 await page.setInputFiles('#mu-file', { name: 'bench-tone.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) });
 await page.waitForTimeout(1400);
 {
@@ -91,11 +122,11 @@ await page.waitForTimeout(1400);
   }));
   !st.hidden ? pass('controls appeared') : fail('controls stayed hidden');
   st.name === 'bench-tone.wav' ? pass('file named in the bar') : fail('name was ' + st.name);
-  st.play === 'Pause' ? pass('started playing') : fail('play button says ' + st.play);
+  st.play === 'Stop' ? pass('started playing') : fail('play button says ' + st.play);
   /0:0\d \/ 0:03/.test(st.time) ? pass('clock running: ' + st.time) : fail('clock read ' + st.time);
 }
 
-console.log('\n5. left-only really silences the right cup');
+console.log('\n7. left-only really silences the right cup');
 await page.click('[data-mupan="-1"]');
 await page.waitForTimeout(700);
 {
@@ -106,19 +137,19 @@ await page.waitForTimeout(700);
   rn < 10 ? pass('right meter down at ' + r) : fail('right still at ' + r);
 }
 
-console.log('\n6. starting a test tone stops the music');
+console.log('\n8. starting a test tone stops the music');
 await page.click('[data-tone="both"]');
 await page.waitForTimeout(400);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
-  ? pass('music paused when a tone started') : fail('music kept playing under the tone');
+  ? pass('music stopped when a tone started') : fail('music kept playing under the tone');
 
-console.log('\n7. leaving the page stops it too');
+console.log('\n9. leaving the page stops it too');
 await page.click('#mu-play'); await page.waitForTimeout(300);
 await page.click('button[data-view="home"]'); await page.waitForTimeout(500);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
   ? pass('stopped on navigation') : fail('still playing after leaving the page');
 
-console.log('\n8. no console errors');
+console.log('\n10. no console errors');
 errors.length ? errors.forEach(fail) : pass('clean');
 
 await browser.close();

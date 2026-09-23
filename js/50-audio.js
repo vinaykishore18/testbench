@@ -444,12 +444,203 @@ var TRACKS = [
     w: "Almost nothing in the mix to hide behind. Snaps should be tight and dead centre; the bass should be deep with no overhang after it stops." }
 ];
 
+/* ---------- built-in bench tracks ----------
+
+   Synthesised here, note by note, so Play does something the moment you press
+   it instead of opening a file dialog. They are not songs and are not trying to
+   be: each one is a short musical figure built around exactly one fault, looped
+   until you stop it. Because the page makes them, they carry no licence and can
+   sit on a commercial site without a second thought.
+
+   Every voice gets an attack and a release. A note that starts or stops at full
+   amplitude is a step, a step is a click, and a click on a headphone test is
+   indistinguishable from the rattle you are listening for. */
+var BENCH = [
+  { id: "drop",   name: "Sub-bass drop",   hint: "Kick plus a low slide from 60 Hz down to 32. A blown or unglued driver turns the slide into a rattle." },
+  { id: "snap",   name: "Transient snap",  hint: "Short, hard hits with silence between them. A damaged driver smears the hit into a thud." },
+  { id: "walk",   name: "Stereo walk",     hint: "A note that steps left, centre, right and back. Catches a channel wired backwards or one side running weak." },
+  { id: "air",    name: "Treble and air",  hint: "Bursts up in the 6–10 kHz band where sibilance lives. Listen for harshness or a hiss that rides on." },
+  { id: "swing",  name: "Loud and quiet",  hint: "Alternating heavy and near-silent bars. The quiet ones should stay clean, the loud ones should not collapse." }
+];
+
+var benchId = null, benchStop = null;
+
+function voice(a, at, dur, freq, type, peak, pan) {
+  var o = a.createOscillator(), g = a.createGain();
+  o.type = type || "sine";
+  o.frequency.setValueAtTime(freq, at);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(peak, at + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  var tail = g;
+  if (a.createStereoPanner && pan != null) {
+    var pn = a.createStereoPanner();
+    pn.pan.setValueAtTime(pan, at);
+    g.connect(pn); tail = pn;
+  }
+  o.connect(g); tail.connect(benchBus(a));
+  o.start(at); o.stop(at + dur + 0.05);
+  return o;
+}
+function burst(a, at, dur, peak, lo, hi, pan) {
+  var n = Math.floor(a.sampleRate * dur);
+  var b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+  for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  var src = a.createBufferSource(); src.buffer = b;
+  var bp = a.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.setValueAtTime(Math.sqrt(lo * hi), at);
+  bp.Q.setValueAtTime(Math.sqrt(lo * hi) / Math.max(1, hi - lo), at);
+  var g = a.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(peak, at + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+  var tail = g;
+  if (a.createStereoPanner && pan != null) {
+    var pn = a.createStereoPanner(); pn.pan.setValueAtTime(pan, at);
+    g.connect(pn); tail = pn;
+  }
+  src.connect(bp); bp.connect(g); tail.connect(benchBus(a));
+  src.start(at); src.stop(at + dur + 0.05);
+}
+function slide(a, at, dur, f0, f1, peak) {
+  var o = a.createOscillator(), g = a.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(f0, at);
+  o.frequency.exponentialRampToValueAtTime(f1, at + dur);
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.linearRampToValueAtTime(peak, at + 0.03);
+  g.gain.setValueAtTime(peak, at + dur - 0.12);
+  g.gain.linearRampToValueAtTime(0.0001, at + dur);
+  o.connect(g); g.connect(benchBus(a));
+  o.start(at); o.stop(at + dur + 0.05);
+}
+
+var bus = null;
+function benchBus(a) {
+  if (!bus) {
+    bus = a.createGain();
+    var split = a.createChannelSplitter(2);
+    var aL = a.createAnalyser(), aR = a.createAnalyser();
+    aL.fftSize = 512; aR.fftSize = 512;
+    bus.connect(a.destination);
+    bus.connect(split);
+    split.connect(aL, 0); split.connect(aR, 1);
+    benchMeter(aL, aR);
+  }
+  bus.gain.value = level() * 1.8;
+  return bus;
+}
+var benchRaf = null;
+function benchMeter(aL, aR) {
+  var bl = new Uint8Array(aL.frequencyBinCount), br = new Uint8Array(aR.frequencyBinCount);
+  (function m() {
+    benchRaf = requestAnimationFrame(m);
+    if (!benchId) return;
+    aL.getByteFrequencyData(bl); aR.getByteFrequencyData(br);
+    function pk(x) { var v = 0; for (var i = 0; i < x.length; i++) if (x[i] > v) v = x[i]; return v / 255; }
+    muBar("#mu-l", pk(bl)); muBar("#mu-r", pk(br));
+  })();
+}
+function muBar(sel, v) {
+  var n = $(sel); if (!n) return;
+  n.style.width = (v * 100) + "%";
+  n.className = v > 0.02 ? "pass" : "";
+}
+
+/* one bar of each pattern, scheduled from time t */
+function benchBar(id, a, t) {
+  var i;
+  if (id === "drop") {
+    for (i = 0; i < 4; i++) slide(a, t + i * 0.9, 0.62, 60, 32, 0.42);
+    for (i = 0; i < 8; i++) voice(a, t + i * 0.45, 0.10, 140, "sine", 0.30);
+    return 3.6;
+  }
+  if (id === "snap") {
+    var hits = [0, 0.25, 0.5, 1.0, 1.25, 1.75, 2.0, 2.25, 2.75, 3.0];
+    for (i = 0; i < hits.length; i++) burst(a, t + hits[i], 0.055, 0.34, 1800, 9000, 0);
+    for (i = 0; i < 4; i++) voice(a, t + i, 0.16, 90, "sine", 0.34);
+    return 3.5;
+  }
+  if (id === "walk") {
+    var pans = [-1, -0.5, 0, 0.5, 1, 0.5, 0, -0.5];
+    for (i = 0; i < pans.length; i++) {
+      voice(a, t + i * 0.5, 0.34, 440, "triangle", 0.30, pans[i]);
+      burst(a, t + i * 0.5, 0.05, 0.16, 2000, 8000, pans[i]);
+    }
+    return 4.0;
+  }
+  if (id === "air") {
+    for (i = 0; i < 6; i++) burst(a, t + i * 0.55, 0.22, 0.26, 6000, 10000, i % 2 ? 0.4 : -0.4);
+    for (i = 0; i < 3; i++) voice(a, t + i * 1.1, 0.30, 220, "sine", 0.22);
+    return 3.3;
+  }
+  /* swing: two loud bars, one near-silent */
+  for (i = 0; i < 8; i++) {
+    var loud = i < 5;
+    voice(a, t + i * 0.5, 0.22, loud ? 110 : 220, "sine", loud ? 0.44 : 0.05);
+    burst(a, t + i * 0.5 + 0.25, 0.05, loud ? 0.30 : 0.035, 1500, 8000, 0);
+  }
+  return 4.0;
+}
+
+function playBench(id) {
+  stopTone();
+  audioEl2Pause();
+  var a = ctx();
+  var go = function () {
+    benchId = id;
+    var next = a.currentTime + 0.08;
+    function schedule() {
+      if (benchId !== id) return;
+      /* keep roughly two bars queued ahead of the clock */
+      while (next < a.currentTime + 2) next += benchBar(id, a, next);
+      benchStop = setTimeout(schedule, 700);
+    }
+    schedule();
+    paintBench();
+  };
+  if (a.state === "suspended" && a.resume) a.resume().then(go, go); else go();
+}
+function stopBench() {
+  benchId = null;
+  if (benchStop) { clearTimeout(benchStop); benchStop = null; }
+  if (bus) { try { bus.gain.setTargetAtTime(0.0001, ac.currentTime, 0.02); } catch (e) {} }
+  muBar("#mu-l", 0); muBar("#mu-r", 0);
+  paintBench();
+}
+function paintBench() {
+  if (window.__muPaint) window.__muPaint();
+  $$("[data-bench]").forEach(function (b) {
+    b.classList.toggle("on", b.dataset.bench === benchId);
+  });
+  var h = $("#mu-benchhint");
+  if (h) {
+    var t = BENCH.filter(function (x) { return x.id === benchId; })[0];
+    h.textContent = t ? t.hint : "Five short patterns built into the page, each one aimed at a single fault. No file needed.";
+  }
+}
+var audioEl2Pause = function () {};
+
 (function () {
   var audioEl2 = new Audio();
   audioEl2.preload = "metadata";
   var srcNode = null, mGain = null, mPan = null, mRaf = null, objURL = null;
   var listEl = $("#mu-list"), drop = $("#mu-drop");
   if (!listEl || !drop) return;
+  audioEl2Pause = function () { audioEl2.pause(); };
+
+  /* built-in patterns: buttons, and the hint line under them */
+  var benchBar2 = $("#mu-bench");
+  if (benchBar2) {
+    BENCH.forEach(function (t) {
+      var b = el("button", "tb-btn", t.name);
+      b.type = "button"; b.dataset.bench = t.id;
+      b.onclick = function () { benchId === t.id ? stopBench() : playBench(t.id); };
+      benchBar2.appendChild(b);
+    });
+    paintBench();
+  }
 
   /* ---------- the reference list ---------- */
   TRACKS.forEach(function (tr, i) {
@@ -462,6 +653,17 @@ var TRACKS = [
     body.appendChild(head);
     body.appendChild(el("span", "k", tr.k));
     body.appendChild(el("p", null, tr.w));
+    /* Search links, not deep links. A search URL is always valid and always
+       lands on the real thing; a hand-written track id is a guess that rots. */
+    var q = encodeURIComponent(tr.t + " " + tr.a);
+    var links = el("div", "find");
+    [["YouTube", "https://www.youtube.com/results?search_query=" + q],
+     ["Spotify", "https://open.spotify.com/search/" + q]].forEach(function (L) {
+      var a2 = el("a", null, L[0]);
+      a2.href = L[1]; a2.target = "_blank"; a2.rel = "noopener noreferrer";
+      links.appendChild(a2);
+    });
+    body.appendChild(links);
     li.appendChild(body);
     listEl.appendChild(li);
   });
@@ -507,6 +709,7 @@ var TRACKS = [
 
   function load(file) {
     if (!file) return;
+    stopBench();
     if (objURL) URL.revokeObjectURL(objURL);
     objURL = URL.createObjectURL(file);
     audioEl2.src = objURL;
@@ -521,9 +724,11 @@ var TRACKS = [
     audioEl2.play().then(paintPlay, function () { paintPlay(); });
   }
   function paintPlay() {
-    $("#mu-play").textContent = audioEl2.paused ? "Play" : "Pause";
-    $("#mu-play").classList.toggle("on", !audioEl2.paused);
+    var going = !audioEl2.paused || !!benchId;
+    $("#mu-play").textContent = going ? "Stop" : "Play";
+    $("#mu-play").classList.toggle("on", going);
   }
+  window.__muPaint = paintPlay;
   audioEl2.addEventListener("play", paintPlay);
   audioEl2.addEventListener("pause", paintPlay);
   audioEl2.addEventListener("ended", paintPlay);
@@ -550,8 +755,11 @@ var TRACKS = [
   });
 
   $("#mu-play").onclick = function () {
-    if (!audioEl2.src) { $("#mu-file").click(); return; }
-    if (audioEl2.paused) { stopTone(); graph(); audioEl2.play().catch(function () {}); }
+    /* With nothing loaded this used to throw you straight into a file dialog,
+       which is a hostile thing for a button called Play to do. It starts the
+       first built-in pattern instead; the file picker has its own button. */
+    if (!audioEl2.src) { benchId ? stopBench() : playBench(BENCH[0].id); return; }
+    if (audioEl2.paused) { stopTone(); stopBench(); graph(); audioEl2.play().catch(function () {}); }
     else audioEl2.pause();
   };
   $("#mu-seek").oninput = function () {
@@ -573,6 +781,7 @@ var TRACKS = [
 
   function stopMusic() {
     audioEl2.pause();
+    stopBench();
     if (mRaf) { cancelAnimationFrame(mRaf); mRaf = null; }
     bar("#mu-l", 0); bar("#mu-r", 0);
   }

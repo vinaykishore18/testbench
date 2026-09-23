@@ -97,28 +97,31 @@
    is not the test any more, so those stay absolute in 60-display.js.
    ============================================================ */
 :root[data-theme="light"]{
-  /* ground — warm paper, never a flat white */
-  --bg:#F6F2EA;
-  --bg-2:#EFE9DD;
-  --panel:#FFFDF8;
-  --panel-2:#F3EDE2;
-  --raise:#E7DFD0;
-  --line:#D8CFBD;
-  --line-soft:#E9E2D4;
+  /* ground — warm paper, never a flat white.
+     The first pass was too timid: panels sat two shades off the page and the
+     secondary ink was so light the notes disappeared. Surfaces are separated
+     harder now and every ink level is darkened until it clears 4.5:1. */
+  --bg:#EDE7DA;
+  --bg-2:#E4DCCB;
+  --panel:#FCFAF4;
+  --panel-2:#F2EDE1;
+  --raise:#E2D9C7;
+  --line:#C8BCA4;
+  --line-soft:#DCD3C0;
 
-  --ink:#17140F;
-  --ink-2:#4B443A;
-  --ink-3:#786F62;
+  --ink:#14110C;
+  --ink-2:#3A342B;
+  --ink-3:#5E574B;
 
   /* the same signals, deepened so they hold their contrast on paper */
-  --red:#D01B33;
-  --red-dim:#E9A3AE;
+  --red:#C4142B;
+  --red-dim:#D98C99;
   --red-glow:rgba(208,27,51,.10);
-  --pass:#0B7F45;
+  --pass:#09703C;
   --pass-glow:rgba(11,127,69,.12);
-  --warn:#8A5D00;
+  --warn:#7A5100;
   --warn-glow:rgba(138,93,0,.12);
-  --idle:#C6BCA9;
+  --idle:#B5A992;
 
   --on-red:#FFF6F1;
   --on-pass:#F2FCF6;
@@ -141,46 +144,49 @@
   --red-t25:rgba(208,27,51,.25);
   --ink3-t30:rgba(120,111,98,.30);
 
-  --hairline:rgba(0,0,0,.06);
-  --scroll-hot:#C3B9A6;
-  --topbar:#FFFDF8;
-  --stick-core:#EFE9DD;
+  --hairline:rgba(0,0,0,.10);
+  --scroll-hot:#B0A48C;
+  --topbar:#FCFAF4;
+  --stick-core:#E4DCCB;
   --ink-shadow:rgba(255,253,248,.9);
 
-  --dev-shell:#FFFDF8;   --dev-shell-line:#BDB3A0;
-  --dev-plate:#F3EDE2;   --dev-plate-line:#D2C8B5;
-  --dev-btn:#EFE8DA;     --dev-btn-line:#B4A992;
-  --dev-knob:#E7DFD0;    --dev-knob-line:#A99E88;
-  --dev-well:#E4DCCB;    --dev-lbl:#6E655A;
+  --dev-shell:#FCFAF4;   --dev-shell-line:#A99C84;
+  --dev-plate:#F2EDE1;   --dev-plate-line:#BFB39B;
+  --dev-btn:#EBE3D3;     --dev-btn-line:#9C8F76;
+  --dev-knob:#E2D9C7;    --dev-knob-line:#8F8269;
+  --dev-well:#D9CFBA;    --dev-lbl:#544C41;
   --dev-on-line:#0B7F45; --dev-knob-on-line:#8A5D00;
-  --dev-rim:#CFC5B2;     --dev-spoke:#B4A992;
-  --dev-hub:#EFE9DD;     --dev-tip:#0E7C8A;
+  --dev-rim:#BBAF97;     --dev-spoke:#9C8F76;
+  --dev-hub:#E4DCCB;     --dev-tip:#0B6874;
 }
 
 @media (prefers-color-scheme:light){
   :root:not([data-theme]){
-  /* ground — warm paper, never a flat white */
-  --bg:#F6F2EA;
-  --bg-2:#EFE9DD;
-  --panel:#FFFDF8;
-  --panel-2:#F3EDE2;
-  --raise:#E7DFD0;
-  --line:#D8CFBD;
-  --line-soft:#E9E2D4;
+  /* ground — warm paper, never a flat white.
+     The first pass was too timid: panels sat two shades off the page and the
+     secondary ink was so light the notes disappeared. Surfaces are separated
+     harder now and every ink level is darkened until it clears 4.5:1. */
+  --bg:#EDE7DA;
+  --bg-2:#E4DCCB;
+  --panel:#FCFAF4;
+  --panel-2:#F2EDE1;
+  --raise:#E2D9C7;
+  --line:#C8BCA4;
+  --line-soft:#DCD3C0;
 
-  --ink:#17140F;
-  --ink-2:#4B443A;
-  --ink-3:#786F62;
+  --ink:#14110C;
+  --ink-2:#3A342B;
+  --ink-3:#5E574B;
 
   /* the same signals, deepened so they hold their contrast on paper */
-  --red:#D01B33;
-  --red-dim:#E9A3AE;
+  --red:#C4142B;
+  --red-dim:#D98C99;
   --red-glow:rgba(208,27,51,.10);
-  --pass:#0B7F45;
+  --pass:#09703C;
   --pass-glow:rgba(11,127,69,.12);
-  --warn:#8A5D00;
+  --warn:#7A5100;
   --warn-glow:rgba(138,93,0,.12);
-  --idle:#C6BCA9;
+  --idle:#B5A992;
 
   --on-red:#FFF6F1;
   --on-pass:#F2FCF6;
@@ -203,20 +209,20 @@
   --red-t25:rgba(208,27,51,.25);
   --ink3-t30:rgba(120,111,98,.30);
 
-  --hairline:rgba(0,0,0,.06);
-  --scroll-hot:#C3B9A6;
-  --topbar:#FFFDF8;
-  --stick-core:#EFE9DD;
+  --hairline:rgba(0,0,0,.10);
+  --scroll-hot:#B0A48C;
+  --topbar:#FCFAF4;
+  --stick-core:#E4DCCB;
   --ink-shadow:rgba(255,253,248,.9);
 
-  --dev-shell:#FFFDF8;   --dev-shell-line:#BDB3A0;
-  --dev-plate:#F3EDE2;   --dev-plate-line:#D2C8B5;
-  --dev-btn:#EFE8DA;     --dev-btn-line:#B4A992;
-  --dev-knob:#E7DFD0;    --dev-knob-line:#A99E88;
-  --dev-well:#E4DCCB;    --dev-lbl:#6E655A;
+  --dev-shell:#FCFAF4;   --dev-shell-line:#A99C84;
+  --dev-plate:#F2EDE1;   --dev-plate-line:#BFB39B;
+  --dev-btn:#EBE3D3;     --dev-btn-line:#9C8F76;
+  --dev-knob:#E2D9C7;    --dev-knob-line:#8F8269;
+  --dev-well:#D9CFBA;    --dev-lbl:#544C41;
   --dev-on-line:#0B7F45; --dev-knob-on-line:#8A5D00;
-  --dev-rim:#CFC5B2;     --dev-spoke:#B4A992;
-  --dev-hub:#EFE9DD;     --dev-tip:#0E7C8A;
+  --dev-rim:#BBAF97;     --dev-spoke:#9C8F76;
+  --dev-hub:#E4DCCB;     --dev-tip:#0B6874;
 }
 }
 
@@ -896,3 +902,43 @@ body.tb-locked .tb-app{padding-top:44px}
   color:var(--ink-3);pointer-events:none;transition:opacity .2s;
 }
 .tb-scopewrap.live .tb-scopeidle{opacity:0}
+
+/* search links on each reference track */
+.tb-track .find{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.tb-track .find a{
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);text-decoration:none;
+  border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  transition:color .15s,border-color .15s;
+}
+.tb-track .find a:hover{color:var(--red);border-color:var(--red)}
+.tb-track .find a:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+
+/* ---------- range inputs ----------
+   Left to the browser, a range renders with the platform's own colours — which
+   on a light page came out as a solid black bar. Styled here so it belongs to
+   the theme in both directions. */
+input[type="range"]{
+  -webkit-appearance:none;appearance:none;background:transparent;
+  height:20px;cursor:pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track{
+  height:5px;border-radius:999px;background:var(--raise);border:1px solid var(--line);
+}
+input[type="range"]::-moz-range-track{
+  height:5px;border-radius:999px;background:var(--raise);border:1px solid var(--line);
+}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:15px;height:15px;border-radius:50%;margin-top:-6px;
+  background:var(--red);border:2px solid var(--panel);
+  box-shadow:0 1px 3px rgba(0,0,0,.35);
+}
+input[type="range"]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;
+  background:var(--red);border:2px solid var(--panel);
+}
+input[type="range"]:disabled{cursor:not-allowed;opacity:.5}
+input[type="range"]:disabled::-webkit-slider-thumb{background:var(--idle)}
+input[type="range"]:disabled::-moz-range-thumb{background:var(--idle)}
+input[type="range"]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--red);outline-offset:2px}
