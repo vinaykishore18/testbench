@@ -70,6 +70,7 @@
   /* fullscreen HUD */
   --hud-bg:rgba(8,9,12,.9); --hud-line:#333; --hud-ink:#D6DEE6; --hud-strong:#fff;
   --ink-shadow:rgba(0,0,0,.85);
+  --shadow:rgba(0,0,0,.45);
 
   /* type */
   --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
@@ -149,6 +150,7 @@
   --topbar:#FCFAF4;
   --stick-core:#E4DCCB;
   --ink-shadow:rgba(255,253,248,.9);
+  --shadow:rgba(90,78,58,.28);
 
   --dev-shell:#FCFAF4;   --dev-shell-line:#A99C84;
   --dev-plate:#F2EDE1;   --dev-plate-line:#BFB39B;
@@ -214,6 +216,7 @@
   --topbar:#FCFAF4;
   --stick-core:#E4DCCB;
   --ink-shadow:rgba(255,253,248,.9);
+  --shadow:rgba(90,78,58,.28);
 
   --dev-shell:#FCFAF4;   --dev-shell-line:#A99C84;
   --dev-plate:#F2EDE1;   --dev-plate-line:#BFB39B;
@@ -898,3 +901,96 @@ body.tb-locked .tb-app{padding-top:44px}
 .tb-chipadd:hover{background:var(--red-glow)}
 .tb-chiprow button:focus-visible,.tb-chipadd:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 .tb-panel.dropping{border-color:var(--red);background:linear-gradient(180deg,var(--red-glow),transparent 140px),var(--panel)}
+
+/* ---------- theme picker ---------- */
+.tb-themepick{
+  display:inline-flex;border:1px solid var(--line);border-radius:999px;
+  overflow:hidden;background:var(--panel-2);flex:0 0 auto;
+}
+.tb-themepick button{
+  appearance:none;-webkit-appearance:none;border:0;background:transparent;cursor:pointer;
+  padding:5px 12px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);white-space:nowrap;
+  transition:color .15s,background .15s;
+}
+.tb-themepick button:hover{color:var(--ink);background:var(--raise)}
+.tb-themepick button[aria-pressed="true"]{background:var(--red);color:var(--on-red)}
+.tb-themepick button[aria-pressed="true"]:hover{background:var(--red-hot);color:var(--on-red)}
+.tb-themepick button:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
+@media (max-width:900px){ .tb-themepick button{padding:5px 9px;font-size:10px;letter-spacing:.06em} }
+
+/* A canvas with nothing in it is just a hole. Name it until it has data. */
+.tb-scopewrap{position:relative}
+.tb-scopewrap canvas{display:block}
+.tb-scopeidle{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);pointer-events:none;transition:opacity .2s;
+}
+.tb-scopewrap.live .tb-scopeidle{opacity:0}
+
+/* ---------- range inputs ----------
+   Left to the browser, a range renders with the platform's own colours — which
+   on a light page came out as a solid black bar. Styled here so it belongs to
+   the theme in both directions. */
+input[type="range"]{
+  -webkit-appearance:none;appearance:none;background:transparent;
+  height:20px;cursor:pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track{
+  height:5px;border-radius:999px;background:var(--raise);border:1px solid var(--line);
+}
+input[type="range"]::-moz-range-track{
+  height:5px;border-radius:999px;background:var(--raise);border:1px solid var(--line);
+}
+input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:15px;height:15px;border-radius:50%;margin-top:-6px;
+  background:var(--red);border:2px solid var(--panel);
+  box-shadow:0 1px 3px var(--shadow);
+}
+input[type="range"]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;
+  background:var(--red);border:2px solid var(--panel);
+}
+input[type="range"]:disabled{cursor:not-allowed;opacity:.5}
+input[type="range"]:disabled::-webkit-slider-thumb{background:var(--idle)}
+input[type="range"]:disabled::-moz-range-thumb{background:var(--idle)}
+input[type="range"]:focus-visible::-webkit-slider-thumb{outline:2px solid var(--red);outline-offset:2px}
+
+/* ---------- interactive states ----------
+   Every control the light theme had left to the browser: what a button looks
+   like under the pointer, while held, when switched on, when focused, and what
+   a form field looks like. Left alone these fall back to the platform's own
+   greys, which is why the theme picker came out as three grey slabs. */
+select,input[type="number"],input[type="text"],input[type="search"],textarea{
+  appearance:none;-webkit-appearance:none;
+  background:var(--panel-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:7px;
+  padding:7px 11px;line-height:1.3;
+}
+select{
+  padding-right:30px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink-3) 50%),
+                   linear-gradient(135deg,var(--ink-3) 50%,transparent 50%);
+  background-position:calc(100% - 15px) 52%, calc(100% - 10px) 52%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+}
+select:hover,input[type="number"]:hover,input[type="text"]:hover,textarea:hover{border-color:var(--ink-3)}
+select:focus-visible,input:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--red);outline-offset:1px;border-color:var(--red);
+}
+select:disabled,input:disabled,textarea:disabled{opacity:.5;cursor:not-allowed}
+
+.tb-btn:active{transform:translateY(1px);background:var(--raise)}
+.tb-btn.pri:hover{background:var(--red-hot);border-color:var(--red-hot);color:var(--on-red)}
+.tb-btn.pri:active{background:var(--red-dim);border-color:var(--red-dim)}
+.tb-btn.on:hover{background:var(--pass-t16);border-color:var(--pass)}
+.tb-btn.danger:hover{background:var(--red-t18);border-color:var(--red);color:var(--red)}
+.tb-seg button:hover:not([aria-pressed="true"]){background:var(--raise);color:var(--ink)}
+.tb-tabs button:hover:not([aria-selected="true"]){background:var(--raise);color:var(--ink)}
+.tb-tabs button[aria-selected="true"]:hover{background:var(--red-hot)}
+.tb-nav:hover{background:var(--raise)}
+a{color:var(--red)}
+a:hover{color:var(--red-hot)}
+::placeholder{color:var(--ink-3);opacity:1}

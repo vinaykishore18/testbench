@@ -40,6 +40,21 @@ console.log('1. the two light blocks are identical');
   }
 }
 
+console.log('\n1b. every themed component still has its rules');
+{
+  /* A regex edit to this stylesheet once deleted the theme picker, the range
+     inputs and the canvas idle labels in one go, and nothing noticed until it
+     was on screen. Name the selectors that must exist. */
+  const css = readFileSync('css/testbench.css', 'utf8');
+  const need = ['.tb-themepick', '.tb-themepick button[aria-pressed="true"]',
+                'input[type="range"]::-webkit-slider-thumb', '.tb-scopeidle',
+                '.tb-chiprow', '.tb-btn.pri:hover', 'select:focus-visible',
+                ':root[data-theme="light"]'];
+  const missing = need.filter(sel => !css.includes(sel));
+  missing.length ? missing.forEach(m => fail('stylesheet has lost ' + m))
+                 : pass(need.length + ' required selectors present');
+}
+
 const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});
 const errors = [];
 const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
@@ -119,6 +134,32 @@ for (const theme of ['light', 'dark']) {
     if (bad.length) fail(`${theme}/${v}: ${bad.length} low-contrast element(s), worst ${JSON.stringify(bad[0])}`);
   }
   if (!worst) pass(theme + ': every page readable');
+}
+
+console.log('\n4b. controls use theme colours, not the platform\'s greys');
+for (const theme of ['light', 'dark']) {
+  await page.click(`#themepick button[data-theme="${theme}"]`);
+  await page.waitForTimeout(250);
+  const st = await page.evaluate(() => {
+    const cs = getComputedStyle;
+    const sel = document.querySelector('#themepick button[aria-pressed="true"]');
+    const red = cs(document.documentElement).getPropertyValue('--red').trim();
+    const hex = (c) => {
+      const m = c.match(/\d+/g);
+      return m ? '#' + m.slice(0, 3).map(n => (+n).toString(16).padStart(2, '0')).join('').toUpperCase() : c;
+    };
+    return {
+      selected: hex(cs(sel).backgroundColor),
+      red: red.toUpperCase(),
+      redHot: cs(document.documentElement).getPropertyValue('--red-hot').trim().toUpperCase(),
+      dropdown: hex(cs(document.querySelector('#au-vol') ? document.querySelector('select') : document.body).backgroundColor),
+      panel2: hex(cs(document.documentElement).getPropertyValue('--panel-2').trim() ? cs(document.querySelector('.tb-panel')).backgroundColor : 'rgb(0,0,0)')
+    };
+  });
+  /* the pointer is still over the button after the click, so the hover shade counts */
+  (st.selected === st.red || st.selected === st.redHot)
+    ? pass(theme + ': the selected theme button is the accent colour (' + st.selected + ')')
+    : fail(theme + ': selected button is ' + st.selected + ', accent is ' + st.red + ' — the rule is missing');
 }
 
 console.log('\n5. the monitor test patterns ignore the theme');
