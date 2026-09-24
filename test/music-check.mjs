@@ -9,8 +9,12 @@
  *   TB_CHROME=/opt/pw-browsers/chromium node test/music-check.mjs
  */
 import { chromium } from 'playwright';
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync, readFileSync, existsSync, mkdtempSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+var MP3 = null;   /* var, so the fixture cache exists before the first call */
 
 const URL = process.env.TB_URL || 'http://127.0.0.1:8099/index.html';
 const CHROME = process.env.TB_CHROME || undefined;
@@ -91,9 +95,9 @@ console.log('\n4. a track added once is still there after a reload');
 {
   /* The whole point: "can we just play the tracks in the site". You add your
      own copies once and they live in this browser from then on. */
-  await page.setInputFiles('#mu-file', [{ name: 'Animals.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) }]);
+  await page.setInputFiles('#mu-file', [{ name: 'Animals.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(wav()) }]);
   await page.waitForTimeout(1100);
-  await page.setInputFiles('#mu-file', [{ name: 'Money.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) }]);
+  await page.setInputFiles('#mu-file', [{ name: 'Money.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(wav()) }]);
   await page.waitForTimeout(1100);
   const before = await page.evaluate(() => [...document.querySelectorAll('.tb-chiprow[data-saved] .go')].map(b => b.textContent));
   JSON.stringify(before) === JSON.stringify(['Animals', 'Money'])
@@ -127,7 +131,7 @@ console.log('\n4. a track added once is still there after a reload');
 }
 
 console.log('\n5. a local file plays through the meters');
-await page.setInputFiles('#mu-file', { name: 'bench-tone.wav', mimeType: 'audio/wav', buffer: Buffer.from(wav()) });
+await page.setInputFiles('#mu-file', { name: 'bench-tone.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(wav()) });
 await page.waitForTimeout(1400);
 {
   const st = await page.evaluate(() => ({
@@ -166,22 +170,47 @@ await page.click('button[data-view="home"]'); await page.waitForTimeout(500);
 (await page.evaluate(() => document.querySelector('#mu-play').textContent)) === 'Play'
   ? pass('stopped on navigation') : fail('still playing after leaving the page');
 
-console.log('\n9. no console errors');
+console.log('\n9. only real MP3s get in');
+{
+  const before = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
+  /* right name, wrong contents — a zip renamed to .mp3 */
+  await page.setInputFiles('#mu-file', [{ name: 'Trojan.mp3', mimeType: 'audio/mpeg', buffer: Buffer.from(notAudio()) }]);
+  await page.waitForTimeout(900);
+  let after = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
+  after === before ? pass('a renamed file was refused on its contents') : fail('a non-MP3 was accepted');
+  let toast = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
+  /not an MP3/.test(toast) ? pass('said why: ' + toast.match(/[^.]*not an MP3[^.]*/)[0].trim()) : fail('no explanation: ' + toast.slice(0, 120));
+
+  /* a genuine wav, honestly named — still refused, because the rule is MP3 */
+  await page.setInputFiles('#mu-file', [{ name: 'Tone.wav', mimeType: 'audio/wav', buffer: Buffer.alloc(9000, 1) }]);
+  await page.waitForTimeout(700);
+  after = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
+  after === before ? pass('a .wav was refused') : fail('a .wav got in');
+  toast = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
+  /Only \.mp3/.test(toast) ? pass('named the rule') : fail('no rule given: ' + toast.slice(0, 120));
+}
+
+console.log('\n10. no console errors');
 errors.length ? errors.forEach(fail) : pass('clean');
 
 await browser.close();
 console.log(failures ? '\n' + failures + ' FAILED' : '\nall checks passed');
 process.exit(failures ? 1 : 0);
 
+/* A real, decodable MP3, encoded at test time.
+   It is never committed: test/security.mjs fails the build if any audio file
+   appears in the tree, and that rule is there to keep music out of the repo.
+   Generating the fixture keeps both things true. */
 function wav() {
-  const sr = 44100, n = sr * 3, b = Buffer.alloc(44 + n * 4);
-  b.write('RIFF', 0); b.writeUInt32LE(36 + n * 4, 4); b.write('WAVE', 8);
-  b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(2, 22);
-  b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr * 4, 28); b.writeUInt16LE(4, 32); b.writeUInt16LE(16, 34);
-  b.write('data', 36); b.writeUInt32LE(n * 4, 40);
-  for (let i = 0; i < n; i++) {
-    const v = Math.round(Math.sin(2 * Math.PI * 440 * i / sr) * 12000);
-    b.writeInt16LE(v, 44 + i * 4); b.writeInt16LE(v, 46 + i * 4);
-  }
-  return b;
+  if (MP3) return MP3;
+  const dir = mkdtempSync(join(tmpdir(), 'tb-'));
+  const out = join(dir, 'tone.mp3');
+  execFileSync('ffmpeg', ['-v', 'quiet', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=3',
+                          '-ac', '2', '-b:a', '128k', out]);
+  MP3 = readFileSync(out);
+  return MP3;
+}
+function notAudio() {
+  /* a zip wearing an .mp3 name */
+  return Buffer.concat([Buffer.from([0x50, 0x4B, 0x03, 0x04]), Buffer.alloc(4000, 0x41)]);
 }

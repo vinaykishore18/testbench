@@ -725,7 +725,7 @@ function niceSize(n) {
       var total = 0; rows.forEach(function (r) { total += r.size; });
       note.textContent = rows.length
         ? rows.length + (rows.length === 1 ? " track" : " tracks") + " of yours (" + niceSize(total) +
-          ") kept in this browser, plus five built-in patterns. Drop a file anywhere on this panel to add one."
+          ") kept in this browser, plus five built-in patterns. Drop an MP3 anywhere on this panel to add one."
         : "Five built-in patterns, ready now. Add your own with the button above or by dropping a file anywhere on this panel — it stays on this machine and is one click away on every visit.";
       return rows;
     });
@@ -783,9 +783,59 @@ function niceSize(n) {
     }, 1200);
   }
 
+  /* MP3 only, and checked by looking inside the file rather than by trusting
+     its name.
+
+     Honest about the risk: nothing here is uploaded, and a blob URL is only
+     ever handed to an <audio> element, so a renamed file cannot execute. What
+     it can do is waste your time — a .mp3 that is really a video or a zip
+     decodes to silence and you stand there wondering whether the headset is
+     dead. Checking the first bytes turns that into an immediate, clear refusal.
+
+     A real MP3 starts with either "ID3" (a tag) or an MPEG frame sync: 0xFF
+     followed by a byte whose top three bits are set. An attacker-supplied
+     extension proves nothing; the header is the file telling the truth. */
+  var MAX_BYTES = 40 * 1024 * 1024;
+
+  function looksLikeMp3(buf) {
+    var b = new Uint8Array(buf);
+    if (b.length < 4) return false;
+    if (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) return true;        /* "ID3" */
+    for (var i = 0; i < Math.min(b.length - 1, 8192); i++) {                 /* leading junk is common */
+      if (b[i] === 0xFF && (b[i + 1] & 0xE0) === 0xE0) return true;          /* frame sync */
+    }
+    return false;
+  }
+  function checkMp3(file) {
+    return new Promise(function (res) {
+      if (!/\.mp3$/i.test(file.name)) { res("Only .mp3 files. " + file.name + " is not one."); return; }
+      if (file.size > MAX_BYTES) { res(file.name + " is " + niceSize(file.size) + ". The limit is 40 MB."); return; }
+      if (file.size < 512) { res(file.name + " is too small to be audio."); return; }
+      var r = new FileReader();
+      r.onerror = function () { res("Could not read " + file.name + "."); };
+      r.onload = function () {
+        res(looksLikeMp3(r.result) ? null
+          : file.name + " is named .mp3 but its contents are not an MP3. Nothing was loaded.");
+      };
+      r.readAsArrayBuffer(file.slice(0, 16384));
+    });
+  }
+
   function save(files) {
-    var list = Array.prototype.slice.call(files || []).filter(function (f) { return /^audio\//.test(f.type || ""); });
-    if (!list.length) { toast("Not an audio file", "Drop an MP3, FLAC, WAV or M4A.", "bad"); return; }
+    var all = Array.prototype.slice.call(files || []);
+    if (!all.length) return;
+    Promise.all(all.map(function (f) {
+      return checkMp3(f).then(function (err) { return { file: f, err: err }; });
+    })).then(function (rows) {
+      var good = rows.filter(function (r) { return !r.err; }).map(function (r) { return r.file; });
+      rows.filter(function (r) { return r.err; })
+          .forEach(function (r) { toast("Rejected", r.err, "bad"); });
+      if (good.length) accept(good);
+      else if (rows.length) $("#mu-name").textContent = "Nothing loaded \u2014 MP3 files only";
+    });
+  }
+
+  function accept(list) {
     var first = list[0];
     startBlob(first, first.name.replace(/\.[^.]+$/, ""));
     var jobs = list.map(function (f) {

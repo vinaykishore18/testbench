@@ -38,6 +38,7 @@
     <span class="tb-chip" id="chip-wheel"><span class="tb-dot"></span>Wheel <b>—</b></span>
     <span class="tb-chip" id="chip-mic"><span class="tb-dot"></span>Mic <b>off</b></span>
     <span class="tb-chip" id="chip-cam"><span class="tb-dot"></span>Cam <b>off</b></span>
+    <span class="tb-chip" id="chip-midi"><span class="tb-dot"></span>MIDI <b>—</b></span>
     <span class="tb-chip" id="chip-scr"><span class="tb-dot"></span>Screen <b>—</b></span>
     <div class="tb-themepick" id="themepick" role="group" aria-label="Theme" style="margin-left:auto"></div>
     <button class="tb-btn" id="run-start" style="min-height:30px;padding:5px 14px;font-size:11px">Run bench</button>
@@ -55,6 +56,7 @@
     <div class="tb-railhead">Audio</div>
     <button class="tb-nav" data-view="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>Mic &amp; Headsets<span class="tb-badge" id="badge-audio"></span></button>
     <button class="tb-nav" data-view="airpods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3.5c-2.2 0-3.5 1.8-3.5 4.2S5.8 12 8 12s3.5-1.8 3.5-4.3S10.2 3.5 8 3.5Z"/><path d="M8 12v6.5a2 2 0 0 0 4 0"/><path d="M16.5 3.5c2.2 0 3.5 1.8 3.5 4.2S18.7 12 16.5 12"/></svg>Earbuds<span class="tb-badge" id="badge-airpods"></span></button>
+    <button class="tb-nav" data-view="midi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M7 6v7M10.5 6v7M14 6v7M17.5 6v7"/></svg>MIDI<span class="tb-badge" id="badge-midi"></span></button>
     <div class="tb-railhead">Screens &amp; optics</div>
     <button class="tb-nav" data-view="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/></svg>Monitors<span class="tb-badge" id="badge-monitor"></span></button>
     <button class="tb-nav" data-view="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/></svg>Webcams<span class="tb-badge" id="badge-camera"></span></button>
@@ -609,7 +611,7 @@
       <h3 class="tb-subhead">Play something</h3>
       <div class="tb-rack" id="mu-rack"></div>
       <p class="tb-note" id="mu-racknote" style="margin-top:9px"></p>
-      <input type="file" id="mu-file" accept="audio/*" multiple hidden>
+      <input type="file" id="mu-file" accept=".mp3,audio/mpeg" multiple hidden>
 
       <div id="mu-controls">
         <div class="tb-bar" style="margin-top:12px">
@@ -796,6 +798,51 @@
   </section>
 
   <!-- ============================= MONITORS ============================= -->
+  <section class="tb-view" id="view-midi">
+    <div class="tb-h">
+      <div><span class="tb-eyebrow">Audio</span><h1>MIDI</h1></div>
+      <p>Keyboards, pad controllers and control surfaces. Finds the fault that matters on a used keyboard: not the key that is silent, but the one that plays quietly.</p>
+    </div>
+
+    <div class="tb-bar" style="margin-bottom:16px">
+      <button class="tb-btn pri" id="mi-connect">Connect MIDI</button>
+      <button class="tb-btn" id="mi-reset">Clear</button>
+      <span class="tb-lab" id="mi-state" style="text-transform:none;letter-spacing:0">Press Connect. No driver is needed for class-compliant gear.</span>
+    </div>
+
+    <div class="tb-panel accent">
+      <h2 class="tb-ptitle">Keyboard<span class="tb-rule"></span></h2>
+      <div class="tb-piano" id="mi-keys"></div>
+      <div class="tb-stats" style="margin-top:16px">
+        <div class="tb-stat"><div class="k">Distinct keys</div><div class="v" id="mi-notes">0</div></div>
+        <div class="tb-stat"><div class="k">Messages</div><div class="v" id="mi-msgs">0</div></div>
+        <div class="tb-stat"><div class="k">Average velocity</div><div class="v" id="mi-vel">&mdash;</div></div>
+        <div class="tb-stat"><div class="k">Velocity range</div><div class="v" id="mi-velrange" style="font-size:18px">&mdash;</div></div>
+        <div class="tb-stat"><div class="k">Channels</div><div class="v" id="mi-chans" style="font-size:18px">&mdash;</div></div>
+      </div>
+      <p class="tb-note">Play every key from the bottom to the top at an even, moderate strength. A key that lights <b>amber</b> came in under velocity 45 while its neighbours were near 100 &mdash; the contact is closing late. That one plays, so it survives a quick listen, and the buyer finds it a week later. Red means a note started and never stopped.</p>
+      <div id="mi-verdict" style="margin-top:14px"></div>
+    </div>
+
+    <div class="tb-grid tb-cols2">
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Wheels &amp; pedal<span class="tb-rule"></span></h2>
+        <div class="tb-meterrow"><span class="lbl">Pitch bend</span><span class="tb-meter"><i id="mi-bendbar"></i></span><span class="val" id="mi-bendv">0%</span></div>
+        <div class="tb-meterrow"><span class="lbl">Mod wheel</span><span class="tb-meter"><i id="mi-modbar"></i></span><span class="val" id="mi-modv">0%</span></div>
+        <div class="tb-stats" style="margin-top:14px">
+          <div class="tb-stat"><div class="k">Sustain pedal</div><div class="v" id="mi-sus">up</div></div>
+        </div>
+        <p class="tb-note">Push the bend wheel both ways and let go &mdash; it must spring back to centre. Roll the mod wheel top to bottom looking for a flat spot. Then press and release the sustain pedal.</p>
+      </div>
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">Inputs<span class="tb-rule"></span></h2>
+        <div class="tb-rack" id="mi-ports"></div>
+        <h3 class="tb-subhead">Raw messages</h3>
+        <div class="tb-log" id="mi-log" data-empty="Every message except clock appears here." style="height:210px"></div>
+      </div>
+    </div>
+  </section>
+
   <section class="tb-view" id="view-monitor">
     <div class="tb-h">
       <div><span class="tb-eyebrow">Screens</span><h1>Monitors</h1></div>
@@ -820,8 +867,8 @@
       <div class="tb-panel accent">
         <h2 class="tb-ptitle">Automatic run<span class="tb-rule"></span></h2>
         <div class="tb-bar">
-          <button class="tb-btn pri big" id="mn-runfull">Run full test</button>
-          <button class="tb-btn" id="mn-runquick">Quick run</button>
+          <button class="tb-btn pri big" id="mn-runfull">Run full test <kbd>F</kbd></button>
+          <button class="tb-btn" id="mn-runquick">Quick run <kbd>Q</kbd></button>
           <label class="tb-lab">Hold each
             <select id="mn-dwell"><option value="4">4 s</option><option value="6" selected>6 s</option><option value="9">9 s</option><option value="14">14 s</option></select>
           </label>
@@ -1086,6 +1133,7 @@
 <script src="js/20-mouse.js"></script>
 <script src="js/30-gamepad.js"></script>
 <script src="js/40-wheel.js"></script>
+<script src="js/45-midi.js"></script>
 <script src="js/50-audio.js"></script>
 <script src="js/60-display.js"></script>
 <script src="js/70-extras.js"></script>

@@ -994,3 +994,94 @@ select:disabled,input:disabled,textarea:disabled{opacity:.5;cursor:not-allowed}
 a{color:var(--red)}
 a:hover{color:var(--red-hot)}
 ::placeholder{color:var(--ink-3);opacity:1}
+
+/* the run countdown, big enough to read from across a bench */
+.tb-fullhud b.count{
+  font-family:var(--f-mono);font-size:13px;font-weight:700;color:var(--hud-strong);
+  font-variant-numeric:tabular-nums;min-width:5ch;text-align:right;
+}
+.tb-btn kbd{
+  font-family:var(--f-mono);font-size:10px;font-weight:700;
+  border:1px solid currentColor;border-radius:4px;padding:1px 5px;opacity:.65;
+}
+
+/* ---------- wheel: named controls and the D-pad hat ----------
+   Face buttons carry the colours their platform has used for twenty years.
+   Nobody looks for "button 3" on a rim; they look for the green triangle. */
+.tb-gbtn[data-face]{border-width:2px}
+.tb-gbtn[data-face="ps0"]{border-color:#4A8FE7}           /* Cross    */
+.tb-gbtn[data-face="ps1"]{border-color:#E8524F}           /* Circle   */
+.tb-gbtn[data-face="ps2"]{border-color:#E060B0}           /* Square   */
+.tb-gbtn[data-face="ps3"]{border-color:#2FBF8F}           /* Triangle */
+.tb-gbtn[data-face="xbox0"]{border-color:#2FBF5A}         /* A */
+.tb-gbtn[data-face="xbox1"]{border-color:#E8524F}         /* B */
+.tb-gbtn[data-face="xbox2"]{border-color:#4A8FE7}         /* X */
+.tb-gbtn[data-face="xbox3"]{border-color:#E8B33A}         /* Y */
+.tb-gbtn[data-face="nintendo0"]{border-color:#E8524F}
+.tb-gbtn[data-face="nintendo1"]{border-color:#E8524F}
+.tb-gbtn[data-face="nintendo2"]{border-color:#2FBF8F}
+.tb-gbtn[data-face="nintendo3"]{border-color:#4A8FE7}
+.tb-gbtn[data-face].down{background:currentColor}
+.tb-gbtn[data-face="ps0"].down,.tb-gbtn[data-face="xbox2"].down,.tb-gbtn[data-face="nintendo3"].down{background:#4A8FE7;border-color:#4A8FE7;color:#fff}
+.tb-gbtn[data-face="ps1"].down,.tb-gbtn[data-face="xbox1"].down,.tb-gbtn[data-face="nintendo0"].down,.tb-gbtn[data-face="nintendo1"].down{background:#E8524F;border-color:#E8524F;color:#fff}
+.tb-gbtn[data-face="ps2"].down{background:#E060B0;border-color:#E060B0;color:#fff}
+.tb-gbtn[data-face="ps3"].down,.tb-gbtn[data-face="nintendo2"].down{background:#2FBF8F;border-color:#2FBF8F;color:#04231A}
+.tb-gbtn[data-face="xbox0"].down{background:#2FBF5A;border-color:#2FBF5A;color:#04231A}
+.tb-gbtn[data-face="xbox3"].down{background:#E8B33A;border-color:#E8B33A;color:#231A04}
+
+.tb-hatbox{display:flex;align-items:center;gap:16px;margin-top:16px}
+.tb-hatlab{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.tb-hat{
+  display:grid;grid-template-columns:repeat(3,34px);grid-template-rows:repeat(3,34px);
+  gap:4px;flex:0 0 auto;
+}
+.tb-hatkey{
+  display:grid;place-items:center;font-size:13px;
+  border:1px solid var(--line);border-radius:7px;background:var(--panel-2);color:var(--ink-3);
+  transition:background .06s,border-color .06s,color .06s;
+}
+.tb-hatkey.up{grid-area:1/2} .tb-hatkey.left{grid-area:2/1}
+.tb-hatkey.right{grid-area:2/3} .tb-hatkey.down{grid-area:3/2}
+.tb-hatkey.seen{border-color:var(--pass-l50);color:var(--pass)}
+.tb-hatkey.on{background:var(--pass);border-color:var(--pass);color:var(--on-pass)}
+
+/* ---------- MIDI keyboard ----------
+   Velocity is a quantity, so it gets a ramp rather than a flat colour, and the
+   ramp is the site's own red. Green was doing decorative work here — it means
+   "passed" everywhere else on the site, and a whole keyboard of it said nothing
+   while stealing the word. Amber still means the one thing worth looking at. */
+.tb-piano{
+  position:relative;width:100%;height:clamp(110px,16vh,150px);
+  border:1px solid var(--line);border-radius:10px;background:var(--bg-2);
+  overflow:hidden;
+}
+.tb-key{position:absolute;top:0;bottom:0;--v:1;transition:background .05s,box-shadow .05s}
+.tb-key.white{
+  background:var(--panel);border-right:1px solid var(--line);
+  border-radius:0 0 4px 4px;
+}
+.tb-key.black{
+  top:0;height:62%;z-index:2;
+  background:var(--dev-btn);border:1px solid var(--dev-btn-line);border-top:0;
+  border-radius:0 0 4px 4px;
+}
+.tb-key .oct{
+  position:absolute;bottom:4px;left:0;right:0;text-align:center;
+  font-family:var(--f-mono);font-size:8.5px;color:var(--ink-3);pointer-events:none;
+}
+/* played: the harder it came in, the more of the accent it carries */
+.tb-key.seen.white{background:color-mix(in srgb,var(--red) calc(var(--v)*62%),var(--panel))}
+.tb-key.seen.black{background:color-mix(in srgb,var(--red) calc(var(--v)*70%),var(--dev-btn))}
+/* weak: the fault you are hunting, and the only amber on the keyboard */
+.tb-key.weak.white,.tb-key.weak.black{
+  background:var(--warn);border-color:var(--warn);
+  box-shadow:inset 0 0 0 2px var(--warn);
+}
+/* stuck: told apart from a hard-played key by outline as well as colour */
+.tb-key.stuck{background:var(--red)!important;border-color:var(--ink)!important;box-shadow:inset 0 0 0 2px var(--ink)}
+/* held right now */
+.tb-key.down{background:var(--red)!important;border-color:var(--red)!important;box-shadow:0 0 12px var(--red-glow)}
+@supports not (background: color-mix(in srgb, red 50%, blue)){
+  .tb-key.seen{background:var(--red-t32)}
+  .tb-key.weak{background:var(--warn)}
+}

@@ -30,6 +30,20 @@ SOLIDS.forEach(function (s, i) {
 $$("[data-pat]").forEach(function (b) {
   b.onclick = function () { seq = [{ kind: b.dataset.pat, name: b.textContent }]; seqI = 0; auto = false; open(); };
 });
+/* Start a run without reaching for the mouse. The point of the bench run is
+   that your hands stay on the unit; the same applies with a monitor on a
+   trolley in front of you. Ignored while typing in a field, and while an
+   overlay is already up (its own keys take over there). */
+window.addEventListener("keydown", function (e) {
+  if (TB.view() !== "monitor" || e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
+  if (stage.classList.contains("on")) return;
+  var t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) return;
+  var k = (e.key || "").toLowerCase();
+  if (k === "f") { e.preventDefault(); $("#mn-runfull").click(); }
+  else if (k === "q") { e.preventDefault(); $("#mn-runquick").click(); }
+});
+
 /* automatic runs */
 function solidSteps() { return SOLIDS.map(function (x) { return { kind: "solid", color: x[0], name: x[1] }; }); }
 function patSteps(list) { return list.map(function (p) { return { kind: p[0], name: p[1] }; }); }
@@ -44,7 +58,13 @@ $("#mn-runquick").onclick = function () {
 };
 
 function open() {
+  /* close() clears every piece of run state, auto included — and open() calls
+     it defensively before starting. So the automatic run switched itself off a
+     few lines before it was due to start, and every run sat on its first
+     pattern waiting for a click. Hold the flag across the teardown. */
+  var wantAuto = auto;
   close(true);                       /* never stack two overlays */
+  auto = wantAuto;
   stage.textContent = "";
   cv = document.createElement("canvas"); cv.className = "fill"; stage.appendChild(cv); ctx = cv.getContext("2d");
   hud = el("div", "tb-fullhud"); stage.appendChild(hud);
@@ -121,6 +141,13 @@ function step() {
   lastT = now;
   var p = clamp(elapsed / dwell, 0, 1);
   if (hudEls.prog) hudEls.prog.style.width = (p * 100) + "%";
+  /* A bar that creeps is hard to trust from across a bench. Print the seconds
+     as well, so a stalled run is obvious instead of ambiguous. */
+  if (hudEls.count) {
+    var left = Math.max(0, (dwell - elapsed) / 1000);
+    var txt = left.toFixed(1) + " s";
+    if (hudEls.count.textContent !== txt) hudEls.count.textContent = txt;
+  }
   if (p >= 1) next();
 }
 function resize() {
@@ -140,6 +167,8 @@ function updateHud() {
   hud.appendChild(el("span", null, (seqI + 1) + " of " + seq.length));
   if (auto) {
     var p = el("span", "prog"), i = el("i"); p.appendChild(i); hud.appendChild(p); hudEls.prog = i;
+    hudEls.count = el("b", "count", (dwell / 1000).toFixed(1) + " s");
+    hud.appendChild(hudEls.count);
     if (paused) hud.appendChild(el("span", "paused", "PAUSED"));
   }
   hud.appendChild(el("span", null, auto ? "Space pauses · → skip · ← back · H hides · Esc stops" : "Click or → next · ← back · H hides · Esc exits"));

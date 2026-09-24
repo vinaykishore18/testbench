@@ -43,13 +43,19 @@ console.log('\n3. permissions are granted only for what the site actually uses')
   const pp = (headers.match(/Permissions-Policy:\s*(.*)/) || [])[1] || '';
   const js = readdirSync('js').map(f => readFileSync(join('js', f), 'utf8')).join('\n');
   /hid=\(self\)/.test(pp) ? pass('hid=(self) — the API the site is built on') : fail('hid not granted, but navigator.hid is used');
+  /* MIDI is granted because the MIDI page uses it; if that page ever goes, deny it again */
+  if (/requestMIDIAccess/.test(js)) {
+    /midi=\(self\)/.test(pp) ? pass('midi=(self) — the MIDI page needs it') : fail('the MIDI page calls requestMIDIAccess but midi is not granted');
+  } else {
+    /midi=\(\)/.test(pp) ? pass('midi denied — never used') : fail('midi granted but never used');
+  }
   if (/navigator\.usb/.test(js)) pass('usb is used, so granting it is right');
   else /usb=\(\)/.test(pp) ? pass('usb denied — never used') : fail('usb granted but navigator.usb is never called');
   /interest-cohort/.test(pp) ? fail('interest-cohort is a dead token; use browsing-topics') : pass('no dead tokens');
   for (const f of ['microphone=(self)', 'camera=(self)', 'gamepad=(self)', 'fullscreen=(self)']) {
     pp.includes(f) ? pass(f) : fail('the site needs ' + f + ' and it is not granted');
   }
-  for (const f of ['serial=()', 'bluetooth=()', 'midi=()', 'display-capture=()']) {
+  for (const f of ['serial=()', 'bluetooth=()', 'display-capture=()', 'usb=()']) {
     pp.includes(f) ? pass(f + ' denied') : fail('unused powerful feature left open: ' + f);
   }
 }

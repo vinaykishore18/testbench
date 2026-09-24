@@ -12,7 +12,7 @@
 import { chromium } from 'playwright';
 
 const URL = process.env.TB_URL || 'http://127.0.0.1:8099/index.html';
-const VIEWS = ['home','keyboard','mouse','gamepad','joycon','wheel','audio','airpods',
+const VIEWS = ['home','keyboard','mouse','gamepad','joycon','wheel','midi','audio','airpods',
                'monitor','camera','touch','network','stress','system'];
 const CHROME = process.env.TB_CHROME || undefined;
 
