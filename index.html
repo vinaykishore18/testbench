@@ -4,19 +4,30 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Testbench by Vinay</title>
-<meta name="description" content="All-in-one hardware test bench — keyboards, mice, controllers, racing wheels, headsets, monitors, webcams and touchscreens. Runs entirely in your browser.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#08090C">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<!-- This is an internal bench tool, not a product. It should not be in anyone's
+     search results, cached by anyone, summarised in an AI answer or used as
+     training data. The header version (X-Robots-Tag, in vercel.json and
+     _headers) is what crawlers actually read first; this meta is the fallback
+     for when the page is served from somewhere that does not set headers, and
+     for the crawlers that only read the document. robots.txt asks politely on
+     top of both. None of the three stops a crawler that chooses to ignore them,
+     which is why there is nothing in this site worth taking. -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, nocache">
+<meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <link rel="stylesheet" href="css/testbench.css">
 <script src="js/_boot.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2308090C'/%3E%3Cpath d='M4 14h3l2-5 2.6 7 2.2-9 2 7h3.2' stroke='%23FF2D46' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body>
+
+<!-- Sixteen rail buttons sit between the top of the document and the test you
+     actually want. On a keyboard that is sixteen tabs every single time you
+     arrive, and the rail is not the point of the page. -->
+<a class="tb-skip" href="#main">Skip to the test</a>
 
 <div class="tb-lockbar" id="lockbar">
   <span class="rec"></span>
@@ -47,28 +58,28 @@
 
   <nav class="tb-rail" id="rail" aria-label="Tests">
     <div class="tb-railhead">Input</div>
-    <button class="tb-nav" data-view="home" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>Bench<span class="tb-badge" id="badge-home"></span></button>
-    <button class="tb-nav" data-view="keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>Keyboard<span class="tb-badge" id="badge-keyboard"></span></button>
-    <button class="tb-nav" data-view="mouse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2.5" width="12" height="19" rx="6"/><path d="M12 6.5v4"/></svg>Mouse<span class="tb-badge" id="badge-mouse"></span></button>
-    <button class="tb-nav" data-view="gamepad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6.5 8h11a4.5 4.5 0 0 1 4.4 5.4l-.8 4A2.6 2.6 0 0 1 16.6 18L15 16H9l-1.6 2a2.6 2.6 0 0 1-4.5-.6l-.8-4A4.5 4.5 0 0 1 6.5 8Z"/><path d="M7 11v3M5.5 12.5h3"/></svg>Controllers<span class="tb-badge" id="badge-gamepad"></span></button>
-    <button class="tb-nav" data-view="joycon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="18" rx="3.5"/><rect x="14" y="3" width="7" height="18" rx="3.5"/><path d="M6.5 8v.01M17.5 8v.01"/></svg>Joy-Cons<span class="tb-badge" id="badge-joycon"></span></button>
-    <button class="tb-nav" data-view="wheel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M4.5 17l5-3M19.5 17l-5-3"/></svg>Wheels<span class="tb-badge" id="badge-wheel"></span></button>
+    <button class="tb-nav" data-view="home" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>Bench<span class="tb-badge" id="badge-home"></span></button>
+    <button class="tb-nav" data-view="keyboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>Keyboard<span class="tb-badge" id="badge-keyboard"></span></button>
+    <button class="tb-nav" data-view="mouse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="6" y="2.5" width="12" height="19" rx="6"/><path d="M12 6.5v4"/></svg>Mouse<span class="tb-badge" id="badge-mouse"></span></button>
+    <button class="tb-nav" data-view="gamepad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M6.5 8h11a4.5 4.5 0 0 1 4.4 5.4l-.8 4A2.6 2.6 0 0 1 16.6 18L15 16H9l-1.6 2a2.6 2.6 0 0 1-4.5-.6l-.8-4A4.5 4.5 0 0 1 6.5 8Z"/><path d="M7 11v3M5.5 12.5h3"/></svg>Controllers<span class="tb-badge" id="badge-gamepad"></span></button>
+    <button class="tb-nav" data-view="joycon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="3" y="3" width="7" height="18" rx="3.5"/><rect x="14" y="3" width="7" height="18" rx="3.5"/><path d="M6.5 8v.01M17.5 8v.01"/></svg>Joy-Cons<span class="tb-badge" id="badge-joycon"></span></button>
+    <button class="tb-nav" data-view="wheel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M4.5 17l5-3M19.5 17l-5-3"/></svg>Wheels<span class="tb-badge" id="badge-wheel"></span></button>
     <div class="tb-railhead">Audio</div>
-    <button class="tb-nav" data-view="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>Mic &amp; Headsets<span class="tb-badge" id="badge-audio"></span></button>
-    <button class="tb-nav" data-view="airpods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3.5c-2.2 0-3.5 1.8-3.5 4.2S5.8 12 8 12s3.5-1.8 3.5-4.3S10.2 3.5 8 3.5Z"/><path d="M8 12v6.5a2 2 0 0 0 4 0"/><path d="M16.5 3.5c2.2 0 3.5 1.8 3.5 4.2S18.7 12 16.5 12"/></svg>Earbuds<span class="tb-badge" id="badge-airpods"></span></button>
-    <button class="tb-nav" data-view="midi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M7 6v7M10.5 6v7M14 6v7M17.5 6v7"/></svg>MIDI<span class="tb-badge" id="badge-midi"></span></button>
+    <button class="tb-nav" data-view="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>Mic &amp; Headsets<span class="tb-badge" id="badge-audio"></span></button>
+    <button class="tb-nav" data-view="airpods"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M8 3.5c-2.2 0-3.5 1.8-3.5 4.2S5.8 12 8 12s3.5-1.8 3.5-4.3S10.2 3.5 8 3.5Z"/><path d="M8 12v6.5a2 2 0 0 0 4 0"/><path d="M16.5 3.5c2.2 0 3.5 1.8 3.5 4.2S18.7 12 16.5 12"/></svg>Earbuds<span class="tb-badge" id="badge-airpods"></span></button>
+    <button class="tb-nav" data-view="midi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M7 6v7M10.5 6v7M14 6v7M17.5 6v7"/></svg>MIDI<span class="tb-badge" id="badge-midi"></span></button>
     <div class="tb-railhead">Screens &amp; optics</div>
-    <button class="tb-nav" data-view="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/></svg>Monitors<span class="tb-badge" id="badge-monitor"></span></button>
-    <button class="tb-nav" data-view="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/></svg>Webcams<span class="tb-badge" id="badge-camera"></span></button>
-    <button class="tb-nav" data-view="touch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 11V5.5a1.8 1.8 0 0 1 3.6 0V11M12.6 11V9.2a1.7 1.7 0 0 1 3.4 0V13"/><path d="M16 12.5a1.7 1.7 0 0 1 3.4 0v3.2A5.8 5.8 0 0 1 13.6 21h-1.2a5 5 0 0 1-4-2l-3-4a1.7 1.7 0 0 1 2.6-2.1L9 14.5"/></svg>Touch<span class="tb-badge" id="badge-touch"></span></button>
+    <button class="tb-nav" data-view="monitor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="2" y="3.5" width="20" height="14" rx="2"/><path d="M8 21h8M12 17.5V21"/></svg>Monitors<span class="tb-badge" id="badge-monitor"></span></button>
+    <button class="tb-nav" data-view="camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 11l5-3v8l-5-3z"/></svg>Webcams<span class="tb-badge" id="badge-camera"></span></button>
+    <button class="tb-nav" data-view="touch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M9 11V5.5a1.8 1.8 0 0 1 3.6 0V11M12.6 11V9.2a1.7 1.7 0 0 1 3.4 0V13"/><path d="M16 12.5a1.7 1.7 0 0 1 3.4 0v3.2A5.8 5.8 0 0 1 13.6 21h-1.2a5 5 0 0 1-4-2l-3-4a1.7 1.7 0 0 1 2.6-2.1L9 14.5"/></svg>Touch<span class="tb-badge" id="badge-touch"></span></button>
     <div class="tb-railhead">Network</div>
-    <button class="tb-nav" data-view="network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12.5a10 10 0 0 1 14 0M2 9a15 15 0 0 1 20 0M8.5 16a5.5 5.5 0 0 1 7 0M12 19.5h.01"/></svg>Routers<span class="tb-badge" id="badge-network"></span></button>
+    <button class="tb-nav" data-view="network"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M5 12.5a10 10 0 0 1 14 0M2 9a15 15 0 0 1 20 0M8.5 16a5.5 5.5 0 0 1 7 0M12 19.5h.01"/></svg>Routers<span class="tb-badge" id="badge-network"></span></button>
     <div class="tb-railhead">Machine</div>
-    <button class="tb-nav" data-view="stress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" stroke-linejoin="round"/></svg>Stress test<span class="tb-badge" id="badge-stress"></span></button>
-    <button class="tb-nav" data-view="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>System<span class="tb-badge" id="badge-system"></span></button>
+    <button class="tb-nav" data-view="stress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" stroke-linejoin="round"/></svg>Stress test<span class="tb-badge" id="badge-stress"></span></button>
+    <button class="tb-nav" data-view="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>System<span class="tb-badge" id="badge-system"></span></button>
   </nav>
 
-  <main class="tb-main" id="main">
+  <main class="tb-main" id="main" tabindex="-1">
 
   <!-- ============================= BENCH ============================= -->
   <section class="tb-view on" id="view-home">
@@ -77,7 +88,7 @@
         <span class="tb-eyebrow">Reverse logistics QC</span>
         <h1>Test <em>everything</em> on one bench</h1>
       </div>
-      <p>Plug a device in and its card lights up. Controllers and wheels are scored the second they connect. Nothing is uploaded — every test runs inside this tab.</p>
+      <p>Plug a device in and its card lights up. Controllers and wheels are scored the second they connect. Nothing is uploaded &mdash; every test runs inside this tab. Press <kbd>Ctrl</kbd>+<kbd>K</kbd> anywhere to jump straight to a test without reaching for the mouse &mdash; it works even while capture mode is holding the keyboard.</p>
     </div>
 
     <div id="home-mobile"></div>
@@ -97,6 +108,39 @@
         <dl class="tb-kv" id="envinfo"></dl>
         <p class="tb-note">A controller stays invisible to every browser until it sends one input — that is a browser rule, not a fault with the pad. If a card stays dark, press a face button.</p>
       </div>
+    </div>
+
+    <div class="tb-panel accent" id="rep-panel">
+      <h2 class="tb-ptitle">Unit report<span class="tb-rule"></span></h2>
+      <p class="tb-sub">Everything you test in this tab is recorded as you go. Fill in the unit details and this turns the session into a one-page QC record you can print, save as a PDF, or paste straight into a listing or a returns dispute. It is built from the results themselves, not typed up afterwards &mdash; so it says what the bench actually found, including the parts that failed.</p>
+      <div class="tb-bar">
+        <label class="tb-lab">Unit / SKU <input type="text" id="rep-unit" placeholder="e.g. DS4-CUH-ZCT2 / lot 418" style="min-width:210px;text-transform:none"></label>
+        <label class="tb-lab">Condition
+          <select id="rep-grade">
+            <option value="">not graded</option>
+            <option value="A — as new">A &mdash; as new</option>
+            <option value="B — light wear">B &mdash; light wear</option>
+            <option value="C — heavy wear, working">C &mdash; heavy wear, working</option>
+            <option value="D — faulty, for parts">D &mdash; faulty, for parts</option>
+          </select>
+        </label>
+        <label class="tb-lab">Tested by <input type="text" id="rep-by" placeholder="initials" style="min-width:90px;text-transform:uppercase"></label>
+      </div>
+      <div class="tb-bar" style="margin-top:10px">
+        <label class="tb-lab" style="flex:1 1 320px">Notes <input type="text" id="rep-note" placeholder="anything the tests cannot see — scuffs, missing cable, smell of smoke" style="width:100%;text-transform:none"></label>
+      </div>
+      <div class="tb-bar" style="margin-top:12px">
+        <button class="tb-btn pri" id="rep-build">Build the report</button>
+        <button class="tb-btn" id="rep-print">Print / save as PDF</button>
+        <button class="tb-btn" id="rep-copy">Copy as text</button>
+        <button class="tb-btn" id="rep-csv">Export CSV</button>
+        <button class="tb-btn" id="rep-json">Export JSON</button>
+        <button class="tb-btn danger" id="rep-reset">Start a new unit</button>
+        <span class="tb-sppill" id="rep-count">nothing recorded yet</span>
+      </div>
+      <div id="rep-out" style="margin-top:16px"></div>
+      <p class="tb-note"><b>CSV</b> gives one row per test with the unit, grade and operator repeated on every line, so it drops straight into an inventory sheet and filters properly. The untested pages get rows too, with an empty score &mdash; a sheet of nothing but passes reads as a pass for the whole unit, which is the error the printed report exists to avoid. <b>JSON</b> is the same data with the flags and timestamps intact, for anything that reads the file rather than looks at it. Both are generated here and saved by your browser; nothing is uploaded.</p>
+      <p class="tb-note">The report never invents a result. A test you did not run is listed as not tested rather than assumed good, because &ldquo;not tested&rdquo; and &ldquo;passed&rdquo; are very different things to put in front of a buyer. Nothing leaves this machine &mdash; printing goes to your own printer or PDF writer, and copying goes to your clipboard.</p>
     </div>
   </section>
 
@@ -198,6 +242,10 @@
         <div class="tb-panel">
           <h2 class="tb-ptitle">Rollover &amp; ghosting<span class="tb-rule"></span></h2>
           <p class="tb-sub">Hold down as many keys at once as you can — all four fingers, then both hands. A cheap membrane board stops registering at 2–3 keys. A proper mechanical one takes six or more.</p>
+          <div class="tb-callout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01" stroke-linecap="round"/></svg>
+            <span><b>If it stops at exactly six, that is almost certainly not the keyboard.</b> USB keyboards have two report modes. In <em>boot protocol</em> &mdash; the simple one a BIOS can read &mdash; the report has room for six keys plus modifiers, full stop. Many boards only switch to the richer mode when a driver asks, and some operating systems never ask. So six is a number the protocol imposes, not one the switches do. Modifiers travel in their own field and do not count against it. A board stopping at <b>two or three</b> is a real limit worth recording; one stopping at six is a note for your listing, not a fault.</span>
+          </div>
           <div class="tb-stats">
             <div class="tb-stat"><div class="k">Held right now</div><div class="v" id="ro-now">0</div></div>
             <div class="tb-stat"><div class="k">Best so far</div><div class="v" id="ro-max">0</div></div>
@@ -228,40 +276,52 @@
     </div>
     <div id="ms-mobile"></div>
 
+    <div class="tb-panel accent" id="ms-dock">
+      <h2 class="tb-ptitle">The mouse<span class="tb-rule"></span></h2>
+      <div class="tb-dockgrid">
+        <div class="tb-dockdev">
+          <div id="ms-svg"></div>
+        </div>
+        <div class="tb-dockinfo">
+  <div class="tb-bar" style="margin-bottom:14px">
+          <div class="tb-seg" id="ms-shape" role="group" aria-label="Mouse shape">
+            <button data-s="std" aria-pressed="false">3-button</button>
+            <button data-s="five" aria-pressed="true">5-button</button>
+            <button data-s="mmo" aria-pressed="false">MMO 12-side</button>
+          </div>
+          <button class="tb-btn" id="ms-armmacro">Swallow macro keys: off</button>
+          <button class="tb-btn" id="ms-navtrap">Hold back/forward: off</button>
+        </div>
+        <div class="tb-stats" style="margin-bottom:14px">
+          <div class="tb-stat"><div class="k">Held right now</div><div class="v" id="ms-heldnow" style="font-size:16px">none</div></div>
+          <div class="tb-stat"><div class="k">Last event</div><div class="v" id="ms-lastev" style="font-size:16px">—</div></div>
+        </div>
+        <div id="ms-svg"></div>
+        <div class="tb-idbar" id="ms-id"></div>
+        <p class="tb-note" id="ms-mmonote"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Four tabs, not nine.
+
+         Nine flat tabs meant hunting for the one test you wanted, and the
+         mouse diagram - the thing you most want to watch while you are
+         pressing things - was buried inside the first of them. The diagram now
+         sits above the tabs and stays on screen for every test, and the tabs
+         group the way the work actually goes: what the buttons do, how the
+         switches behave, what the sensor does, and the raw stream for when
+         something is strange. -->
     <div class="tb-tabs" id="ms-tabs" role="tablist">
-      <button role="tab" aria-selected="true" data-t="buttons">Buttons</button>
-      <button role="tab" aria-selected="false" data-t="cps">Click speed</button>
-      <button role="tab" aria-selected="false" data-t="dbl">Double-click</button>
-      <button role="tab" aria-selected="false" data-t="scroll">Scroll wheel</button>
-      <button role="tab" aria-selected="false" data-t="track">Tracking &amp; polling</button>
-      <button role="tab" aria-selected="false" data-t="dpi">DPI / CPI</button>
-      <button role="tab" aria-selected="false" data-t="react">Reaction time</button>
-      <button role="tab" aria-selected="false" data-t="drag">Drag &amp; hold</button>
+      <button role="tab" aria-selected="true" data-t="buttons">Buttons &amp; scroll</button>
+      <button role="tab" aria-selected="false" data-t="switches">Switch health</button>
+      <button role="tab" aria-selected="false" data-t="sensor">Sensor &amp; polling</button>
       <button role="tab" aria-selected="false" data-t="raw">Raw events</button>
     </div>
 
-    <!-- buttons -->
     <div data-mspane="buttons">
-      <div class="tb-grid tb-cols2">
-        <div class="tb-panel">
-          <h2 class="tb-ptitle">The mouse<span class="tb-rule"></span></h2>
-          <div class="tb-bar" style="margin-bottom:14px">
-            <div class="tb-seg" id="ms-shape" role="group" aria-label="Mouse shape">
-              <button data-s="std" aria-pressed="false">3-button</button>
-              <button data-s="five" aria-pressed="true">5-button</button>
-              <button data-s="mmo" aria-pressed="false">MMO 12-side</button>
-            </div>
-            <button class="tb-btn" id="ms-armmacro">Swallow macro keys: off</button>
-            <button class="tb-btn on" id="ms-navtrap">Hold back/forward: on</button>
-          </div>
-          <div class="tb-stats" style="margin-bottom:14px">
-            <div class="tb-stat"><div class="k">Held right now</div><div class="v" id="ms-heldnow" style="font-size:16px">none</div></div>
-            <div class="tb-stat"><div class="k">Last event</div><div class="v" id="ms-lastev" style="font-size:16px">—</div></div>
-          </div>
-          <div id="ms-svg"></div>
-          <div class="tb-idbar" id="ms-id"></div>
-          <p class="tb-note" id="ms-mmonote"></p>
-        </div>
+
+      <div class="tb-grid">
         <div class="tb-panel">
           <h2 class="tb-ptitle">Buttons seen<span class="tb-rule"></span></h2>
           <div class="tb-stats" style="margin-bottom:14px">
@@ -276,10 +336,36 @@
           <p class="tb-note">A side button bound to a shortcut in Synapse, G HUB or Armoury sends a keystroke, not a mouse button &mdash; so it is detected automatically and named above. <b>Swallow macro keys</b> only stops it reaching the browser, useful when a macro keeps opening tabs. Clear the binding in the mouse software to grade the switch as button 4 or 5.</p>
         </div>
       </div>
+    
+
+      <div class="tb-grid tb-cols2">
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Scroll wheel<span class="tb-rule"></span></h2>
+          <div class="tb-hitpad" id="scroll-pad">
+            <div class="cap">Hover here and scroll both ways</div>
+            <div class="big" id="scroll-last">0</div>
+            <div class="cap">last step</div>
+          </div>
+          <div class="tb-stats" style="margin-top:14px">
+            <div class="tb-stat"><div class="k">Up</div><div class="v" id="scroll-up">0</div></div>
+            <div class="tb-stat"><div class="k">Down</div><div class="v" id="scroll-dn">0</div></div>
+            <div class="tb-stat"><div class="k">Tilt L / R</div><div class="v" id="ms-tilt">0 / 0</div></div>
+            <div class="tb-stat"><div class="k">Step size</div><div class="v" id="scroll-step">—</div></div>
+            <div class="tb-stat"><div class="k">Consistency</div><div class="v" id="scroll-cons">—</div></div>
+          </div>
+          <div class="tb-bar" style="margin-top:12px"><button class="tb-btn" id="scroll-reset">Reset</button></div>
+        </div>
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Step log<span class="tb-rule"></span></h2>
+          <div class="tb-log" id="scroll-log" data-empty="Scroll over the pad to log each step." style="height:230px"></div>
+          <p class="tb-note">A healthy encoder reports the same delta on every notch and never reverses direction on its own. Mixed values, skipped notches or an occasional step the wrong way mean the encoder is worn.</p>
+        </div>
+      </div>
+    
     </div>
 
-    <!-- cps -->
-    <div data-mspane="cps" hidden>
+    <div data-mspane="switches" hidden>
+
       <div class="tb-grid tb-cols2">
         <div class="tb-panel">
           <h2 class="tb-ptitle">Clicks per second<span class="tb-rule"></span></h2>
@@ -306,10 +392,8 @@
           <p class="tb-note">Useful two ways: it proves the switch keeps up under fast clicking, and a switch that is starting to fail will show a click count higher than your actual clicking — that is the double-click fault showing itself under load.</p>
         </div>
       </div>
-    </div>
+    
 
-    <!-- double click -->
-    <div data-mspane="dbl" hidden>
       <div class="tb-grid tb-cols2">
         <div class="tb-panel">
           <h2 class="tb-ptitle">Double-click fault<span class="tb-rule"></span></h2>
@@ -335,84 +419,8 @@
           <div class="tb-log" id="dbl-log" data-empty="Nothing has re-fired yet. Good." style="height:150px;margin-top:12px"></div>
         </div>
       </div>
-    </div>
+    
 
-    <!-- scroll -->
-    <div data-mspane="scroll" hidden>
-      <div class="tb-grid tb-cols2">
-        <div class="tb-panel">
-          <h2 class="tb-ptitle">Scroll wheel<span class="tb-rule"></span></h2>
-          <div class="tb-hitpad" id="scroll-pad">
-            <div class="cap">Hover here and scroll both ways</div>
-            <div class="big" id="scroll-last">0</div>
-            <div class="cap">last step</div>
-          </div>
-          <div class="tb-stats" style="margin-top:14px">
-            <div class="tb-stat"><div class="k">Up</div><div class="v" id="scroll-up">0</div></div>
-            <div class="tb-stat"><div class="k">Down</div><div class="v" id="scroll-dn">0</div></div>
-            <div class="tb-stat"><div class="k">Tilt L / R</div><div class="v" id="ms-tilt">0 / 0</div></div>
-            <div class="tb-stat"><div class="k">Step size</div><div class="v" id="scroll-step">—</div></div>
-            <div class="tb-stat"><div class="k">Consistency</div><div class="v" id="scroll-cons">—</div></div>
-          </div>
-          <div class="tb-bar" style="margin-top:12px"><button class="tb-btn" id="scroll-reset">Reset</button></div>
-        </div>
-        <div class="tb-panel">
-          <h2 class="tb-ptitle">Step log<span class="tb-rule"></span></h2>
-          <div class="tb-log" id="scroll-log" data-empty="Scroll over the pad to log each step." style="height:230px"></div>
-          <p class="tb-note">A healthy encoder reports the same delta on every notch and never reverses direction on its own. Mixed values, skipped notches or an occasional step the wrong way mean the encoder is worn.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- tracking -->
-    <div data-mspane="track" hidden>
-      <div class="tb-grid tb-cols2">
-        <div class="tb-panel">
-          <h2 class="tb-ptitle">Sensor trace<span class="tb-rule"></span></h2>
-          <div class="tb-mousepad" id="ms-pad" style="height:clamp(220px,32vh,320px)"><canvas id="ms-canvas"></canvas></div>
-          <div class="tb-bar" style="margin-top:10px">
-            <button class="tb-btn" id="ms-clear">Clear trace</button>
-          </div>
-          <p class="tb-note">Hold the button down and draw slow circles, then fast sweeps. A healthy sensor draws one continuous line. Steps, corners or gaps mean the sensor is dropping out.</p>
-        </div>
-        <div class="tb-panel">
-          <h2 class="tb-ptitle">Polling rate<span class="tb-rule"></span></h2>
-          <div class="tb-stats">
-            <div class="tb-stat"><div class="k">Measured</div><div class="v" id="ms-poll">—</div></div>
-            <div class="tb-stat"><div class="k">Reports counted</div><div class="v" id="ms-reports">0</div></div>
-            <div class="tb-stat"><div class="k">Likely rating</div><div class="v" id="ms-pollsnap" style="font-size:18px">—</div></div>
-          </div>
-          <p class="tb-note">Move the mouse continuously across the trace area for a couple of seconds. The count is taken from every report the mouse sends, not from screen frames, so a 1000 Hz mouse reads near 1000 — but only while it is actually moving.</p>
-          <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Report rate</span><span class="tb-meter"><i id="ms-pollbar"></i></span><span class="val" id="ms-pollpct">0</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- dpi -->
-    <div data-mspane="dpi" hidden>
-      <div class="tb-panel">
-        <h2 class="tb-ptitle">DPI / CPI estimate<span class="tb-rule"></span></h2>
-        <ol class="tb-steps">
-          <li><b>1</b><span>Turn off pointer acceleration in Windows first</span></li>
-          <li><b>2</b><span>Press start, then swipe the mouse one straight pass</span></li>
-          <li><b>3</b><span>Measure that pass with a ruler and type it in</span></li>
-        </ol>
-        <div class="tb-bar">
-          <button class="tb-btn pri" id="dpi-start">Start measuring</button>
-          <label class="tb-lab">Distance moved <input type="number" id="ms-cpidist" value="0" min="0" max="200" step="0.5"> cm</label>
-          <button class="tb-btn" id="ms-cpireset">Reset</button>
-        </div>
-        <div class="tb-stats" style="margin-top:14px">
-          <div class="tb-stat"><div class="k">Raw counts</div><div class="v" id="dpi-counts">0</div></div>
-          <div class="tb-stat"><div class="k">Estimated CPI</div><div class="v" id="ms-cpi">—</div></div>
-          <div class="tb-stat"><div class="k">Nearest standard</div><div class="v" id="dpi-snap" style="font-size:18px">—</div></div>
-        </div>
-        <p class="tb-note">This counts the raw movement the mouse reports and divides it by the physical distance you moved. It is an estimate, not a calibration — Windows pointer acceleration will inflate it, so switch "Enhance pointer precision" off before you trust the number.</p>
-      </div>
-    </div>
-
-    <!-- reaction -->
-    <div data-mspane="react" hidden>
       <div class="tb-grid tb-cols2">
         <div class="tb-panel">
           <h2 class="tb-ptitle">Reaction time<span class="tb-rule"></span></h2>
@@ -434,10 +442,8 @@
           <p class="tb-note">Mostly a sanity check on the whole chain — mouse, cable, USB port, and the machine itself. A mouse that reads 400 ms when you know you are quicker has a link problem, usually a flaky wireless dongle.</p>
         </div>
       </div>
-    </div>
+    
 
-    <!-- drag -->
-    <div data-mspane="drag" hidden>
       <div class="tb-grid tb-cols2">
         <div class="tb-panel">
           <h2 class="tb-ptitle">Drag &amp; hold<span class="tb-rule"></span></h2>
@@ -456,10 +462,57 @@
           <div class="tb-log" id="drag-log" data-empty="Press and drag on the pad to start a run." style="height:180px;margin-top:14px"></div>
         </div>
       </div>
+    
     </div>
 
-    <!-- raw -->
+    <div data-mspane="sensor" hidden>
+
+      <div class="tb-grid tb-cols2">
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Sensor trace<span class="tb-rule"></span></h2>
+          <div class="tb-mousepad" id="ms-pad" style="height:clamp(220px,32vh,320px)"><canvas role="img" aria-label="Mouse movement trail. Every reading is also printed in the counters and the event log beside it." id="ms-canvas"></canvas></div>
+          <div class="tb-bar" style="margin-top:10px">
+            <button class="tb-btn" id="ms-clear">Clear trace</button>
+          </div>
+          <p class="tb-note">Hold the button down and draw slow circles, then fast sweeps. A healthy sensor draws one continuous line. Steps, corners or gaps mean the sensor is dropping out.</p>
+        </div>
+        <div class="tb-panel">
+          <h2 class="tb-ptitle">Polling rate<span class="tb-rule"></span></h2>
+          <div class="tb-stats">
+            <div class="tb-stat"><div class="k">Measured</div><div class="v" id="ms-poll">—</div></div>
+            <div class="tb-stat"><div class="k">Reports counted</div><div class="v" id="ms-reports">0</div></div>
+            <div class="tb-stat"><div class="k">Likely rating</div><div class="v" id="ms-pollsnap" style="font-size:18px">—</div></div>
+          </div>
+          <p class="tb-note">Move the mouse continuously across the trace area for a couple of seconds. The count is taken from every report the mouse sends, not from screen frames, so a 1000 Hz mouse reads near 1000 — but only while it is actually moving.</p>
+          <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Report rate</span><span class="tb-meter"><i id="ms-pollbar"></i></span><span class="val" id="ms-pollpct">0</span></div>
+        </div>
+      </div>
+    
+
+      <div class="tb-panel">
+        <h2 class="tb-ptitle">DPI / CPI estimate<span class="tb-rule"></span></h2>
+        <ol class="tb-steps">
+          <li><b>1</b><span>Turn off pointer acceleration in Windows first</span></li>
+          <li><b>2</b><span>Press start, then swipe the mouse one straight pass</span></li>
+          <li><b>3</b><span>Measure that pass with a ruler and type it in</span></li>
+        </ol>
+        <div class="tb-bar">
+          <button class="tb-btn pri" id="dpi-start">Start measuring</button>
+          <label class="tb-lab">Distance moved <input type="number" id="ms-cpidist" value="0" min="0" max="200" step="0.5"> cm</label>
+          <button class="tb-btn" id="ms-cpireset">Reset</button>
+        </div>
+        <div class="tb-stats" style="margin-top:14px">
+          <div class="tb-stat"><div class="k">Raw counts</div><div class="v" id="dpi-counts">0</div></div>
+          <div class="tb-stat"><div class="k">Estimated CPI</div><div class="v" id="ms-cpi">—</div></div>
+          <div class="tb-stat"><div class="k">Nearest standard</div><div class="v" id="dpi-snap" style="font-size:18px">—</div></div>
+        </div>
+        <p class="tb-note">This counts the raw movement the mouse reports and divides it by the physical distance you moved. It is an estimate, not a calibration — Windows pointer acceleration will inflate it, so switch "Enhance pointer precision" off before you trust the number.</p>
+      </div>
+    
+    </div>
+
     <div data-mspane="raw" hidden>
+
       <div class="tb-panel accent">
         <h2 class="tb-ptitle">Raw event monitor<span class="tb-rule"></span></h2>
         <p class="tb-sub">Everything the browser receives, exactly as it arrives — every mouse button, wheel step, key and navigation attempt. If a button on your mouse does nothing anywhere else on this page, press it here: whatever it really sends will show up in this list.</p>
@@ -472,6 +525,7 @@
         <div class="tb-log" id="raw-log" data-empty="Press buttons, turn the wheel, hit keys — everything lands here." style="height:clamp(260px,44vh,460px);margin-top:14px"></div>
         <p class="tb-note">If a side button produces a line saying <code>NAVIGATION back</code> rather than <code>mousedown button 3</code>, the mouse driver is sending a browser command instead of a mouse button. That is normal for Logitech and Razer software — the page catches it either way, and the button still counts as tested.</p>
       </div>
+    
     </div>
 
     <div class="tb-panel"><h2 class="tb-ptitle">Verdict<span class="tb-rule"></span></h2><div id="ms-verdict"></div></div>
@@ -500,7 +554,7 @@
     </div>
 
     <div class="tb-callout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Detach the Joy-Con from the console and pair it to this computer first — hold the small round button on the rail until the lights run back and forth, then pair it in Windows Bluetooth settings. A Pro Controller can go straight in with a USB cable. Chrome, Edge or Opera only.</span>
     </div>
 
@@ -573,11 +627,11 @@
       </div>
       <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Input level</span><span class="tb-meter"><i id="au-inbar"></i></span><span class="val" id="au-inpct">0</span></div>
       <div class="tb-scopewrap" style="margin-top:10px">
-        <canvas class="tb-scope" id="au-scope"></canvas>
+        <canvas role="img" aria-label="Live waveform from the microphone. The peak, floor and clip counts above are the same data as numbers." class="tb-scope" id="au-scope"></canvas>
         <span class="tb-scopeidle">Waveform &mdash; starts when the microphone does</span>
       </div>
       <div class="tb-scopewrap" style="margin-top:8px">
-        <canvas class="tb-scope" id="au-spec" style="height:100px"></canvas>
+        <canvas role="img" aria-label="Live frequency spectrum from the microphone. The readouts above give the same information as numbers." class="tb-scope" id="au-spec" style="height:100px"></canvas>
         <span class="tb-scopeidle">Spectrum</span>
       </div>
       <div id="au-verdict" style="margin-top:14px"></div>
@@ -654,7 +708,7 @@
     </div>
 
     <div class="tb-callout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span><b>No browser can read a serial number, firmware version or anything else from Apple.</b> Nothing here talks to Apple and nothing here is proof on its own. What it gives you is a confidence score from things that <i>can</i> be measured — drivers, sensors, and behaviour — which you weigh alongside the case, the engraving and the price you paid.</span>
     </div>
 
@@ -682,7 +736,7 @@
         </div>
         <p class="tb-note"><b>Listen with must be the laptop's own microphone, not the earbuds.</b> The moment earbuds become the input device they drop into headset mode — mono, and everything above about 8 kHz thrown away — which ruins both the playback and the measurement.</p>
         <div class="tb-meterrow" style="margin-top:14px"><span class="lbl">Progress</span><span class="tb-meter"><i id="ap-bar"></i></span><span class="val" id="ap-state" style="text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ready</span></div>
-        <canvas class="tb-scope" id="ap-chart" style="margin-top:14px;height:clamp(200px,32vh,300px)"></canvas>
+        <canvas role="img" aria-label="Measured frequency response against the saved reference pair. The verdict and the decibel figures beside it say the same thing in words." class="tb-scope" id="ap-chart" style="margin-top:14px;height:clamp(200px,32vh,300px)"></canvas>
         <div class="tb-stats" style="margin-top:14px">
           <div class="tb-stat"><div class="k">Average difference</div><div class="v" id="ap-dev">—</div></div>
           <div class="tb-stat"><div class="k">Worst band</div><div class="v" id="ap-worst">—</div></div>
@@ -723,7 +777,7 @@
       <div class="tb-grid tb-cols2">
         <div class="tb-panel">
           <h2 class="tb-ptitle">Ear detection<span class="tb-rule"></span></h2>
-          <p class="tb-sub">Genuine AirPods pause the moment a bud leaves your ear — that is an infrared sensor and a chip most counterfeits do not bother with. Put both in, press start, then take one out.</p>
+          <p class="tb-sub">Genuine AirPods pause playback when a bud comes out. All this page can see is that <em>something</em> paused playback &mdash; a Bluetooth dropout or an output-device change looks identical to the browser, and no browser can read the wear sensor itself. Put both in, press start, then take one out, and repeat it two or three times: pausing every time you remove a bud and never when you leave it alone is the pattern worth trusting. One pause on its own is not.</p>
           <div class="tb-bar">
             <button class="tb-btn pri" id="ap-earrun">Start ear test</button>
             <button class="tb-btn" id="ap-earstop">Stop</button>
@@ -751,20 +805,56 @@
 
     <!-- serial -->
     <div data-appane="serial" hidden>
+      <div class="tb-panel accent" id="sn-panel">
+        <h2 class="tb-ptitle">Serial check<span class="tb-rule"></span></h2>
+        <p class="tb-sub">Apple&rsquo;s older serial numbers are not random &mdash; they encode the factory, the half-year and the week the unit was built. This reads those out, checks the whole thing is a shape Apple actually uses, and cross-checks the date against the model you picked. It runs entirely on this machine and contacts nobody.</p>
+        <div class="tb-bar">
+          <input type="text" id="sn-in" placeholder="serial from inside the case lid" style="min-width:250px;text-transform:uppercase;font-family:var(--f-mono);letter-spacing:.06em">
+          <label class="tb-lab">Model
+            <select id="sn-model">
+              <option value="">not sure</option>
+              <option value="2016-12">AirPods (1st gen)</option>
+              <option value="2019-03">AirPods (2nd gen)</option>
+              <option value="2021-10">AirPods (3rd gen)</option>
+              <option value="2024-09">AirPods 4 / 4 with ANC</option>
+              <option value="2019-10">AirPods Pro (1st gen)</option>
+              <option value="2022-09">AirPods Pro (2nd gen)</option>
+              <option value="2023-09">AirPods Pro (2nd gen, USB-C)</option>
+              <option value="2025-09">AirPods Pro (3rd gen)</option>
+              <option value="2020-12">AirPods Max (Lightning)</option>
+              <option value="2024-09">AirPods Max (USB-C)</option>
+            </select>
+          </label>
+          <button class="tb-btn pri" id="sn-check">Check the serial</button>
+          <button class="tb-btn" id="sn-apple">Copy &amp; open Apple&rsquo;s checker</button>
+        </div>
+        <div class="tb-stats" style="margin-top:14px">
+          <div class="tb-stat"><div class="k">Shape</div><div class="v" id="sn-shape" style="font-size:16px">&mdash;</div></div>
+          <div class="tb-stat"><div class="k">Built</div><div class="v" id="sn-built" style="font-size:16px">&mdash;</div></div>
+          <div class="tb-stat"><div class="k">Factory</div><div class="v" id="sn-fac" style="font-size:16px">&mdash;</div></div>
+          <div class="tb-stat"><div class="k">Against the model</div><div class="v" id="sn-cross" style="font-size:16px">&mdash;</div></div>
+        </div>
+        <div id="sn-out" style="margin-top:14px"></div>
+        <div class="tb-callout" style="margin-top:14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span><b>Read this once and you will never misuse the result.</b> A serial that passes this check is <em>not</em> proven genuine &mdash; a counterfeiter can print a correctly-shaped serial as easily as a wrong one, and plenty do. What this catches is the other half: invented serials, mistyped ones, an O typed for a zero, and the contradiction where the encoded build date predates the model it is printed on. A <b>fail</b> here is worth acting on. A <b>pass</b> only means move on to the next check. For the authoritative answer, use the button above and read it from Apple yourself &mdash; no browser can ask them on your behalf.</span>
+        </div>
+      </div>
       <div class="tb-panel">
         <h2 class="tb-ptitle">Serial log<span class="tb-rule"></span></h2>
-        <p class="tb-sub">Read the serial off the case lid and type it in. A serial you have logged before is close to proof of a counterfeit — real ones are unique, fakes come off a line sharing one.</p>
+        <p class="tb-sub">Read the serial off the case lid and type it in. This is a memory aid, not a verdict: the usual reason a serial comes back twice is that you are re-testing the same unit, and the log counts the repeat rather than flagging it. It only points at a fake when two <em>different physical pairs</em> carry the same serial &mdash; that is the signal to act on.</p>
         <div class="tb-bar">
           <input type="text" id="ap-sn" placeholder="serial from inside the case lid" style="min-width:230px;text-transform:uppercase">
           <input type="text" id="ap-snnote" placeholder="note (optional)" style="min-width:150px;text-transform:none">
           <button class="tb-btn pri" id="ap-snadd">Check &amp; log</button>
+          <button class="tb-btn danger" id="ap-snclear">Clear the log</button>
         </div>
         <div class="tb-stats" style="margin-top:14px">
           <div class="tb-stat"><div class="k">Result</div><div class="v" id="ap-snresult" style="font-size:16px">—</div></div>
           <div class="tb-stat"><div class="k">Logged so far</div><div class="v" id="ap-sncount">0</div></div>
         </div>
         <div id="ap-serials" style="margin-top:14px"></div>
-        <p class="tb-note">This checks your own history only — it never contacts Apple, and it cannot tell you whether a serial is valid, only whether you have seen it before. To verify one properly, type it into Apple's own coverage checker yourself.</p>
+        <p class="tb-note">Kept on this machine only, capped at the last 500 entries, and cleared by the button above or by &ldquo;Delete everything&rdquo; on the System page. This checks your own history only — it never contacts Apple, and it cannot tell you whether a serial is valid, only whether you have seen it before. To verify one properly, type it into Apple's own coverage checker yourself.</p>
       </div>
     </div>
 
@@ -860,8 +950,8 @@
       <p class="tb-note">Refresh rate is measured live over one second. Drag this window onto the monitor you are testing before you read it.</p>
     </div>
     <div class="tb-callout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span><b>Before you run these on a shop floor:</b> the stuck-pixel flush cycles colours across the whole screen. It runs slowly on purpose, well below the rate that provokes photosensitive seizures, but if anyone nearby is sensitive to flashing, skip it. Every other pattern here is still or slow-moving.</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><b>Before you run these on a shop floor:</b> the stuck-pixel flush flashes the whole screen through saturated colours at two changes a second. That is under the three-per-second limit published in WCAG 2.3.1, but &ldquo;under the limit&rdquo; is not the same as safe for everyone &mdash; if anyone nearby is photosensitive or has epilepsy, do not run it while they are in the room. It arms on the first press and runs on the second so you cannot start it by mis-clicking. Every other pattern on this page is still or slow-moving.</span>
     </div>
     <div class="tb-grid tb-cols2">
       <div class="tb-panel accent">
@@ -870,10 +960,10 @@
           <button class="tb-btn pri big" id="mn-runfull">Run full test <kbd>F</kbd></button>
           <button class="tb-btn" id="mn-runquick">Quick run <kbd>Q</kbd></button>
           <label class="tb-lab">Hold each
-            <select id="mn-dwell"><option value="4">4 s</option><option value="6" selected>6 s</option><option value="9">9 s</option><option value="14">14 s</option></select>
+            <select id="mn-dwell"><option value="1">1 s</option><option value="2">2 s</option><option value="4">4 s</option><option value="6" selected>6 s</option><option value="9">9 s</option><option value="14">14 s</option></select>
           </label>
         </div>
-        <p class="tb-note">The full run walks all eleven colour fields and all nine patterns on its own — twenty steps, about two minutes at six seconds each. Space pauses, → skips, ← goes back, Esc stops.</p>
+        <p class="tb-note">The full run walks all eleven colour fields and all ten patterns on its own — twenty-one steps. About two minutes at six seconds each, or twenty seconds flat at one. One second is a fast sweep for catching a dead pixel or a backlight fault; six is the right dwell for banding, uniformity and near-black crush, which your eyes need a moment to settle into. Space pauses, → skips, ← goes back, Esc stops.</p>
         <h2 class="tb-ptitle" style="margin-top:18px">Solid fields<span class="tb-rule"></span></h2>
         <div class="tb-swatchrow" id="mn-swatches"></div>
         <p class="tb-note">A dead pixel stays black on every field. A stuck pixel stays one colour on every field. Dust wipes off; a fault does not.</p>
@@ -893,7 +983,7 @@
           <button class="tb-btn" data-pat="gamma">Gamma 2.2 match</button>
           <button class="tb-btn danger" data-pat="fixer">Stuck-pixel flush</button>
         </div>
-        <p class="tb-note">Stuck-pixel flush cycles colours fast over the whole screen; leave it running ten minutes on a stuck subpixel. It flashes rapidly — skip it if anyone nearby is sensitive to flashing.</p>
+        <p class="tb-note">Stuck-pixel flush cycles the whole screen through saturated colours twice a second; leave it running ten minutes on a stuck subpixel. It flashes &mdash; press the button once to arm it, again to run, and skip it entirely if anyone nearby is photosensitive.</p>
       </div>
     </div>
   </section>
@@ -926,7 +1016,7 @@
             <div class="tb-stat"><div class="k">Frame rate</div><div class="v" id="cam-fps">—</div></div>
             <div class="tb-stat"><div class="k">Device</div><div class="v" id="cam-name" style="font-size:13px">—</div></div>
           </div>
-          <canvas id="cam-canvas" style="width:100%;margin-top:14px;border:1px solid var(--line);border-radius:10px;display:none"></canvas>
+          <canvas role="img" aria-label="Still frame captured from the webcam." id="cam-canvas" style="width:100%;margin-top:14px;border:1px solid var(--line);border-radius:10px;display:none"></canvas>
         </div>
       </div>
     </div>
@@ -945,7 +1035,7 @@
         <div class="tb-stat"><div class="k">Pointer type</div><div class="v" id="tc-type" style="font-size:15px">—</div></div>
         <div class="tb-stat"><div class="k">Pressure</div><div class="v" id="tc-press">—</div></div>
       </div>
-      <div class="tb-touchpad" id="tc-pad"><canvas id="tc-canvas"></canvas></div>
+      <div class="tb-touchpad" id="tc-pad"><canvas role="img" aria-label="Touch points drawn as you press the pad. The number of simultaneous touches is printed above." id="tc-canvas"></canvas></div>
       <div class="tb-bar" style="margin-top:10px"><button class="tb-btn" id="tc-clear">Clear</button></div>
       <p class="tb-note">Drag across the whole panel, edge to edge, corner to corner. Gaps in the trail are dead zones in the digitiser.</p>
     </div>
@@ -983,6 +1073,35 @@
         <div class="tb-log" id="sy-watch" data-empty="Connect or unplug a device and it is logged here with a timestamp." style="height:200px"></div>
       </div>
     </div>
+    <div class="tb-panel" id="pv-panel">
+      <h2 class="tb-ptitle">Privacy &amp; data<span class="tb-rule"></span></h2>
+      <p class="tb-sub">The short version: nothing you do on this page leaves this computer. There is no account, no analytics, no tracking, no cookies and no third-party code of any kind &mdash; the site makes zero requests to anyone but itself. Below is every single thing it keeps, where it keeps it, and a button that removes all of it.</p>
+      <dl class="tb-kv" id="pv-stores"></dl>
+      <div class="tb-bar" style="margin-top:14px">
+        <button class="tb-btn danger" id="pv-wipe">Delete everything stored on this machine</button>
+        <button class="tb-btn" id="pv-refresh">Recount</button>
+      </div>
+      <p class="tb-note" id="pv-state">Counting&hellip;</p>
+      <h3 class="tb-ptitle" style="margin-top:20px;font-size:14px">What never happens here<span class="tb-rule"></span></h3>
+      <ul class="tb-steps">
+        <li class="ok"><span class="tag">network</span><span>No request goes anywhere except back to this site for its own files. No fonts, no scripts, no beacons, no CDN. The one exception is the router page, which deliberately fetches a file from this same site to time it &mdash; you press the button and it tells you how much it pulled.</span></li>
+        <li class="ok"><span class="tag">microphone</span><span>Audio is analysed live in the browser and thrown away frame by frame. Nothing is written to disk and nothing is sent anywhere. The recorder on the audio page makes a clip you can play back in the tab; it is gone when you close it unless you save it yourself.</span></li>
+        <li class="ok"><span class="tag">camera</span><span>The preview is drawn straight from the camera. Pressing Snapshot paints one frame into a canvas on the page; it is not saved or uploaded. Leaving the camera page switches the camera off.</span></li>
+        <li class="ok"><span class="tag">serials</span><span>Serial numbers you type on the earbuds page are stored on this machine so repeats stand out, and nowhere else. They are capped at 500 entries, oldest dropped first, and the delete button above clears them.</span></li>
+        <li class="ok"><span class="tag">cookies</span><span>None are set, so there is nothing to consent to. The theme choice and the serial log use local storage, which is per-machine and never transmitted with a request.</span></li>
+        <li class="warn"><span class="tag">permissions</span><span>Microphone, camera, gamepad, HID and MIDI are only requested when you press the button that needs them, and the browser asks you first every time it has to. Revoke any of them from the padlock in the address bar; nothing here can grant itself access.</span></li>
+      </ul>
+      <h3 class="tb-ptitle" style="margin-top:20px;font-size:14px">Who runs this<span class="tb-rule"></span></h3>
+      <dl class="tb-kv">
+        <dt>Operated by</dt><dd>The bench operator who deployed it. This is private tooling, not a public service, and it is deliberately not linked to any trading name &mdash; a tool that tells every visitor whose shop it belongs to is a lead nobody asked to publish.</dd>
+        <dt>What it is for</dt><dd>Testing used and returned hardware before it is listed, refurbished or scrapped. An internal bench tool &mdash; not a product, not a service offered to anyone, and nothing on it is for sale.</dd>
+        <dt>Who it is for</dt><dd>Bench staff on the shop floor. Nobody signs up, nothing is sold through it, no payment is taken and no money changes hands anywhere on this site &mdash; which is why there is no refund policy, no terms of sale and no cookie banner to accept. Those exist to govern a transaction, and there is no transaction here.</dd>
+        <dt>Not suitable for children</dt><dd>It is a workshop tool for adults handling returned stock. No part of it is aimed at or marketed to children, and it collects nothing about anyone.</dd>
+        <dt>Data requests</dt><dd>There is no server and no database, so there is nothing held about you anywhere for anyone to look up, export or delete on request. Everything there is sits on the machine in front of you and the button above removes it.</dd>
+        <dt>Search engines</dt><dd>Told to stay away, in all three places that matter: robots.txt, an <code>X-Robots-Tag</code> header on every response, and a <code>noindex</code> meta in the page for when it is served without headers. Honestly though: those are requests, and a crawler that ignores them meets no obstacle. The reason that is acceptable is that there is nothing here worth taking &mdash; no server, no database, no customer records, no credentials, and every internal note kept out of the deployment.</dd>
+        <dt>Fonts and images</dt><dd>Every typeface is one your operating system already ships. Every icon on the site is hand-drawn SVG in the page itself. Nothing is licensed from anyone and nothing is hot-linked.</dd>
+      </dl>
+    </div>
   </section>
 
   <!-- ============================= ROUTERS ============================= -->
@@ -993,7 +1112,7 @@
     </div>
 
     <div class="tb-callout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>These numbers cover the router, the modem and the line together — no browser can isolate the router on its own. Run one test on a router you know is good, write the numbers down, and judge everything else against that.</span>
     </div>
 
@@ -1022,26 +1141,58 @@
         <div class="tb-stat"><div class="k">Probes sent</div><div class="v" id="net-sent">0</div></div>
         <div class="tb-stat"><div class="k">Elapsed</div><div class="v" id="net-elapsed">0:00</div></div>
       </div>
-      <canvas class="tb-scope" id="net-graph" style="margin-top:14px;height:clamp(130px,22vh,200px)"></canvas>
+      <canvas role="img" aria-label="Round-trip time over the run, with dropouts marked. The averages, jitter and dropout count beside it are the same data." class="tb-scope" id="net-graph" style="margin-top:14px;height:clamp(130px,22vh,200px)"></canvas>
       <p class="tb-note">Green line is response time, second by second. Every red column is a moment the router did not answer at all. One red column on a five-minute soak is a router you send back.</p>
       <div id="net-verdict" style="margin-top:14px"></div>
     </div>
 
+    <div class="tb-panel accent" id="sp-panel">
+      <h2 class="tb-ptitle">Speed test<span class="tb-rule"></span></h2>
+      <p class="tb-sub">Three numbers, in one run. Download speed, how long the line takes to answer when it is idle, and &mdash; the one most speed tests leave out &mdash; how long it takes to answer <em>while it is busy</em>. That third number is the one that explains a call that breaks up whenever somebody starts a download, and it is the fastest way to tell a bad router from a slow line.</p>
+      <div class="tb-bar">
+        <button class="tb-btn pri big" id="sp-run">Run speed test <kbd>S</kbd></button>
+        <label class="tb-lab">Length
+          <select id="sp-len"><option value="5">5 s</option><option value="10" selected>10 s</option><option value="20">20 s</option></select>
+        </label>
+        <span class="tb-sppill" id="sp-phase">idle</span>
+      </div>
+
+      <div class="tb-spbig">
+        <div class="tb-spnum"><b id="sp-now">—</b><i>Mbps down</i></div>
+        <div class="tb-spnum"><b id="sp-ping">—</b><i>ms idle</i></div>
+        <div class="tb-spnum"><b id="sp-loaded">—</b><i>ms under load</i></div>
+        <div class="tb-spnum"><b id="sp-grade">—</b><i>bufferbloat</i></div>
+      </div>
+
+      <canvas role="img" aria-label="Download speed and response time during the run. Every figure drawn here is also printed in the readouts beside it." class="tb-scope" id="sp-graph" style="margin-top:14px;height:clamp(140px,24vh,210px)"></canvas>
+
+      <div class="tb-stats" style="margin-top:14px">
+        <div class="tb-stat"><div class="k">Download (steady)</div><div class="v" id="sp-mbps">—<small> Mbps</small></div></div>
+        <div class="tb-stat"><div class="k">Peak</div><div class="v" id="sp-peak">—<small> Mbps</small></div></div>
+        <div class="tb-stat"><div class="k">Pulled</div><div class="v" id="sp-bytes">—</div></div>
+        <div class="tb-stat"><div class="k">Jitter (idle)</div><div class="v" id="sp-jit">—</div></div>
+        <div class="tb-stat"><div class="k">Loss</div><div class="v" id="sp-loss">—</div></div>
+        <div class="tb-stat"><div class="k">Streams used</div><div class="v" id="sp-streams">—</div></div>
+      </div>
+
+      <div id="sp-verdict" style="margin-top:14px"></div>
+      <p class="tb-note">Honest about what this is: a download measurement against this site, so it is capped by the shop's internet and by this machine's Wi-Fi, and it cannot prove a router is capable of gigabit. It is very good at the opposite &mdash; showing one crawling at 3 Mbps on a line that does fifty, or one whose response time climbs from 12 ms to 400 ms the moment traffic starts. <b>Upload is not measured</b>, and no static site can measure it: there is no server here to accept the data. Every byte this pulls is counted and shown above, and it all stops the moment you leave the page.</p>
+    </div>
+
     <div class="tb-grid tb-cols2">
       <div class="tb-panel">
-        <h2 class="tb-ptitle">Speed &amp; load<span class="tb-rule"></span></h2>
+        <h2 class="tb-ptitle">Connection load<span class="tb-rule"></span></h2>
         <div class="tb-bar">
-          <button class="tb-btn" id="net-speed">Measure speed (8 s)</button>
           <button class="tb-btn" id="net-load">Load test</button>
           <label class="tb-lab">connections
             <select id="net-conc-n"><option value="60">60</option><option value="120" selected>120</option><option value="250">250</option></select>
           </label>
         </div>
         <div class="tb-stats" style="margin-top:14px">
-          <div class="tb-stat"><div class="k">Download</div><div class="v" id="net-mbps">—<small> Mbps</small></div></div>
           <div class="tb-stat"><div class="k">Connections answered</div><div class="v" id="net-conc" style="font-size:20px">—</div></div>
+          <div class="tb-stat"><div class="k">Download</div><div class="v" id="net-mbps">—<small> Mbps</small></div></div>
         </div>
-        <p class="tb-note">Speed is capped by the shop's internet, so it will not prove a router is gigabit — but it will show one crawling at 3 Mbps when the line does fifty. The load test opens every connection at once: routers with a failing NAT table choke here exactly the way they choke on a house full of devices.</p>
+        <p class="tb-note">Opens every connection at once. A router with a failing NAT table chokes here exactly the way it chokes on a house full of phones, tablets and smart plugs — which is the complaint that brings them back. Anything short of all of them answering is a finding.</p>
       </div>
       <div class="tb-panel">
         <h2 class="tb-ptitle">Runs this session<span class="tb-rule"></span></h2>
@@ -1065,7 +1216,7 @@
       <p>Loads every CPU core and the graphics chip, then watches the frame rate. A machine that throttles, crashes or drops off a cliff under load has a cooling or power fault you will not find by opening the lid.</p>
     </div>
     <div class="tb-callout">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" focusable="false"><path d="M12 9v5M12 17.5h.01M10.3 3.9 2.6 17.3A2 2 0 0 0 4.3 20.3h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>This deliberately heats the machine and spins the fans up. Run it on a bench, not on a lap, and stop it if anything smells hot or the machine shuts down.</span>
     </div>
     <div class="tb-panel accent">
@@ -1094,14 +1245,14 @@
         <div class="tb-stat"><div class="k">Work done</div><div class="v" id="st-ops">—</div></div>
         <div class="tb-stat"><div class="k">Longest stall</div><div class="v" id="st-stall">—</div></div>
       </div>
-      <canvas class="tb-scope" id="st-graph" style="margin-top:14px;height:clamp(120px,20vh,180px)"></canvas>
+      <canvas role="img" aria-label="Frames per second over the stress run. The current and minimum figures are printed above." class="tb-scope" id="st-graph" style="margin-top:14px;height:clamp(120px,20vh,180px)"></canvas>
       <div id="st-verdict" style="margin-top:14px"></div>
     </div>
     <div class="tb-grid tb-cols2">
       <div class="tb-panel">
         <h2 class="tb-ptitle">GPU load<span class="tb-rule"></span></h2>
         <div class="tb-glwrap">
-          <canvas id="st-gl"></canvas>
+          <canvas role="img" aria-label="The 3D load the stress test draws to keep the graphics chip busy. Nothing here needs reading." id="st-gl"></canvas>
           <div class="tb-glidle" id="st-glidle">
             <b>Idle</b>
             <span>The shader draws here while the test runs.</span>
@@ -1141,7 +1292,12 @@
 <script src="js/85-runbench.js"></script>
 <script src="js/90-stress.js"></script>
 <script src="js/95-network.js"></script>
+<script src="js/96-speed.js"></script>
+<script src="js/96-serial.js"></script>
 <script src="js/97-airpods.js"></script>
 <script src="js/98-joycon.js"></script>
+<script src="js/99-privacy.js"></script>
+<script src="js/99-report.js"></script>
+<script src="js/99-palette.js"></script>
 </body>
 </html>

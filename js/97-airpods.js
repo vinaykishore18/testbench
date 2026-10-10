@@ -13,7 +13,16 @@ function load() {
   try { return JSON.parse(localStorage.getItem(KEY)) || { profiles: [], serials: [] }; }
   catch (e) { return { profiles: [], serials: [] }; }
 }
+var MAX_SERIALS = 500;
 function save() {
+  /* The serial log had no upper bound and nothing ever pruned it. On a returns
+     bench that is a list that only ever grows, in a store with a few megabytes
+     of room, and localStorage throws rather than evicting when it fills - so
+     the first thing to break would have been saving the reference profiles,
+     with no obvious connection to the cause. Oldest entries go first. */
+  if (store.serials && store.serials.length > MAX_SERIALS) {
+    store.serials = store.serials.slice(-MAX_SERIALS);
+  }
   try { localStorage.setItem(KEY, JSON.stringify(store)); }
   catch (e) { toast("Could not save", "This browser is blocking local storage, so profiles will vanish on reload. Export them to a file instead.", "bad"); }
 }
@@ -27,6 +36,9 @@ function save() {
    ============================================================ */
 var LO = 100, HI = 12000, BANDS = 32;      /* laptop mics are useless outside this */
 var ac = null, micStream = null, running = false;
+/* Same guard as the audio page: a capture still in flight when closeMic runs
+   must release the hardware itself, or the microphone stays live silently. */
+var micGen = 0;
 
 function ctx() {
   if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -41,12 +53,23 @@ function bandEdges() {
 var EDGES = bandEdges();
 
 function openMic() {
+  if (micStream) return Promise.resolve(micStream);
+  var gen = micGen;
   var id = $("#ap-indev").value;
   var c = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } };
   if (id && id.length > 4) c.audio.deviceId = { exact: id };
-  return navigator.mediaDevices.getUserMedia(c).then(function (s) { micStream = s; return s; });
+  return navigator.mediaDevices.getUserMedia(c).then(function (s) {
+    if (gen !== micGen || micStream) {
+      s.getTracks().forEach(function (t) { t.stop(); });
+      if (micStream) return micStream;
+      throw new Error("cancelled");
+    }
+    micStream = s;
+    return s;
+  });
 }
 function closeMic() {
+  micGen++;
   if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
   micStream = null;
 }
@@ -252,16 +275,29 @@ function score(cmp, r) {
     f.push({ level: "warn", tag: "response", text: "Off by " + cmp.mean.toFixed(1) + " dB on average, worst at " + $("#ap-worsthz").textContent + ". Could be placement, could be a different driver. Re-seat it and run again before you judge." });
   } else {
     s -= 70;
-    f.push({ level: "bad", tag: "response", text: "Off by " + cmp.mean.toFixed(1) + " dB on average, and " + cmp.worst.toFixed(1) + " dB out at " + $("#ap-worsthz").textContent + ". That is a different driver, not a different position." });
+    /* This used to say "that is a different driver, not a different position",
+       which the code's own 3-6 dB branch contradicts two lines up: there we
+       admit placement can move the curve. Placement does not stop mattering
+       because the number got bigger. State what was measured and what to do. */
+    f.push({ level: "bad", tag: "response", text: "Off by " + cmp.mean.toFixed(1) + " dB on average, and " + cmp.worst.toFixed(1) + " dB out at " + $("#ap-worsthz").textContent + ". That is a bigger gap than re-seating usually explains. Re-seat the bud and run it once more; if it stays this far out, the driver is not the same as the reference." });
   }
   f.push({ level: "ok", tag: "scope", text: "This compares drivers only. It cannot read a serial number, firmware or anything from Apple — no browser can. Treat it as one strong signal among several, never as proof on its own." });
   verdict($("#ap-verdict"), clamp(s, 0, 100), f);
 }
 
 /* ============================================================
-   EAR DETECTION — genuine H1/H2 pauses playback when a bud comes out.
-   Most counterfeits do not. We play through an <audio> element and watch
-   for the pause event the operating system sends.
+   EAR DETECTION — a weak signal, and we say so on the page.
+
+   All we can observe is a "pause" event on an <audio> element, which means
+   the operating system paused playback. Genuine buds cause that when you
+   take one out. So does a Bluetooth dropout, an output-device change, a
+   phone call, or the OS pausing for its own reasons — the event looks
+   identical in every case and the browser cannot tell us which happened.
+
+   Earlier wording here called a pause "the infrared wear sensor working"
+   and "real H1/H2 behaviour". Neither is observable from a browser, and
+   AirPods Pro 2 use skin detection rather than an infrared wear sensor, so
+   the claim was wrong on the hardware as well as on the inference.
    ============================================================ */
 (function () {
   var au = new Audio(), armed = false, fired = false;
@@ -293,10 +329,10 @@ function score(cmp, r) {
   au.addEventListener("pause", function () {
     if (!armed || fired) return;
     fired = true;
-    $("#ap-ear").textContent = "Paused — genuine behaviour";
-    $("#ap-ear").className = "v pass";
-    $("#ap-earstate").textContent = "The bud told the computer it had been removed. That is the infrared wear sensor working, which most counterfeits do not have.";
-    toast("Ear detection works", "Playback paused when you took the bud out — that is real H1/H2 behaviour.", "ok");
+    $("#ap-ear").textContent = "Playback paused";
+    $("#ap-ear").className = "v warn";
+    $("#ap-earstate").textContent = "Something paused playback. If you took a bud out just then, wear detection is the likely cause \u2014 but a Bluetooth dropout or an output-device change produces exactly the same event, and the browser cannot tell them apart. Run it twice more: a bud that pauses every time you remove it and never pauses when you leave it alone is behaving like a genuine pair.";
+    toast("Playback paused", "That is consistent with wear detection, but a dropout looks the same. Repeat it a couple of times before you trust it.", "ok");
   });
   $("#ap-earrun").onclick = function () {
     armTone();
@@ -369,8 +405,17 @@ function score(cmp, r) {
 })();
 
 /* ============================================================
-   SERIAL LOG — you still read it off the case by eye, but a serial you
-   have seen before is close to proof. Fakes reuse them in batches.
+   SERIAL LOG — a memory aid, not a verdict.
+
+   This used to render a repeat as "v fail" and toast the words "close to
+   proof of a counterfeit", and it appended the serial unconditionally. So
+   testing one genuine pair twice flagged it the second time, every time.
+   Re-testing the same unit is the single most common reason a serial comes
+   back twice on a returns bench, which made the loudest result on the page
+   also its least reliable one.
+
+   Now a repeat counts the checks against the existing entry and says what
+   it actually means: it matters only if this is a DIFFERENT physical pair.
    ============================================================ */
 (function () {
   function render() {
@@ -384,7 +429,7 @@ function score(cmp, r) {
       var row = el("div", "tb-gbtn");
       row.style.cssText = "display:flex;gap:10px;margin-bottom:5px";
       row.appendChild(el("span", null, s.sn));
-      var d = el("em", null, (s.note || "") + "  " + new Date(s.at).toLocaleDateString());
+      var d = el("em", null, (s.note || "") + "  " + new Date(s.at).toLocaleDateString() + ((s.seen || 1) > 1 ? "  \u00b7 " + s.seen + " checks" : ""));
       d.style.cssText = "font-style:normal;opacity:.6;margin-left:auto";
       row.appendChild(d);
       box.appendChild(row);
@@ -393,20 +438,37 @@ function score(cmp, r) {
   $("#ap-snadd").onclick = function () {
     var sn = ($("#ap-sn").value || "").trim().toUpperCase();
     if (sn.length < 6) { toast("Too short", "That does not look like a serial.", null); return; }
-    var dupe = store.serials.filter(function (s) { return s.sn === sn; });
-    if (dupe.length) {
-      $("#ap-snresult").textContent = "SEEN BEFORE — " + dupe.length + " time(s), first on " + new Date(dupe[0].at).toLocaleDateString();
-      $("#ap-snresult").className = "v fail";
-      toast("Duplicate serial", "You have logged this exact serial before. Genuine serials are unique — counterfeits reuse them in batches.", "bad");
+    var note = ($("#ap-snnote").value || "").trim().slice(0, 30);
+    var prev = null;
+    for (var i = 0; i < store.serials.length; i++) if (store.serials[i].sn === sn) { prev = store.serials[i]; break; }
+    if (prev) {
+      prev.seen = (prev.seen || 1) + 1;
+      prev.at2 = Date.now();
+      if (note) prev.note = note;
+      $("#ap-snresult").textContent = "Logged before \u2014 check " + prev.seen + ", first on " + new Date(prev.at).toLocaleDateString();
+      $("#ap-snresult").className = "v warn";
+      toast("You have logged this serial before",
+            "Usually that just means you are re-testing the same unit, which is fine. It only points at a fake if this is a different physical pair \u2014 two separate units sharing one serial is the signal worth acting on.", null);
     } else {
-      $("#ap-snresult").textContent = "New — not seen before";
+      $("#ap-snresult").textContent = "New \u2014 not seen before";
       $("#ap-snresult").className = "v pass";
+      store.serials.push({ sn: sn, at: Date.now(), seen: 1, note: note });
     }
-    store.serials.push({ sn: sn, at: Date.now(), note: ($("#ap-snnote").value || "").trim().slice(0, 30) });
-    save(); render();
+    save(); render(); recount();
     $("#ap-sn").value = "";
   };
-  $("#ap-sncount") && ( $("#ap-sncount").textContent = store.serials.length );
+  function recount() { if ($("#ap-sncount")) $("#ap-sncount").textContent = store.serials.length; }
+  /* A log of serial numbers off other people's hardware should be removable
+     from the page that collects it, not only from a settings screen elsewhere.
+     Two presses, because there is no undo. */
+  if ($("#ap-snclear")) TB.arm($("#ap-snclear"), "Clear the log",
+    function () { return "Press again to clear " + store.serials.length; },
+    function () {
+      store.serials = []; save(); render(); recount();
+      $("#ap-snresult").textContent = "\u2014"; $("#ap-snresult").className = "v";
+      toast("Serial log cleared", "Nothing is left on this machine. The reference profiles are untouched.", "ok");
+    });
+  recount();
   render();
   window.__apRenderSerials = render;
 })();

@@ -28,7 +28,23 @@ SOLIDS.forEach(function (s, i) {
 });
 /* single pattern buttons */
 $$("[data-pat]").forEach(function (b) {
-  b.onclick = function () { seq = [{ kind: b.dataset.pat, name: b.textContent }]; seqI = 0; auto = false; open(); };
+  /* The flush is the one pattern that flashes. Everything else here is still
+     or slow-moving, so a stray click costs nothing — but a flashing full-screen
+     pattern on a shop floor is not something to start by mis-clicking. It arms
+     on the first press and runs on the second, and disarms itself after four
+     seconds if the second press never comes. */
+  var label = b.textContent;
+  function start() { seq = [{ kind: b.dataset.pat, name: label }]; seqI = 0; auto = false; open(); }
+  if (b.dataset.pat === "fixer") {
+    /* Through the shared two-press guard, which refuses a second press inside
+       400 ms. The hand-rolled version here had the same hole as the other
+       three: a double-click armed and started a flashing full-screen pattern
+       in one gesture, which on a shop floor is the one thing the arming was
+       added to prevent. */
+    TB.arm(b, label, "Flashes \u2014 press again to run", start);
+  } else {
+    b.onclick = start;
+  }
 });
 /* Start a run without reaching for the mouse. The point of the bench run is
    that your hands stay on the unit; the same applies with a monitor on a
@@ -287,16 +303,31 @@ function render() {
     return;
   }
   if (s.kind === "fixer") {
-    /* Cycled at about 5 Hz, not at screen refresh. Fast enough to work a stuck
-       subpixel loose, well clear of the 15-25 Hz band that provokes seizures. */
+    /* 2 Hz, and the order matters.
+
+       This was a 200 ms swap, which is 5 flashes per second across the whole
+       screen. WCAG 2.3.1 draws the line at three per second for anything
+       bigger than a small central patch, and the old comment here claimed it
+       was "well clear of the 15-25 Hz band" — but 15-25 Hz is where
+       sensitivity PEAKS, not where risk begins. 5 Hz full-screen saturated red
+       sits inside the risky range, not clear of it, and the page told the
+       operator the opposite.
+
+       500 ms puts it at 2 Hz, under the limit. The palette is also reordered
+       so saturated red never swaps straight to or from black: red-to-black is
+       the largest luminance-plus-red-saturation transition in the set, and the
+       red flash threshold is the one WCAG treats separately. A stuck subpixel
+       gets exercised 1200 times over the ten-minute soak either way. */
+    var SWAP_MS = 500;
+    var CYCLE = ["#FF0000", "#FFFFFF", "#00FF00", "#000000", "#0000FF", "#FFFFFF"];
     var lastSwap = 0, f = 0;
     (function frame() {
       if (!ctx || !stage.classList.contains("on")) { anim = null; return; }
       anim = requestAnimationFrame(frame);
       var now = performance.now();
-      if (now - lastSwap < 200) return;
+      if (now - lastSwap < SWAP_MS) return;
       lastSwap = now; f++;
-      ctx.fillStyle = ["#FF0000", "#00FF00", "#0000FF", "#FFFFFF", "#000000"][f % 5];
+      ctx.fillStyle = CYCLE[f % CYCLE.length];
       ctx.fillRect(0, 0, W, H);
     })();
     return;

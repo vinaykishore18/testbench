@@ -179,7 +179,10 @@ console.log('\n9. only real MP3s get in');
   let after = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
   after === before ? pass('a renamed file was refused on its contents') : fail('a non-MP3 was accepted');
   let toast = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
-  /not an MP3/.test(toast) ? pass('said why: ' + toast.match(/[^.]*not an MP3[^.]*/)[0].trim()) : fail('no explanation: ' + toast.slice(0, 120));
+  /* The refusal has to say what the file really is, not just that it is wrong.
+     "It is really a zip archive" is the message an operator can act on. */
+  /is really a zip/.test(toast) ? pass('said what it really was: ' + toast.match(/[^.]*is really[^.]*/)[0].trim())
+    : fail('no explanation: ' + toast.slice(0, 160));
 
   /* a genuine wav, honestly named — still refused, because the rule is MP3 */
   await page.setInputFiles('#mu-file', [{ name: 'Tone.wav', mimeType: 'audio/wav', buffer: Buffer.alloc(9000, 1) }]);
@@ -188,6 +191,40 @@ console.log('\n9. only real MP3s get in');
   after === before ? pass('a .wav was refused') : fail('a .wav got in');
   toast = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
   /Only \.mp3/.test(toast) ? pass('named the rule') : fail('no rule given: ' + toast.slice(0, 120));
+
+  /* ---- the actual bypass the audit found ----
+     The old validator accepted any file whose first three bytes were "ID3".
+     So a zip with those three characters stapled on the front went into the
+     library and sat there as a track. Same for a Windows executable. This is
+     the regression test for that, and it is the reason the validator now
+     parses the frame headers after the tag instead of stopping at the tag. */
+  await page.evaluate(() => { const t = document.querySelector('#toasts'); if (t) t.textContent = ''; });
+  await page.setInputFiles('#mu-file', [{ name: 'RejectedTrojan.mp3', mimeType: 'audio/mpeg',
+    buffer: Buffer.concat([Buffer.from('ID3'), Buffer.alloc(7, 0),
+                           Buffer.from([0x50, 0x4B, 0x03, 0x04]), Buffer.alloc(40000, 0x41)]) }]);
+  await page.waitForTimeout(1200);
+  after = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
+  after === before ? pass('an "ID3" prefix no longer gets a zip past the check') : fail('the ID3 prefix bypass is back — a zip was stored');
+  toast = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
+  /no MPEG audio frames/.test(toast) ? pass('said why: no MPEG frames after the tag')
+    : fail('wrong reason given: ' + toast.slice(0, 160));
+
+  /* And a Windows executable with the same three letters on the front. */
+  await page.evaluate(() => { const t = document.querySelector('#toasts'); if (t) t.textContent = ''; });
+  await page.setInputFiles('#mu-file', [{ name: 'Setup.mp3', mimeType: 'audio/mpeg',
+    buffer: Buffer.concat([Buffer.from('ID3'), Buffer.alloc(7, 0),
+                           Buffer.from('MZ'), Buffer.alloc(40000, 0x90)]) }]);
+  await page.waitForTimeout(1200);
+  after = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
+  after === before ? pass('an executable behind an ID3 tag was refused') : fail('an executable was stored in the library');
+
+  /* ---- and the check must not have become so strict it refuses real audio ----
+     A validator that rejects everything passes every test above and is
+     useless, so prove a genuinely encoded MP3 still loads. */
+  await page.setInputFiles('#mu-file', [{ name: 'RealTone.mp3', mimeType: 'audio/mpeg', buffer: wav() }]);
+  await page.waitForTimeout(1400);
+  after = await page.evaluate(() => document.querySelectorAll('.tb-chiprow[data-saved]').length);
+  after === before + 1 ? pass('a real encoded MP3 still gets in') : fail('the validator now refuses real MP3s too (' + before + ' -> ' + after + ')');
 }
 
 console.log('\n10. no console errors');

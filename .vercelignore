@@ -1,0 +1,15 @@
+# Nothing in here is part of the site. Keeping it out of the upload is the real
+# fix: a file that never reaches the CDN cannot be served, whereas a redirect
+# rule only hides one that did. The redirects block in vercel.json is the
+# second line of defence in case a file lands here some other way.
+.git
+.gitignore
+.github
+test/
+build.py
+*.md
+IT-REVIEW.html
+Testbench-IT-review.pdf
+_redirects
+dist/
+docs/

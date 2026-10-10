@@ -49,15 +49,15 @@ function build() {
 
   var p0 = el("div", "tb-panel");
   var head = el("div"); head.style.cssText = "display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin-bottom:12px";
-  var h = el("h2"); h.style.cssText = "font-family:var(--font-d);font-size:17px;letter-spacing:.03em";
+  var h = el("h2"); h.style.cssText = "font-family:var(--f-display);font-size:17px;letter-spacing:.03em";
   h.textContent = shortName(rec); head.appendChild(h);
-  var meta = el("span"); meta.style.cssText = "font-family:var(--font-m);font-size:10.5px;color:var(--ink-faint);letter-spacing:.06em";
+  var meta = el("span"); meta.style.cssText = "font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em";
   meta.textContent = (rec.wheel ? "WHEEL DETECTED" : "GENERIC DEVICE") + " · " + rec.axes.length + " axes · " + rec.buttons.length + " buttons";
   head.appendChild(meta); p0.appendChild(head);
 
   var viz = el("div", "tb-wheelviz");
   var svgWrap = el("div");
-  svgWrap.innerHTML = '<svg viewBox="0 0 200 200" aria-label="Steering position">' +
+  svgWrap.innerHTML = '<svg viewBox="0 0 200 200" role="img" aria-label="Steering position, drawn live from the wheel. The angle in degrees is printed beside it.">' +
     '<circle cx="100" cy="100" r="90" fill="none" style="stroke:var(--dev-rim)" stroke-width="1"/>' +
     '<g id="whrot">' +
       '<circle cx="100" cy="100" r="78" fill="none" style="stroke:var(--dev-spoke)" stroke-width="14"/>' +

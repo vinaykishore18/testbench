@@ -81,7 +81,9 @@ console.log('\n5. the verdict explains the remap instead of failing the mouse');
 }
 
 console.log('\n6. typing in a text field is never treated as a mouse macro');
-await page.click('#ms-tabs [data-t="dbl"]');
+/* The nine mouse tabs were grouped into four; the double-click test now
+   lives under "Switch health". */
+await page.click('#ms-tabs [data-t="switches"]');
 await page.waitForTimeout(80);
 await page.fill('#ms-dcth', '90');
 await page.waitForTimeout(60);

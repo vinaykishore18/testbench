@@ -13,6 +13,58 @@
    It touches nothing else. Removing the one <script> tag in index.html that
    loads it puts the site back exactly as it was. */
 "use strict";
+
+/* ---------- framing ----------------------------------------------------
+   The deploy sends X-Frame-Options: DENY and CSP frame-ancestors 'none', and
+   those are the real protection. But both are headers, and this page is also
+   opened straight off a USB stick on the bench, where there are no headers at
+   all - and frame-ancestors is one of the few CSP directives a <meta> tag
+   cannot set, so the inline policy in index.html cannot cover it either.
+
+   Framed with the headers missing, the microphone and camera permissions this
+   page asks for are granted to the TOP-level origin, not to this one. That is
+   the whole attack: wrap the bench in an iframe on a page the operator was
+   sent a link to, let them click Start microphone because the tool they
+   recognise asked for it, and the recording belongs to the framing site.
+
+   So refuse to render inside a frame no matter how the file was served. Break
+   out if we are allowed to, and if the framing page blocks that (sandbox
+   without allow-top-navigation) replace our own body with a plain notice, so
+   the worst case is an obviously broken panel rather than a working one.
+   -------------------------------------------------------------------- */
+(function () {
+  var framed;
+  try { framed = window.top !== window.self; }
+  catch (e) { framed = true; }     /* cross-origin top: reading it throws */
+  if (!framed) return;
+
+  try { window.top.location = window.self.location.href; } catch (e) {}
+
+  function blank() {
+    try {
+      var d = document.documentElement;
+      d.innerHTML = "";
+      var b = document.createElement("body");
+      b.setAttribute("style", "margin:0;min-height:100vh;display:grid;place-items:center;background:#14110C;color:#EDE7DA;font:16px/1.6 system-ui,sans-serif;padding:24px;text-align:center");
+      var box = document.createElement("div");
+      box.setAttribute("style", "max-width:34em");
+      var h = document.createElement("strong");
+      h.setAttribute("style", "display:block;font-size:19px;margin-bottom:10px");
+      h.appendChild(document.createTextNode("Testbench will not run inside a frame."));
+      var p = document.createElement("p");
+      p.setAttribute("style", "margin:0;opacity:.78");
+      p.appendChild(document.createTextNode(
+        "This page asks for your microphone and camera. Inside someone else’s frame those permissions would be granted to their page rather than to this one, so it refuses to load. Open it in a tab of its own."));
+      box.appendChild(h); box.appendChild(p);
+      b.appendChild(box);
+      d.appendChild(b);
+    } catch (e) {}
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", blank);
+  else blank();
+  /* and make sure nothing downstream carries on regardless */
+  throw new Error("Testbench: refusing to run framed");
+})();
 (function () {
   /* Distinct failures, in order, each with a count. The first version listed
      every occurrence, so one throw per mouse click filled the screen with

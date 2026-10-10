@@ -94,6 +94,45 @@ await page.waitForTimeout(600);
   await page.waitForTimeout(400);
 }
 
+console.log('\n4b. the one-second sweep really does advance once a second');
+{
+  /* A one-second dwell is where a timing bug shows up, because every source of
+     slack - the fullscreen transition, the first frame, an animated pattern
+     setting up - is now a sizeable fraction of the whole step. At six seconds
+     a half-second stall is invisible; at one second it halts the run. */
+  await page.selectOption('#mn-dwell', '1');
+  await page.click('#mn-runquick');
+  await page.waitForTimeout(500);
+  const stepOf = () => page.evaluate(() => {
+    const t = document.querySelector('.tb-fullhud')?.textContent || '';
+    const m = t.match(/(\d+)\s+of\s+(\d+)/);
+    return m ? Number(m[1]) : -1;
+  });
+  const first = await stepOf();
+  await page.waitForTimeout(3200);
+  const later = await stepOf();
+  const advanced = later - first;
+  /* Three seconds at a one-second dwell should move three steps. Allow two in
+     case the fullscreen transition eats one, but standing still is a failure. */
+  advanced >= 2 ? pass(`advanced ${advanced} steps in 3.2 s at a 1 s dwell`)
+                : fail(`only advanced ${advanced} step(s) in 3.2 s at a 1 s dwell (${first} -> ${later})`);
+
+  /* Read the countdown element itself. Matching a number-followed-by-s against
+     the whole HUD picks up the step label and the pattern name too - it read
+     "80.3 s" off text that had nothing to do with the timer. */
+  const counting = await page.evaluate(() => {
+    const b = document.querySelector('.tb-fullhud .count');
+    const m = (b?.textContent || '').match(/([\d.]+)/);
+    return m ? Number(m[1]) : -1;
+  });
+  counting >= 0 && counting <= 1.05 ? pass(`countdown reads ${counting} s, inside the one-second step`)
+    : fail(`countdown reads ${counting} s on a one-second dwell`);
+
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.selectOption('#mn-dwell', '6');
+}
+
 console.log('\n5. typing in the dwell selector does not fire a run');
 await page.selectOption('#mn-dwell', '6');
 await page.waitForTimeout(400);

@@ -96,6 +96,69 @@ await page.waitForTimeout(11000);
     : fail('a genuinely stuck button was not reported: ' + v.replace(/\s+/g, ' ').slice(0, 200));
 }
 
+console.log('\n3b. drift is drawn, not just scored');
+{
+  /* A figure like "rests at 0.071" means nothing at a glance, and the drift
+     score read it without ever showing it. The plot now marks the measured
+     rest point and the deadzone ring, so an operator sees whether a stick has
+     crept outside what a game would ignore - which is the difference between
+     a pad that is fine and one that walks the camera on its own.
+
+     A second context, because this one needs a pad that is drifting from the
+     moment it connects: the rest point comes from the settle sample taken on
+     connection, so it cannot be introduced later. */
+  const ctx2 = await browser.newContext({ viewport: { width: 1500, height: 1000 } });
+  await ctx2.addInitScript(() => {
+    const axes = [0.11, -0.06, 0, 0];          /* left stick resting off-centre */
+    navigator.getGamepads = () => [{
+      index: 0, id: 'Wireless Controller (STANDARD GAMEPAD)', mapping: 'standard',
+      connected: true, timestamp: performance.now(), axes: axes,
+      buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })),
+      vibrationActuator: null
+    }];
+  });
+  const p2 = await ctx2.newPage();
+  await p2.goto(URL, { waitUntil: 'load' });
+  await p2.click('button[data-view="gamepad"]');
+  await p2.waitForTimeout(2600);               /* settle 450 ms + measure 850 ms, with slack */
+
+  const reads = await p2.evaluate(() =>
+    [...document.querySelectorAll('.tb-stickread')].map((n) => ({ text: n.textContent, cls: n.className })));
+
+  reads.length >= 2 ? pass(`${reads.length} stick readouts rendered`) : fail(`${reads.length} stick readouts`);
+
+  const left = reads[0] || { text: '', cls: '' };
+  /rests 12\.5%/.test(left.text)
+    ? pass('the left stick reports its measured rest magnitude: 12.5%')
+    : fail('no rest magnitude on the drifting stick: ' + JSON.stringify(left.text));
+  /OUTSIDE the deadzone/.test(left.text)
+    ? pass('and says it is outside the deadzone, in words')
+    : fail('it does not say the drift is outside the deadzone: ' + JSON.stringify(left.text));
+  /\bbad\b/.test(left.cls)
+    ? pass('and the readout is tinted to match') : fail('readout class is ' + JSON.stringify(left.cls));
+
+  const right = reads[1] || { text: '', cls: '' };
+  /inside the deadzone/.test(right.text) && !/\bbad\b/.test(right.cls)
+    ? pass('the clean right stick is not flagged')
+    : fail('a centred stick was flagged: ' + JSON.stringify(right));
+
+  /* And the canvas must actually have drawn something other than the grid -
+     a marker that exists only in the readout text is not a visual. */
+  const drawn = await p2.evaluate(() => {
+    const c = document.querySelector('.tb-stick canvas');
+    if (!c) return -1;
+    const g = c.getContext('2d');
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let lit = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 20) lit++;
+    return lit;
+  });
+  drawn > 500 ? pass(`the plot is drawn (${drawn} lit pixels)`)
+    : fail(`the stick canvas is empty or nearly so (${drawn} lit pixels)`);
+
+  await ctx2.close();
+}
+
 console.log('\n4. no console errors');
 errors.length ? errors.forEach(fail) : pass('clean');
 

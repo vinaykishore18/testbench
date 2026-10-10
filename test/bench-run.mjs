@@ -92,7 +92,12 @@ await pressBtn(3); await page.waitForTimeout(3600);
 {
   const b = await bar();
   b && /step 2 of/.test(b.kick) ? pass('advanced to step 2 once the count settled') : fail('did not advance: ' + (b && b.kick));
-  (await tab()) === 'scroll' ? pass('opened the Scroll wheel tab by itself') : fail('tab was ' + await tab());
+  /* The scroll test moved in with Buttons when the mouse page's nine tabs
+     were grouped into four, so step 2 stays on the same tab rather than
+     switching. The check that matters is that the run advanced, which the
+     line above asserts. */
+  (await tab()) === 'buttons' ? pass('stayed on Buttons & scroll, where the wheel test now lives')
+    : fail('tab was ' + await tab());
   b && b.done === 1 ? pass('step 1 marked done') : fail('dots show ' + (b && b.done) + ' done');
 }
 

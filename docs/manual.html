@@ -1,0 +1,635 @@
+<title>Testbench Field Manual</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a technical manual. Sticky contents rail at desktop, single column on
+   a phone. Every test page gets the same three-part anatomy — what it measures,
+   how to read it, what it cannot tell you — because that is the discipline the
+   tool itself is built on. */
+:root{
+  --paper:#F7F4EE; --panel:#FFFFFF; --rule:#D9D2C4; --rule-soft:#E8E2D6;
+  --ink:#171310; --ink-2:#4A423A; --ink-3:#7A7064;
+  --red:#C4142B; --pass:#0A6B3C; --warn:#7A5100; --cold:#1F4E6B;
+  --mark:#FDF3C2;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#111316; --panel:#181B1F; --rule:#2E343B; --rule-soft:#232830;
+    --ink:#EDE9E2; --ink-2:#B9B2A8; --ink-3:#8A8277;
+    --red:#FF5668; --pass:#39C87E; --warn:#E0A33C; --cold:#6FC0E8;
+    --mark:#453A12;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111316; --panel:#181B1F; --rule:#2E343B; --rule-soft:#232830;
+  --ink:#EDE9E2; --ink-2:#B9B2A8; --ink-3:#8A8277;
+  --red:#FF5668; --pass:#39C87E; --warn:#E0A33C; --cold:#6FC0E8;
+  --mark:#453A12;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16.5px;line-height:1.68;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-block:0 72px;padding-left:20px;padding-right:20px}
+
+/* ---- masthead ---- */
+.mast{border-bottom:2px solid var(--ink);padding-block:34px 18px;margin-bottom:0}
+.mast .kick{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--red);display:block;margin-bottom:12px}
+.mast h1{font-family:var(--f-display);font-weight:800;font-size:clamp(32px,6vw,54px);line-height:1.02;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+.mast p{margin:0;max-width:62ch;color:var(--ink-2);font-size:17.5px}
+.specs{display:flex;flex-wrap:wrap;gap:8px 26px;margin-top:22px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+.specs b{color:var(--ink);font-weight:600}
+
+/* ---- two-column shell ---- */
+.shell{display:grid;grid-template-columns:218px minmax(0,1fr);gap:48px;margin-top:36px;align-items:start}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:28px}}
+
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);padding-top:20px;max-height:100vh;overflow:auto}
+@media (max-width:900px){
+  nav.toc{position:static;max-height:none;border:1px solid var(--rule);border-radius:10px;padding:16px 18px;background:var(--panel)}
+}
+nav.toc h2{font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px;font-weight:600}
+nav.toc ol{list-style:none;margin:0 0 20px;padding:0;display:flex;flex-direction:column;gap:1px}
+nav.toc a{display:block;padding:4px 0;color:var(--ink-2);text-decoration:none;font-size:14px;border-left:2px solid transparent;padding-left:10px;margin-left:-10px}
+nav.toc a:hover{color:var(--red);border-left-color:var(--red)}
+nav.toc a .n{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);margin-right:7px}
+
+main{min-width:0}
+section{padding-top:34px;scroll-margin-top:16px}
+section + section{border-top:1px solid var(--rule-soft);margin-top:10px}
+h2.sec{font-family:var(--f-display);font-weight:700;font-size:clamp(23px,3.4vw,31px);line-height:1.12;letter-spacing:-.015em;margin:0 0 6px;text-wrap:balance}
+h2.sec .n{font-family:var(--f-mono);font-size:12px;color:var(--red);display:block;letter-spacing:.14em;margin-bottom:8px;font-weight:600}
+.lede{color:var(--ink-2);max-width:66ch;margin:0 0 22px;font-size:17px}
+h3{font-family:var(--f-display);font-weight:600;font-size:17px;margin:26px 0 8px;letter-spacing:-.005em}
+p{max-width:68ch;margin:0 0 14px}
+ul,ol.plain{max-width:68ch;margin:0 0 16px;padding-left:22px}
+li{margin-bottom:7px}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--rule-soft);padding:1px 5px;border-radius:4px}
+strong{font-weight:600}
+a{color:var(--red)}
+
+/* ---- the three-part anatomy block ---- */
+.anat{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:18px 0 22px}
+.anat > div{background:var(--panel);padding:15px 17px;min-width:0}
+.anat h4{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 9px;font-weight:600}
+.anat .m h4{color:var(--cold)}
+.anat .r h4{color:var(--pass)}
+.anat .c h4{color:var(--warn)}
+.anat p{font-size:14.5px;line-height:1.6;margin:0 0 9px;max-width:none;color:var(--ink-2)}
+.anat p:last-child{margin-bottom:0}
+.anat b{color:var(--ink)}
+
+/* ---- control reference table ---- */
+.ctrls{width:100%;border-collapse:collapse;margin:16px 0 22px;font-size:14.5px}
+.ctrls th,.ctrls td{text-align:left;vertical-align:top;padding:9px 12px 9px 0;border-bottom:1px solid var(--rule-soft)}
+.ctrls th{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule);font-weight:600}
+.ctrls td:first-child{font-family:var(--f-mono);font-size:12.5px;color:var(--ink);white-space:nowrap;padding-right:18px;font-weight:500}
+.ctrls td:nth-child(2){color:var(--ink-2)}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* ---- callouts ---- */
+.note{border-left:3px solid var(--red);background:var(--panel);padding:14px 18px;margin:18px 0;border-radius:0 8px 8px 0}
+.note p{margin:0;font-size:15px;max-width:66ch}
+.note p + p{margin-top:10px}
+.note .tag{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);display:block;margin-bottom:7px;font-weight:600}
+.note.cold{border-left-color:var(--cold)}
+.note.cold .tag{color:var(--cold)}
+
+kbd{font-family:var(--f-mono);font-size:11.5px;border:1px solid var(--rule);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--panel);white-space:nowrap}
+
+.pill{display:inline-block;font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--rule);color:var(--ink-3);font-weight:600}
+.pill.ok{color:var(--pass);border-color:color-mix(in srgb,var(--pass) 45%,transparent)}
+.pill.no{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+
+.units{font-family:var(--f-mono);font-size:13px;color:var(--ink-2);background:var(--panel);border:1px solid var(--rule-soft);border-radius:8px;padding:12px 15px;margin:14px 0 20px;max-width:68ch}
+.units div{display:flex;gap:12px;padding:3px 0}
+.units span:first-child{color:var(--red);min-width:5.5em;font-weight:500}
+mark{background:var(--mark);color:var(--ink);padding:0 3px;border-radius:3px}
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:3px}
+.foot{margin-top:52px;padding-top:20px;border-top:2px solid var(--ink);font-size:14px;color:var(--ink-3);max-width:70ch}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <span class="kick">Operator reference &middot; Testbench by Vinay</span>
+  <h1>Testbench Field Manual</h1>
+  <p>Every page, every control, every number &mdash; what it measures, how to read it, and what it cannot tell you. The third column is the one that matters: a bench tool earns its keep by being clear about where its knowledge stops.</p>
+  <div class="specs">
+    <span><b>15</b> test pages</span>
+    <span><b>11,578</b> lines</span>
+    <span><b>18</b> test suites</span>
+    <span><b>0</b> dependencies at runtime</span>
+    <span><b>0</b> third-party requests</span>
+    <span><b>0</b> servers</span>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="toc">
+  <h2>How it is built</h2>
+  <ol>
+    <li><a href="#shape"><span class="n">00</span>The shape of it</a></li>
+    <li><a href="#rules"><span class="n">01</span>Four rules it follows</a></li>
+  </ol>
+  <h2>Input</h2>
+  <ol>
+    <li><a href="#bench"><span class="n">02</span>Bench &amp; report</a></li>
+    <li><a href="#keyboard"><span class="n">03</span>Keyboard</a></li>
+    <li><a href="#mouse"><span class="n">04</span>Mouse</a></li>
+    <li><a href="#gamepad"><span class="n">05</span>Controllers</a></li>
+    <li><a href="#joycon"><span class="n">06</span>Joy-Cons</a></li>
+    <li><a href="#wheel"><span class="n">07</span>Wheels</a></li>
+  </ol>
+  <h2>Audio</h2>
+  <ol>
+    <li><a href="#audio"><span class="n">08</span>Mic &amp; headsets</a></li>
+    <li><a href="#airpods"><span class="n">09</span>Earbuds</a></li>
+    <li><a href="#midi"><span class="n">10</span>MIDI</a></li>
+  </ol>
+  <h2>Screens &amp; network</h2>
+  <ol>
+    <li><a href="#monitor"><span class="n">11</span>Monitors</a></li>
+    <li><a href="#camera"><span class="n">12</span>Webcams</a></li>
+    <li><a href="#touch"><span class="n">13</span>Touch</a></li>
+    <li><a href="#network"><span class="n">14</span>Routers</a></li>
+  </ol>
+  <h2>Machine</h2>
+  <ol>
+    <li><a href="#stress"><span class="n">15</span>Stress test</a></li>
+    <li><a href="#system"><span class="n">16</span>System &amp; privacy</a></li>
+  </ol>
+  <h2>Reference</h2>
+  <ol>
+    <li><a href="#keys"><span class="n">17</span>Keys &amp; shortcuts</a></li>
+    <li><a href="#storage"><span class="n">18</span>What it stores</a></li>
+    <li><a href="#security"><span class="n">19</span>Security posture</a></li>
+    <li><a href="#limits"><span class="n">20</span>What no browser can do</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="shape">
+  <h2 class="sec"><span class="n">00</span>The shape of it</h2>
+  <p class="lede">One HTML file, one stylesheet, nineteen JavaScript files. No framework, no build step, nothing installed at runtime. What is in the files is exactly what runs in the browser.</p>
+
+  <p>Every test page is a hidden <code>&lt;section&gt;</code> inside the single <code>index.html</code>. Switching pages does not load anything &mdash; it shows one section and hides the others. That is why navigation is instant, and why the whole site works from a USB stick with no network at all.</p>
+
+  <p>The JavaScript files are numbered because the numbers are the load order. <code>_boot.js</code> loads first and exists only to make failures visible: if a script 404s or throws, it prints a banner on the page instead of hiding the problem in a console nobody opens. <code>00-core.js</code> defines one global, <code>TB</code>, which holds everything shared &mdash; the router, the gamepad polling loop, the theme engine, the verdict renderer, the session results store. Every other file is a self-contained module that reaches into <code>TB</code> and never into another module.</p>
+
+  <h3>The gamepad loop</h3>
+  <p>One <code>requestAnimationFrame</code> loop in the core reads every connected controller sixty times a second and hands the readings to whoever registered interest. There is exactly one loop no matter how many pages you visit, and a test asserts that: two loops would read as a stuttering controller and would be very hard to trace.</p>
+
+  <div class="note cold">
+    <span class="tag">why this matters to you</span>
+    <p>A controller is invisible to every browser until it sends its first input. That is a browser rule, not a fault with the pad. If a card stays dark, press a face button. Nothing in the app can work around it.</p>
+  </div>
+</section>
+
+<section id="rules">
+  <h2 class="sec"><span class="n">01</span>Four rules it follows</h2>
+  <p class="lede">These are not style preferences. Each one came out of a bug that reached the deployed site.</p>
+
+  <h3>1. A result says what was measured, not what it implies</h3>
+  <p>The earbuds page used to call a repeated serial &ldquo;close to proof of a counterfeit&rdquo; and style it as a failure. Testing one genuine pair twice flagged it the second time, every time &mdash; so the loudest result on the page was also its least reliable. Every verdict on the site now states what was measured and what that does and does not establish.</p>
+
+  <h3>2. A test that cannot fail is worse than no test</h3>
+  <p>The contrast check in the test suite gated at 2.6:1 for years. The accessibility standard is 4.5:1, so it could never have caught the two real failures that were in the stylesheet. It read as a pass and was not one.</p>
+
+  <h3>3. Nothing outlives the page you left</h3>
+  <p>The router tests once pulled 1.19&nbsp;GB from ten clicks, and 1,094&nbsp;MB of that arrived <em>after</em> the operator had navigated away. Every fetch now registers with an abort list, and leaving the page cancels the lot. The microphone and camera have the same discipline: both used to survive a page change with the status chip reading &ldquo;off&rdquo;.</p>
+
+  <h3>4. Nothing leaves this machine</h3>
+  <p>No server, no database, no analytics, no fonts from a CDN, no third party of any kind. The site makes zero requests to anyone but itself. That is also the shortest answer to give any IT department: there is no server to attack.</p>
+</section>
+
+<section id="bench">
+  <h2 class="sec"><span class="n">02</span>Bench &amp; report</h2>
+  <p class="lede">The landing page. Shows what is plugged in, scores controllers the moment they connect, and turns the session into a printable QC record.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Every device the browser will admit to seeing, live. Controllers get a full rest-state score on connection without you pressing anything.</p>
+      <p>It also collects every scored result from every page you visit, as you visit it.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>A dark card means the device has not sent input yet. Press a button on it.</p>
+      <p><b>Unit report:</b> fill in the SKU, grade, your initials and any notes, then <b>Build the report</b>. Print it, save it as a PDF through your browser's print dialog, or <b>Copy as text</b> for a listing or an email.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>A device the browser cannot see is not necessarily broken &mdash; USB audio, printers and most storage never appear to a web page at all.</p>
+      <p>The report covers what you actually ran. It is not a certification and not a warranty.</p></div>
+  </div>
+
+  <h3>The one thing to understand about the report</h3>
+  <p>Every page of the app appears in it. The ones you did not open are printed under <strong>Not tested</strong>, in words, with what they would have covered. This is deliberate: a report listing only the tests you happened to run reads as a clean bill of health for the whole unit, and a buyer will read it that way.</p>
+
+  <p>One failure makes the unit <strong>Faulty</strong> however many other pages passed. A controller with a dead trigger is not eighty-six percent fine. Re-running a test replaces its result rather than adding a second row, so a unit can never be listed as both passed and failed.</p>
+
+  <div class="note">
+    <span class="tag">be careful with this</span>
+    <p>Pasting the copied report into a spreadsheet is safe &mdash; a SKU beginning with <code>=</code>, <code>+</code> or <code>@</code> is neutralised with a leading apostrophe so it cannot run as a formula. If you see that apostrophe, it is doing its job.</p>
+  </div>
+</section>
+
+<section id="keyboard">
+  <h2 class="sec"><span class="n">03</span>Keyboard</h2>
+  <p class="lede">Every key, chatter, rollover, and a typing test. Capture mode holds the keys that would otherwise throw you out of the page.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Which physical keys register, how many simultaneous presses the board reports (rollover), whether a key fires twice from one press (chatter), and typing speed and accuracy.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Press every key until the whole board is green. A key that never lights is dead or the layout is wrong &mdash; check the layout selector first.</p>
+      <p>Chatter is the fault that gets a board returned: it types <code>aa</code> when you pressed <kbd>a</kbd> once.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Switch feel, actuation force, or how many more presses a switch has in it. Nothing in a browser reaches that.</p>
+      <p>Media and brightness keys are handled by the operating system and often never reach the page at all.</p></div>
+  </div>
+
+  <h3>Capture mode</h3>
+  <p>Holds <kbd>Win</kbd>, <kbd>Alt</kbd>+<kbd>Tab</kbd>, <kbd>Esc</kbd> and the F-row so they register here instead of switching windows. Hold <kbd>Esc</kbd> for one second to leave, or <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd>.</p>
+  <p>The lock keys &mdash; Caps, Num, Scroll &mdash; are detected without being allowed to toggle, so testing a keyboard no longer leaves Caps Lock on.</p>
+  <p><kbd>Ctrl</kbd>+<kbd>K</kbd> still works in capture mode, which is the only way to reach another page while the keyboard is held.</p>
+</section>
+
+<section id="mouse">
+  <h2 class="sec"><span class="n">04</span>Mouse</h2>
+  <p class="lede">Nine tabs. Buttons, click speed, double-click, scroll, tracking, polling rate, CPI, reaction time, drag, and the raw event stream.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Which buttons register and in what order. Click interval, to catch a switch that double-fires. Scroll direction and granularity. Reported polling rate. Pointer travel against the surface, to estimate CPI.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p><b>Double-click chatter</b> is the common fault: two clicks logged from one press, with an interval under about 50&nbsp;ms. That is a worn switch.</p>
+      <p><b>Side buttons</b> that a driver has mapped to Copy/Paste or Back/Forward are detected automatically and named &mdash; this works for Razer Synapse, Logitech G Hub and the rest.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>True sensor CPI. The browser reports the operating system's pointer movement, after acceleration and scaling. Use the CPI tab as a comparison between mice, not as an absolute.</p>
+      <p>Polling rate is the rate the browser <em>observed</em>, which a busy machine will understate.</p></div>
+  </div>
+
+  <div class="note">
+    <span class="tag">hold back/forward</span>
+    <p>A mouse whose side buttons the browser reports as real Back and Forward navigation needs the <b>Hold back/forward</b> button pressed before those presses can be counted. It traps the browser's own Back button while it is on, so it does not arm itself &mdash; an earlier version did, and that quietly broke Back across the whole site for the rest of the session.</p>
+  </div>
+</section>
+
+<section id="gamepad">
+  <h2 class="sec"><span class="n">05</span>Controllers</h2>
+  <p class="lede">Any pad the Gamepad API will report: Xbox, DualSense, Switch Pro, and the long tail of third-party and leverless controllers.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Stick rest position and drift, deadzone, full travel on every axis, every button and trigger including analogue travel, and the D-pad however the pad reports it.</p>
+      <p>On connect it takes a two-phase rest sample: 450&nbsp;ms to settle, then 850&nbsp;ms to measure.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p><b>Drift</b> is a stick that does not read zero at rest. Small is normal; a reading that wanders while the pad sits still is the fault people return.</p>
+      <p>Work every axis to its limits so the travel bars fill. An axis that never reaches full is a worn or dirty potentiometer.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Battery health, firmware version, or anything over the pad's proprietary protocol. Rumble can be triggered but not measured.</p>
+      <p>A wireless pad often appears twice &mdash; once as the dongle, once as itself. The page remembers which one actually sends input.</p></div>
+  </div>
+
+  <div class="note cold">
+    <span class="tag">why the settle delay exists</span>
+    <p>The rest sample used to begin the instant the pad appeared &mdash; which is the moment you pressed the button that made the browser reveal it. Every controller was therefore scored with a button held down, and reported &ldquo;button pressed early&rdquo; on connection. The two-phase sample waits for your hand to leave.</p>
+  </div>
+</section>
+
+<section id="joycon">
+  <h2 class="sec"><span class="n">06</span>Joy-Cons</h2>
+  <p class="lede">Reads Joy-Cons over WebHID, which gets at things the Gamepad API does not expose.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Sticks and buttons, battery level, and the factory and user calibration data read directly out of the controller's SPI flash.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Joy-Con stick drift is the known fault. Compare the live stick reading against the stored calibration centre: a large gap is drift the controller itself has not corrected.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>It is <strong>read-only</strong>. There is no firmware write path here, so it cannot recalibrate or repair a drifting stick &mdash; only show you that it drifts.</p>
+      <p>Needs a Chromium browser. WebHID does not exist in Safari or Firefox.</p></div>
+  </div>
+</section>
+
+<section id="wheel">
+  <h2 class="sec"><span class="n">07</span>Wheels</h2>
+  <p class="lede">Racing wheels and pedal sets. Logitech G29 and G923, Thrustmaster, Fanatec &mdash; anything that presents as a gamepad.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Steering travel lock to lock, throttle, brake and clutch separately, shifter and paddle positions, and every face and rim button, colour-coded by family.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Turn the wheel fully each way. The steering bar should reach both ends and return to centre.</p>
+      <p>Press each pedal to the floor. A pedal that stops short of full travel has a worn potentiometer &mdash; the single most common fault on a used set.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Force feedback strength cannot be measured, only triggered. Gear detection depends on how the wheel reports its shifter, which varies by model.</p></div>
+  </div>
+
+  <div class="note">
+    <span class="tag">how the steering axis is found</span>
+    <p>Earlier versions assumed steering was axis 0. On a G923 it is not, so the wheel appeared not to turn at all. The page now watches every axis and picks the one with the widest travel whose midpoint sits near centre &mdash; and if it still guesses wrong, you can pick the axis by hand and it stops guessing.</p>
+  </div>
+</section>
+
+<section id="audio">
+  <h2 class="sec"><span class="n">08</span>Mic &amp; headsets</h2>
+  <p class="lede">Microphone metering, headset output, a loopback test, and a music library for listening to real material.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Live waveform and spectrum from the microphone, with peak, noise floor and clip count. Channel count and sample rate. Output through each earcup separately.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p><b>Clip count above zero</b> means the signal is hitting the ceiling and distorting &mdash; back the gain off or move the mic.</p>
+      <p><b>Loopback:</b> the page plays a tone through the headset and listens for it on the microphone. &ldquo;Both halves work&rdquo; means the cable and both drivers are good. Put the headset on the bench, not on your head.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Absolute sound pressure level. There is no calibrated reference, so the levels are relative.</p>
+      <p>It cannot judge sound quality. It can tell you a driver is silent, distorting or wired to the wrong side.</p></div>
+  </div>
+
+  <div class="units">
+    <div><span>Sweep</span><span>a tone that climbs through the frequency range &mdash; listen for gaps, buzzes and rattles</span></div>
+    <div><span>Bass</span><span>low tones, for a driver that flaps or a loose enclosure</span></div>
+    <div><span>Pink noise</span><span>equal energy per octave; the best single signal for hearing a hole in the response</span></div>
+    <div><span>Patterns</span><span>five synthesised test pieces &mdash; drop, snap, walk, air, swing &mdash; for stereo imaging and transients</span></div>
+  </div>
+
+  <h3>The music library</h3>
+  <p>You can add your own <code>.mp3</code> files, and only MP3. The check is not the filename: the page parses the MPEG frame headers, computes each frame's length from its own bitrate and sample rate, and requires three frames to chain at the computed offsets. Seventeen other formats are named explicitly, so a renamed <code>.m4a</code> is refused with a message saying what it really is.</p>
+  <p>Caps are 40&nbsp;MB per file and 400&nbsp;MB in total. Files are stored only on this machine and never uploaded. No music ships with the site &mdash; a build check fails if any audio file appears in the repository.</p>
+</section>
+
+<section id="airpods">
+  <h2 class="sec"><span class="n">09</span>Earbuds</h2>
+  <p class="lede">The hardest page to do honestly. An acoustic fingerprint, a wear-detection check, a serial check, and a log.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p><b>Acoustic fingerprint:</b> the shape of the frequency response across 32 bands from 100&nbsp;Hz to 12&nbsp;kHz, compared against a reference pair you recorded yourself. Shape, not level &mdash; so how loud you set it does not matter.</p>
+      <p><b>Serial check:</b> the structure of the serial, offline.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Average deviation under <b>3&nbsp;dB</b> means these drivers behave like your genuine pair. 3&ndash;6&nbsp;dB could be placement &mdash; re-seat and run again. Over 6&nbsp;dB is a bigger gap than re-seating usually explains.</p>
+      <p>You must record a reference from a sealed known-good pair first, in a quiet room. Without it there is nothing to compare against.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>It cannot confirm a pair is genuine. It compares drivers, and nothing more. Treat it as one strong signal among several, never as proof on its own.</p>
+      <p>It cannot read a serial number, firmware or anything from Apple. No browser can.</p></div>
+  </div>
+
+  <h3>The serial check, and exactly what it proves</h3>
+  <p>Apple's older serials are structured. The 12-character format encodes the factory in positions 1&ndash;3, the half-year in position 4, the week-within-half in position 5, and the model in 9&ndash;12. The older 11-character format carries the year digit and week as plain digits. Serials issued from 2021 onward are 10 characters and deliberately random &mdash; no factory, no date, nothing to decode.</p>
+
+  <p>So the page can check a serial against itself: is it a length and character set Apple uses, do the date characters decode to a real half-year and week, and <mark>does the decoded build date make sense for the model you picked</mark>. That last one is the strongest thing here. A serial decoding to 2018 on a pair of AirPods Pro 2 is impossible &mdash; that model did not exist until September 2022. So is a randomised 10-character serial on a 2016 product. Those are contradictions, not opinions.</p>
+
+  <div class="note">
+    <span class="tag">read this once</span>
+    <p>A serial that <strong>passes</strong> is not proven genuine. A correctly-shaped serial is as easy to print as a wrong one, and counterfeiters print them. A <strong>pass</strong> means move on to the next check. A <strong>fail</strong> is worth acting on.</p>
+    <p>For the authoritative answer, use <b>Copy &amp; open Apple's checker</b> and read it from Apple yourself. The page cannot ask on your behalf: Apple's coverage checker sits behind a captcha placed there to stop exactly that, and a scraper would fail silently the first time they changed the page &mdash; answering &ldquo;could not verify&rdquo; for genuine pairs with nothing to distinguish that from a fake.</p>
+  </div>
+
+  <h3>Wear detection</h3>
+  <p>All the page can observe is that <em>something</em> paused playback. Genuine buds do that when you take one out. So does a Bluetooth dropout, an output-device change or a phone call &mdash; the event is identical and the browser cannot say which happened. Repeat it two or three times: pausing every time you remove a bud and never when you leave it alone is the pattern worth trusting. One pause is not.</p>
+
+  <h3>The serial log</h3>
+  <p>A memory aid, not a verdict. The usual reason a serial comes back twice is that you are re-testing the same unit, so the log counts the repeat rather than flagging it. It only points at a fake when <strong>two different physical pairs</strong> carry the same serial. Capped at the last 500 entries, stored only on this machine, with its own clear button.</p>
+</section>
+
+<section id="midi">
+  <h2 class="sec"><span class="n">10</span>MIDI</h2>
+  <p class="lede">MIDI keyboards and controllers over Web MIDI. 88 keys, velocity, and the continuous controls.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Every note on and note off with its velocity, across the full 88-key range. Pitch bend, modulation and sustain. Stuck notes.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Key shading follows velocity, so a key that always reads low has a weak or dirty sensor. Anything under <b>45</b> on a normal press is flagged.</p>
+      <p>A note still held after <b>6 seconds</b> with your finger off it is a stuck note &mdash; the fault that makes a keyboard unusable.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Key weight, aftertouch feel, or anything about the sound the keyboard makes on its own. This reads the MIDI messages, not the instrument.</p>
+      <p>Requested without SysEx, so it cannot read or change device settings.</p></div>
+  </div>
+</section>
+
+<section id="monitor">
+  <h2 class="sec"><span class="n">11</span>Monitors</h2>
+  <p class="lede">Eleven solid colour fields and ten patterns, full screen, with an automatic run that walks all of them on its own.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Dead and stuck pixels, backlight bleed, near-black crush, near-white clipping, banding, geometry and overscan, 1&nbsp;px sharpness, panel uniformity, inversion, gamma, ghosting, and the live refresh rate.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>A <b>dead pixel</b> stays black on every field. A <b>stuck pixel</b> stays one colour on every field. Dust wipes off; a fault does not.</p>
+      <p>Dwell matters: <b>1 s</b> is a fast sweep for catching a dead pixel or a backlight fault. <b>6 s</b> is the right dwell for banding, uniformity and near-black crush, which your eyes need a moment to settle into.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Colour accuracy. That needs a colorimeter &mdash; no screen can measure itself.</p>
+      <p>Brightness in nits, contrast ratio, or response time in milliseconds.</p></div>
+  </div>
+
+  <h3>Controls</h3>
+  <div class="tscroll"><table class="ctrls">
+    <tr><th>Key</th><th>What it does</th></tr>
+    <tr><td>F</td><td>Full run &mdash; all eleven fields and all ten patterns, 21 steps</td></tr>
+    <tr><td>Q</td><td>Quick run &mdash; eight steps</td></tr>
+    <tr><td>Space</td><td>Pause and resume</td></tr>
+    <tr><td>&rarr; &larr;</td><td>Skip forward, step back</td></tr>
+    <tr><td>Esc</td><td>Stop and leave full screen</td></tr>
+  </table></div>
+
+  <div class="note">
+    <span class="tag">the stuck-pixel flush</span>
+    <p>It flashes the whole screen through saturated colours at <strong>two changes a second</strong>, which is under the three-per-second limit in WCAG 2.3.1. Under the limit is not the same as safe for everyone: if anyone nearby is photosensitive or has epilepsy, do not run it while they are in the room.</p>
+    <p>It arms on the first press and runs on the second, so it cannot be started by a mis-click or by a double-click from the faulty mouse currently on the bench. An earlier version ran at 5&nbsp;Hz while telling the operator it was &ldquo;well below&rdquo; the seizure threshold. It was above it.</p>
+  </div>
+</section>
+
+<section id="camera">
+  <h2 class="sec"><span class="n">12</span>Webcams</h2>
+  <p class="lede">Live preview, resolution, frame rate and a snapshot.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>The resolution actually negotiated (it asks for 1920&times;1080 and reports what it got), measured frame rate, and the camera's reported name.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>A camera that negotiates far below its advertised resolution is either not the model it is sold as or is being limited by the cable or hub.</p>
+      <p>Frame rate well under the reported figure usually means poor light, not a fault &mdash; most webcams drop frames to compensate.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Lens sharpness, colour accuracy or low-light performance in any measurable way. Look at the preview and judge.</p></div>
+  </div>
+
+  <div class="note">
+    <span class="tag">the camera goes off when you leave</span>
+    <p>Leaving this page releases the camera. That used to be an empty function with a comment claiming it already did &mdash; the webcam stayed live for the rest of the session with the status chip reading &ldquo;off&rdquo;. On somebody else's laptop that is not acceptable, so the chip and the hardware now agree.</p>
+  </div>
+</section>
+
+<section id="touch">
+  <h2 class="sec"><span class="n">13</span>Touch</h2>
+  <p class="lede">Touchscreens, trackpads and pen digitisers.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Every simultaneous touch point, drawn where it lands, with a running maximum. Pen pressure and tilt where the digitiser reports them.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Drag a finger across the whole panel. A dead zone shows as a gap in the trail &mdash; that is a delaminated digitiser.</p>
+      <p>The maximum point count tells you how many fingers the panel really tracks, which is often fewer than the specification claims.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Whether the glass is cracked, or whether the panel will fail under heat. Touch registering is necessary, not sufficient.</p></div>
+  </div>
+</section>
+
+<section id="network">
+  <h2 class="sec"><span class="n">14</span>Routers</h2>
+  <p class="lede">A speed test, a long soak and a connection load test. The soak is the one that catches the fault that actually comes back.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p><b>Speed test:</b> idle latency, download throughput, and latency measured <em>while the download is running</em>.</p>
+      <p><b>Soak:</b> response time once a second for up to thirty minutes, with every dropout time-stamped.</p>
+      <p><b>Load test:</b> up to 400 connections opened at once.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>The grade is the number to look at. Read on.</p>
+      <p><b>One red column on a five-minute soak is a router you send back.</b> Works fine, then drops out ten minutes later, is the complaint that brings them to the counter.</p>
+      <p>Anything short of all connections answering is a finding &mdash; a failing NAT table chokes here the way it chokes on a house full of devices.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p><b>Upload is not measured and cannot be.</b> There is no server here to send data to.</p>
+      <p>It cannot isolate the router: it measures the router, the modem, the line and this machine's Wi-Fi as one chain. And it cannot exceed the shop's connection, so it will never prove a router does gigabit.</p></div>
+  </div>
+
+  <h3>Latency under load, and why it is the point</h3>
+  <p>A line can measure 200&nbsp;Mbps and still be unusable for a video call. The moment traffic starts, a badly-behaved router buffers so deeply that every packet queues behind the download. That is bufferbloat, and it is the single most common cause of <em>&ldquo;the internet is fine but Teams keeps dropping&rdquo;</em>.</p>
+
+  <p>So the test measures response time idle and again under full load, with the same probe, and grades the <strong>gap</strong> rather than the absolute figure &mdash; a satellite link starts at 600&nbsp;ms and is usable, while fibre climbing from 10&nbsp;ms to 300&nbsp;ms is not.</p>
+
+  <div class="units">
+    <div><span>A+ / A</span><span>under 30 ms of extra delay &mdash; holds up under load</span></div>
+    <div><span>B</span><span>under 60 ms &mdash; slight queueing</span></div>
+    <div><span>C</span><span>under 200 ms &mdash; calls will wobble during a download</span></div>
+    <div><span>D</span><span>under 400 ms &mdash; calls will break up during a download</span></div>
+    <div><span>F</span><span>over 400 ms &mdash; unusable for calls while anything is downloading</span></div>
+  </div>
+
+  <p>Idle 14&nbsp;ms and loaded 600&nbsp;ms is a router you reject however good its download number looks. That is a router fault far more often than a line fault.</p>
+
+  <h3>Measurement detail that changes the answer</h3>
+  <ul>
+    <li>The first 1.5 seconds are discarded. TCP slow-start and the CDN's first-byte latency make the opening of a run unrepresentatively slow, and including it understates a fast line badly.</li>
+    <li>Streams ramp from three up to eight while throughput is still climbing. One connection cannot fill a fast link; eight on a slow one just fight each other.</li>
+    <li>Jitter is the mean absolute difference between <em>consecutive</em> probes, not standard deviation &mdash; which reads deceptively low on a line that alternates fast, slow, fast, slow, the behaviour that actually ruins a call.</li>
+    <li>Every byte pulled is counted and shown, and everything stops the moment you leave the page.</li>
+  </ul>
+
+  <p>Label each run &mdash; <code>LAN port 1</code>, <code>5 GHz</code>, <code>2.4 GHz</code> &mdash; and compare them in the runs table. Four runs and you have tested every port: a dead port shows as total loss, a bad one as dropouts the others do not have.</p>
+</section>
+
+<section id="stress">
+  <h2 class="sec"><span class="n">15</span>Stress test</h2>
+  <p class="lede">Sustained CPU and GPU load, to find the machine that passes a ten-second test and dies after ten minutes.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>Frame rate under continuous WebGL load, with the current and minimum figures tracked over the run. Worker threads loading the CPU in parallel.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>Watch for the frame rate falling away after a few minutes and staying down. That is <b>thermal throttling</b>: a blocked fan, dried thermal paste, or a heatsink that is not seated.</p>
+      <p>A machine that holds its frame rate for ten minutes is thermally sound.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Temperatures in degrees. No browser can read a thermal sensor &mdash; the throttling is inferred from the frame rate falling, which is the symptom rather than the cause.</p></div>
+  </div>
+</section>
+
+<section id="system">
+  <h2 class="sec"><span class="n">16</span>System &amp; privacy</h2>
+  <p class="lede">What the machine reports about itself, the connection watchdog, and the panel that shows and deletes everything stored here.</p>
+
+  <div class="anat">
+    <div class="m"><h4>What it measures</h4>
+      <p>CPU threads, a lower bound on memory, platform, graphics chip from the renderer string, storage quota, and battery charge and charging state.</p>
+      <p>The watchdog time-stamps every device connection and disconnection.</p></div>
+    <div class="r"><h4>How to read it</h4>
+      <p>The <b>connection watchdog</b> is worth more than any score on the site. A device that appears and disappears in that log is a loose port or a failing cable &mdash; the fault that tests fine for ten seconds and comes back a week later. Leave it open with the device plugged in.</p></div>
+    <div class="c"><h4>What it cannot tell you</h4>
+      <p>Battery cycle count or design capacity. Browsers do not expose either, so battery health still needs the manufacturer's tool.</p>
+      <p>Memory is reported as a minimum and rounded by the browser on purpose, to make fingerprinting harder.</p></div>
+  </div>
+
+  <h3>The privacy panel</h3>
+  <p>It counts what is actually stored rather than listing what is supposed to be &mdash; every key, with its size, and the audio library with its real byte count. A key it does not recognise is reported as unaccounted for rather than ignored, so a future change that starts saving something cannot do it quietly.</p>
+  <p><strong>Delete everything</strong> clears local storage, session storage and the audio database, then <em>reads the store back</em> and reports what is actually left. If another tab is holding the database open it says so and names the cause, instead of claiming a deletion that did not happen. Two presses, with a real gap between them, because this also throws away the earbuds reference curve.</p>
+</section>
+
+<section id="keys">
+  <h2 class="sec"><span class="n">17</span>Keys &amp; shortcuts</h2>
+  <p class="lede">Hands stay on the device. That is the whole reason these exist.</p>
+
+  <div class="tscroll"><table class="ctrls">
+    <tr><th>Key</th><th>Where</th><th>What it does</th></tr>
+    <tr><td>Ctrl / &#8984; + K</td><td>anywhere</td><td>Jump to any test by typing two or three letters. Works in capture mode, which is the only way out of a held keyboard.</td></tr>
+    <tr><td>F</td><td>Monitors</td><td>Start the full run</td></tr>
+    <tr><td>Q</td><td>Monitors</td><td>Start the quick run</td></tr>
+    <tr><td>S</td><td>Routers</td><td>Start the speed test</td></tr>
+    <tr><td>Space</td><td>Monitors, full screen</td><td>Pause and resume</td></tr>
+    <tr><td>&rarr; &larr;</td><td>Monitors, full screen</td><td>Skip, step back</td></tr>
+    <tr><td>Esc</td><td>Monitors, full screen</td><td>Stop</td></tr>
+    <tr><td>Esc held 1 s</td><td>Keyboard, capture mode</td><td>Leave capture mode</td></tr>
+    <tr><td>Ctrl+Shift+Q</td><td>Keyboard, capture mode</td><td>Leave capture mode</td></tr>
+    <tr><td>Tab</td><td>anywhere</td><td>First stop is &ldquo;Skip to the test&rdquo;, which jumps past the sixteen rail buttons</td></tr>
+  </table></div>
+
+  <p>The palette matches on what you would actually type, not just page names: <code>ping</code> and <code>latency</code> find Routers, <code>dead pixel</code> finds Monitors, <code>drift</code> finds Controllers and Joy-Cons, <code>fake</code> finds Earbuds, <code>pdf</code> finds the report.</p>
+</section>
+
+<section id="storage">
+  <h2 class="sec"><span class="n">18</span>What it stores</h2>
+  <p class="lede">Three things, all on this machine, all listed and deletable on the System page.</p>
+
+  <div class="tscroll"><table class="ctrls">
+    <tr><th>Where</th><th>What</th><th>Why</th></tr>
+    <tr><td>tb-theme</td><td>Dark / light / system</td><td>So the choice survives a reload</td></tr>
+    <tr><td>tb.earbuds.v1</td><td>Reference curves and the serial log</td><td>The curve takes a sealed pair and a quiet room to record. Serials capped at 500, oldest dropped first.</td></tr>
+    <tr><td>testbench-music</td><td>MP3 files you added</td><td>So they are still there next session. 400 MB cap.</td></tr>
+  </table></div>
+
+  <p>No cookies are set, so there is nothing to consent to. Session results for the unit report live in memory only and are gone when the tab closes. Nothing is transmitted and nothing is readable by any other site.</p>
+</section>
+
+<section id="security">
+  <h2 class="sec"><span class="n">19</span>Security posture</h2>
+  <p class="lede">The short version for any IT department: there is no server, so there is nothing to breach.</p>
+
+  <ul>
+    <li><span class="pill ok">0</span> &nbsp;third-party requests. No fonts from a CDN, no analytics, no scripts from anywhere but this site. Typefaces are the ones your operating system already ships.</li>
+    <li><span class="pill ok">CSP</span> &nbsp;<code>default-src 'none'</code> with <code>script-src 'self'</code>. No inline script, no <code>eval</code>. Verified enforced from inside a Worker, not just read off the header.</li>
+    <li><span class="pill ok">deny</span> &nbsp;Framing refused by header, by policy and by the page itself &mdash; because framed without headers, the microphone and camera permissions this page requests would be granted to whoever framed it.</li>
+    <li><span class="pill ok">least</span> &nbsp;Permissions-Policy grants microphone, camera, gamepad, HID, MIDI and fullscreen to this origin only, and denies USB, serial, Bluetooth, screen capture, geolocation, payment and topics outright.</li>
+    <li><span class="pill no">404</span> &nbsp;No source, documentation, build script or test file is deployed. They are excluded from the upload, not merely redirected.</li>
+    <li><span class="pill no">index</span> &nbsp;<code>robots.txt</code>, an <code>X-Robots-Tag</code> header on every response, and a <code>noindex</code> meta. Twenty crawlers named individually, because several treat a wildcard as advisory. No sitemap.</li>
+  </ul>
+
+  <p>Permissions are requested only when you press the button that needs them, and the browser asks you every time it has to. Revoke any of them from the padlock in the address bar; nothing here can grant itself access.</p>
+
+  <p>Eighteen test suites run against the site, including one that fails the build if an inline-script allowance, a dropped header, a committed secret, an audio file or a stale bundle appears in the tree.</p>
+</section>
+
+<section id="limits">
+  <h2 class="sec"><span class="n">20</span>What no browser can do</h2>
+  <p class="lede">Worth knowing in one list, so you never go looking for it.</p>
+
+  <ul>
+    <li><strong>Battery health.</strong> Cycle count and design capacity are not exposed. Manufacturer tool only.</li>
+    <li><strong>Temperatures.</strong> No thermal sensor is readable. Throttling is inferred from frame rate falling.</li>
+    <li><strong>True sensor CPI.</strong> You get the operating system's pointer movement, after acceleration.</li>
+    <li><strong>Absolute sound level.</strong> No calibrated reference, so audio figures are relative.</li>
+    <li><strong>Colour accuracy, brightness in nits, contrast ratio.</strong> A screen cannot measure itself.</li>
+    <li><strong>Upload speed.</strong> Needs a server to receive the data. There isn't one.</li>
+    <li><strong>Wi-Fi names, signal strength, the band you are on, the router's admin page or its firmware.</strong> Connect the machine to the port or band you want to check and label the run instead.</li>
+    <li><strong>Anything from Apple about a serial.</strong> No public API, and their checker is behind a captcha placed there to stop automated queries.</li>
+    <li><strong>USB audio interfaces, printers, most storage.</strong> They never appear to a web page.</li>
+    <li><strong>Firmware, on anything.</strong> The Joy-Con page reads calibration; it cannot write it.</li>
+  </ul>
+
+  <p>Everything on that list is a real limit of the platform, not a gap waiting to be filled. Where a test gets close to one of them, the page says so on its face rather than letting the number imply more than it measured.</p>
+</section>
+
+<p class="foot">Testbench by Vinay &mdash; an internal bench tool for returns QC. Not a product, not a certification, nothing for sale. Every figure in this manual is one the tool produces or a limit it states on its own pages.</p>
+
+</main>
+</div>
+</div>

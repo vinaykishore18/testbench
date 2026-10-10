@@ -7,6 +7,13 @@ var AUDIO = (function () {
 var $ = TB.$, $$ = TB.$$, el = TB.el, clamp = TB.clamp, toast = TB.toast, verdict = TB.verdict;
 
 var ac = null, micStream = null, micNode = null, ana = null, sink = null, recTimer = null;
+/* micPending covers the gap between asking for the microphone and getting it.
+   Without it, clicking Start ten times fast fires ten getUserMedia calls, each
+   one overwrites micStream when it resolves, and Stop only ever stops the last
+   — the other nine stay live with the UI saying "off". micGen is how a capture
+   that is still in flight learns it has been cancelled: stopMic bumps it, and a
+   resolution whose generation no longer matches throws its own stream away. */
+var micPending = false, micGen = 0;
 var buf = null, freqBuf = null, raf = null;
 var peak = 0, floor = 1, clips = 0, frames = 0;
 var rec = null, chunks = [], blobUrl = null, audioEl = new Audio();
@@ -55,6 +62,8 @@ function scopesLive(on) {
   $$(".tb-scopewrap").forEach(function (n) { n.classList.toggle("live", !!on); });
 }
 function stopMic() {
+  micGen++;              /* cancels any getUserMedia still in flight */
+  micPending = false;
   scopesLive(false);
   if (raf) { cancelAnimationFrame(raf); raf = null; }
   if (micStream) micStream.getTracks().forEach(function (t) { t.stop(); });
@@ -68,10 +77,24 @@ function stopMic() {
   stepTo(1);
 }
 function startMic() {
+  if (micStream || micPending) return;   /* exactly one capture at a time */
+  micPending = true;
+  var gen = micGen;
+  $("#au-start").disabled = true;
+  $("#au-start").textContent = "Opening microphone\u2026";
   var id = $("#au-indev").value;
   var c = { audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 } };
   if (id && id.length > 4) c.audio.deviceId = { exact: id };
   navigator.mediaDevices.getUserMedia(c).then(function (s) {
+    micPending = false;
+    $("#au-start").disabled = false;
+    if (gen !== micGen || micStream) {
+      /* Stopped while the permission prompt was up, or a second start beat us
+         here. Either way this stream has no owner, so release the hardware
+         rather than leaving an orphaned capture running. */
+      s.getTracks().forEach(function (t) { t.stop(); });
+      return;
+    }
     scopesLive(true);
     micStream = s;
     var a = ctx();
@@ -106,6 +129,9 @@ function startMic() {
     if (a.state === "suspended") a.resume();
     loop();
   }).catch(function (err) {
+    micPending = false;
+    $("#au-start").disabled = false;
+    $("#au-start").textContent = "Start microphone";
     toast("Microphone blocked",
       err.name === "NotAllowedError" ? "Permission was denied. Allow the microphone for this page and try again."
       : err.name === "NotFoundError" ? "No microphone was found on this machine."
@@ -631,6 +657,7 @@ var audioEl2Pause = function () {};
    should take the page down with them. */
 var DB_NAME = "testbench-music", DB_STORE = "tracks", dbP = null;
 
+var dbConn = null;
 function db() {
   if (dbP) return dbP;
   dbP = new Promise(function (res, rej) {
@@ -640,11 +667,39 @@ function db() {
       var d = rq.result;
       if (!d.objectStoreNames.contains(DB_STORE)) d.createObjectStore(DB_STORE, { keyPath: "id" });
     };
-    rq.onsuccess = function () { res(rq.result); };
-    rq.onerror = function () { rej(rq.error); };
+    rq.onsuccess = function () {
+      dbConn = rq.result;
+      /* An open connection BLOCKS deleteDatabase, and a blocked delete never
+         settles - it just sits there, and while it sits, every later
+         indexedDB.open on this origin hangs too. That is what happened: this
+         module opened the database at page load and held it for the life of
+         the tab, so the privacy panel's "Delete everything" fired onblocked
+         instead of onsuccess, the customer's audio stayed on disk, and the
+         panel's own counter was left waiting on an open() that would never
+         come back.
+
+         versionchange fires on this connection the moment something asks to
+         delete the database. Closing here is what lets the delete through. */
+      dbConn.onversionchange = function () { closeDb(); };
+      dbConn.onclose = function () { dbConn = null; dbP = null; };
+      res(dbConn);
+    };
+    rq.onerror = function () { dbP = null; rej(rq.error); };
+    rq.onblocked = function () { dbP = null; rej(new Error("blocked")); };
   });
   return dbP;
 }
+/* Let the delete through, and forget the cached promise so the next read
+   reopens rather than resolving to a closed connection. */
+function closeDb() {
+  if (dbConn) { try { dbConn.close(); } catch (e) {} }
+  dbConn = null; dbP = null;
+}
+/* The privacy panel calls this before it deletes. Exported on window rather
+   than passed around because the two modules do not otherwise know about each
+   other, and the alternative - the panel reaching into this file's internals -
+   is worse. */
+window.MUSICDB = { close: closeDb, name: DB_NAME, store: DB_STORE };
 function tx(mode) {
   return db().then(function (d) { return d.transaction(DB_STORE, mode).objectStore(DB_STORE); });
 }
@@ -795,43 +850,190 @@ function niceSize(n) {
      A real MP3 starts with either "ID3" (a tag) or an MPEG frame sync: 0xFF
      followed by a byte whose top three bits are set. An attacker-supplied
      extension proves nothing; the header is the file telling the truth. */
-  var MAX_BYTES = 40 * 1024 * 1024;
+  var MAX_BYTES = 40 * 1024 * 1024;          /* one file */
+  var MAX_LIB   = 400 * 1024 * 1024;         /* everything kept on this machine */
 
-  function looksLikeMp3(buf) {
-    var b = new Uint8Array(buf);
-    if (b.length < 4) return false;
-    if (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) return true;        /* "ID3" */
-    for (var i = 0; i < Math.min(b.length - 1, 8192); i++) {                 /* leading junk is common */
-      if (b[i] === 0xFF && (b[i + 1] & 0xE0) === 0xE0) return true;          /* frame sync */
+  /* ---- what counts as an MP3 ----------------------------------------------
+
+     The first version of this check accepted any file whose first three bytes
+     were "ID3", or that contained 0xFF followed by a byte with its top three
+     bits set anywhere in the first 8 KB. Both were trivially wrong:
+
+       - prepending the three characters "ID3" to anything passed it. A Windows
+         PE executable and a zip archive were both stored in the library this
+         way during testing.
+       - 0xFF followed by 0xE0-0xFF turns up by chance roughly once every few
+         hundred bytes of arbitrary binary, so the fallback scan passed almost
+         any file of any size.
+
+     An MPEG audio frame header carries its own bitrate, sample rate and
+     layer, and from those you can compute exactly how long the frame is -
+     which means the next frame header must sit at a known offset. Three
+     headers that agree in a row is not something random data produces.
+
+     Nothing here is uploaded and a blob URL only ever reaches an <audio>
+     element, so the risk this manages is wasted bench time rather than code
+     execution: a file that is not really audio decodes to silence and you
+     stand there wondering whether the headset is dead. A refusal up front is
+     worth more than a silent track.
+     --------------------------------------------------------------------- */
+
+  /* kbps, indexed [MPEG1 | MPEG2+2.5][layer][bitrate index] */
+  var BITRATES = {
+    1: { 1: [0,32,64,96,128,160,192,224,256,288,320,352,384,416,448,0],
+         2: [0,32,48,56,64,80,96,112,128,160,192,224,256,320,384,0],
+         3: [0,32,40,48,56,64,80,96,112,128,160,192,224,256,320,0] },
+    2: { 1: [0,32,48,56,64,80,96,112,128,144,160,176,192,224,256,0],
+         2: [0,8,16,24,32,40,48,56,64,80,96,112,128,144,160,0],
+         3: [0,8,16,24,32,40,48,56,64,80,96,112,128,144,160,0] }
+  };
+  /* keyed by the two version bits: 3 = MPEG1, 2 = MPEG2, 0 = MPEG2.5, 1 is reserved */
+  var RATES = { 3: [44100,48000,32000], 2: [22050,24000,16000], 0: [11025,12000,8000] };
+
+  /* Length in bytes of the frame starting at i, or 0 if that is not a frame. */
+  function frameLen(b, i) {
+    if (i + 4 > b.length) return 0;
+    if (b[i] !== 0xFF || (b[i + 1] & 0xE0) !== 0xE0) return 0;
+    var ver = (b[i + 1] >> 3) & 3;            if (ver === 1) return 0;   /* reserved */
+    var layerBits = (b[i + 1] >> 1) & 3;      if (layerBits === 0) return 0;
+    var layer = 4 - layerBits;                                           /* 01->3, 11->1 */
+    var brIdx = (b[i + 2] >> 4) & 15;         if (brIdx === 0 || brIdx === 15) return 0;
+    var srIdx = (b[i + 2] >> 2) & 3;          if (srIdx === 3) return 0;
+    var pad = (b[i + 2] >> 1) & 1;
+    var grp = (ver === 3) ? 1 : 2;
+    var br = BITRATES[grp][layer][brIdx] * 1000, sr = RATES[ver][srIdx];
+    if (!br || !sr) return 0;
+    if (layer === 1) return (Math.floor(12 * br / sr) + pad) * 4;
+    return Math.floor(((layer === 3 && grp === 2) ? 72 : 144) * br / sr) + pad;
+  }
+
+  /* True when three frames chain correctly starting somewhere in the window. */
+  function hasFrameChain(b, from) {
+    var limit = Math.min(b.length - 4, (from || 0) + 8192);
+    for (var i = from || 0; i <= limit; i++) {
+      if (b[i] !== 0xFF) continue;
+      var at = i, ok = 0;
+      for (var n = 0; n < 3; n++) {
+        var len = frameLen(b, at);
+        if (!len || at + len + 4 > b.length) break;
+        at += len; ok++;
+      }
+      if (ok >= 3) return true;
     }
     return false;
   }
-  function checkMp3(file) {
-    return new Promise(function (res) {
-      if (!/\.mp3$/i.test(file.name)) { res("Only .mp3 files. " + file.name + " is not one."); return; }
-      if (file.size > MAX_BYTES) { res(file.name + " is " + niceSize(file.size) + ". The limit is 40 MB."); return; }
-      if (file.size < 512) { res(file.name + " is too small to be audio."); return; }
+
+  /* Formats that are definitely not MP3, named so the refusal can say what the
+     file really is instead of just "not an MP3". */
+  var MAGIC = [
+    ["MZ",            [0x4D,0x5A],                     "a Windows program"],
+    ["ELF",           [0x7F,0x45,0x4C,0x46],           "a Linux program"],
+    ["Mach-O",        [0xCF,0xFA,0xED,0xFE],           "a macOS program"],
+    ["zip",           [0x50,0x4B,0x03,0x04],           "a zip archive (or an Office file)"],
+    ["rar",           [0x52,0x61,0x72,0x21],           "a RAR archive"],
+    ["7z",            [0x37,0x7A,0xBC,0xAF],           "a 7-Zip archive"],
+    ["gzip",          [0x1F,0x8B],                     "a gzip archive"],
+    ["pdf",           [0x25,0x50,0x44,0x46],           "a PDF"],
+    ["png",           [0x89,0x50,0x4E,0x47],           "a PNG image"],
+    ["gif",           [0x47,0x49,0x46,0x38],           "a GIF image"],
+    ["jpeg",          [0xFF,0xD8,0xFF],                "a JPEG image"],
+    ["riff",          [0x52,0x49,0x46,0x46],           "a WAV or AVI"],
+    ["ogg",           [0x4F,0x67,0x67,0x53],           "an Ogg file"],
+    ["flac",          [0x66,0x4C,0x61,0x43],           "a FLAC file"],
+    ["matroska",      [0x1A,0x45,0xDF,0xA3],           "an MKV or WebM video"],
+    ["script",        [0x23,0x21],                     "a shell script"],
+    ["class",         [0xCA,0xFE,0xBA,0xBE],           "a Java class file"]
+  ];
+  function knownNotMp3(b) {
+    for (var m = 0; m < MAGIC.length; m++) {
+      var sig = MAGIC[m][1], hit = true;
+      for (var i = 0; i < sig.length; i++) if (b[i] !== sig[i]) { hit = false; break; }
+      if (hit) return MAGIC[m][2];
+    }
+    /* MP4/M4A: "ftyp" at offset 4. An .m4a renamed .mp3 is the single most
+       common honest mistake on a returns bench, so name it specifically. */
+    if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) return "an MP4/M4A file";
+    return null;
+  }
+
+  function readSlice(file, from, len) {
+    return new Promise(function (res, rej) {
       var r = new FileReader();
-      r.onerror = function () { res("Could not read " + file.name + "."); };
-      r.onload = function () {
-        res(looksLikeMp3(r.result) ? null
-          : file.name + " is named .mp3 but its contents are not an MP3. Nothing was loaded.");
-      };
-      r.readAsArrayBuffer(file.slice(0, 16384));
+      r.onerror = function () { rej(r.error || new Error("read failed")); };
+      r.onload = function () { res(new Uint8Array(r.result)); };
+      r.readAsArrayBuffer(file.slice(from, from + len));
     });
+  }
+
+  function checkMp3(file) {
+    if (!/\.mp3$/i.test(file.name)) return Promise.resolve("Only .mp3 files. " + file.name + " is not one.");
+    if (file.size > MAX_BYTES) return Promise.resolve(file.name + " is " + niceSize(file.size) + ". The limit is 40 MB per file.");
+    if (file.size < 512) return Promise.resolve(file.name + " is too small to be audio.");
+
+    return readSlice(file, 0, 16).then(function (head) {
+      var what = knownNotMp3(head);
+      if (what) return file.name + " is named .mp3 but it is really " + what + ". Nothing was loaded.";
+
+      var from = 0;
+      if (head[0] === 0x49 && head[1] === 0x44 && head[2] === 0x33) {
+        /* ID3v2. The four size bytes are "syncsafe": seven bits each. Audio
+           starts after the tag, and that is the only place worth looking - the
+           old check stopped at the three letters "ID3" and never got here. */
+        var sz = ((head[6] & 0x7F) << 21) | ((head[7] & 0x7F) << 14) | ((head[8] & 0x7F) << 7) | (head[9] & 0x7F);
+        from = 10 + sz + ((head[5] & 0x10) ? 10 : 0);   /* bit 4 of the flags = footer present */
+        if (from >= file.size) return file.name + " has an ID3 tag and no audio after it. Nothing was loaded.";
+      }
+      return readSlice(file, from, 65536).then(function (b) {
+        if (hasFrameChain(b, 0)) return null;
+        return file.name + " is named .mp3 but no MPEG audio frames were found inside it. Nothing was loaded.";
+      });
+    }).catch(function () { return "Could not read " + file.name + "."; });
   }
 
   function save(files) {
     var all = Array.prototype.slice.call(files || []);
     if (!all.length) return;
-    Promise.all(all.map(function (f) {
-      return checkMp3(f).then(function (err) { return { file: f, err: err }; });
-    })).then(function (rows) {
-      var good = rows.filter(function (r) { return !r.err; }).map(function (r) { return r.file; });
-      rows.filter(function (r) { return r.err; })
-          .forEach(function (r) { toast("Rejected", r.err, "bad"); });
-      if (good.length) accept(good);
-      else if (rows.length) $("#mu-name").textContent = "Nothing loaded \u2014 MP3 files only";
+    /* The 40 MB cap was per file only, so dropping a folder in sailed straight
+       past it - 780 MB went into IndexedDB in one go during testing with no
+       warning at all, on a machine that is not ours to fill. Check the library
+       total as well, and check it before validating anything so a huge drop is
+       refused immediately rather than after sixty file reads. */
+    libAll().then(function (have) {
+      var used = have.reduce(function (n, r) { return n + (r.size || 0); }, 0);
+      var known = Object.create(null);
+      have.forEach(function (r) { known[r.id] = r.name; });
+
+      var queue = [], room = MAX_LIB - used;
+      for (var i = 0; i < all.length; i++) {
+        var f = all[i], id = f.name + ":" + f.size;
+        if (known[id]) {
+          /* The id is name + size, so a second file matching both used to
+             overwrite the first without a word. Keep what is already there and
+             say so - on a bench, a track that quietly changed under you is
+             worse than one that refused to load. */
+          toast("Already in the library", f.name + " is already saved on this machine. Kept the one you had.", null);
+          continue;
+        }
+        if (f.size > room) {
+          toast("Library full",
+                "Keeping " + f.name + " would put this machine over " + niceSize(MAX_LIB) +
+                " of saved audio (" + niceSize(used) + " used). Remove a track first.", "bad");
+          continue;
+        }
+        room -= f.size; known[id] = f.name;
+        queue.push(f);
+      }
+      if (!queue.length) { if (all.length) $("#mu-name").textContent = "Nothing loaded"; return; }
+
+      Promise.all(queue.map(function (f) {
+        return checkMp3(f).then(function (err) { return { file: f, err: err }; });
+      })).then(function (rows) {
+        var good = rows.filter(function (r) { return !r.err; }).map(function (r) { return r.file; });
+        rows.filter(function (r) { return r.err; })
+            .forEach(function (r) { toast("Rejected", r.err, "bad"); });
+        if (good.length) accept(good);
+        else if (rows.length) $("#mu-name").textContent = "Nothing loaded \u2014 MP3 files only";
+      });
     });
   }
 
@@ -1035,10 +1237,10 @@ TB.onLeave("audio", function () {
   /* Leaving the page must release the microphone. Otherwise the OS recording
      light stays on for the rest of the session and the analyser keeps running
      an FFT every frame, which quietly skews the Stress test's fps figure. */
-  if (micStream) stopMic();
+  if (micStream || micPending) stopMic();
   if (recTimer) { clearTimeout(recTimer); recTimer = null; }
 });
 /* never leave a microphone open on a machine that is walking out the door */
-window.addEventListener("pagehide", function () { stopTone(true); if (micStream) stopMic(); });
+window.addEventListener("pagehide", function () { stopTone(true); if (micStream || micPending) stopMic(); });
 return { listDevices: listDevices };
 })();

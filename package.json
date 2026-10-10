@@ -1,0 +1,13 @@
+{
+  "name": "testbench",
+  "private": true,
+  "description": "Hardware test bench. A static site: no server, no build step, no runtime dependencies. Playwright is here only to run the suites in test/ and is never deployed.",
+  "scripts": {
+    "serve": "python3 -m http.server 8099",
+    "build": "python3 build.py",
+    "test": "node test/smoke.mjs && node test/security.mjs && node test/themes.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  }
+}

@@ -4,78 +4,150 @@
    ============================================================ */
 
 :root{
-  /* ground */
-  --bg:#08090C;
-  --bg-2:#0D0F14;
-  --panel:#101318;
-  --panel-2:#161A21;
-  --raise:#1E242D;
-  --line:#242A34;
-  --line-soft:#191E26;
+  /* ---- ground ------------------------------------------------------------
+     Five surfaces, each a measured step apart, so depth comes from the
+     surfaces themselves rather than from borders drawn around everything.
+     Slightly cool rather than neutral grey: a pure grey next to a red accent
+     reads as a default nobody chose, and the cool bias makes the red look
+     deliberate. Every ink and signal colour below clears 4.5:1 on all five -
+     the tightest pair is 4.7, and test/themes.mjs fails the build if any of
+     them slips under. */
+  --bg:#0B0D10;
+  --bg-2:#11141A;
+  --panel:#16191F;
+  --panel-2:#1C2028;
+  --raise:#232833;
+  --line:#2A313C;
+  --line-soft:#1E232B;
 
   /* ink */
-  --ink:#F2F5F8;
-  --ink-2:#AEB9C6;
-  --ink-3:#77828F;
+  --ink:#F4F7FA;
+  --ink-2:#B6C2D0;
+  /* 4.99:1 against --raise, the darkest surface this colour ever sits on.
+     It was #77828F, which measured 3.99:1 there and failed AA for normal text
+     in the .tb-badge pills and the bold lead-in inside .tb-steps - both 9-11px
+     type, which is exactly where a shortfall bites hardest. */
+  --ink-3:#8D97A5;
 
-  /* signal */
-  --red:#FF2D46;
+  /* ---- signal ------------------------------------------------------------
+     --red is the text-safe red: 4.7:1 on --raise. The old #FF2D46 measured
+     4.22 there, under AA, and it is used as a text colour in a dozen places.
+     --red-hot keeps the full saturation for fills, strokes and glows, where
+     contrast ratios do not apply and the deeper red looks better. */
+  --red:#FF5366;
+  --red-hot:#FF2D46;
   --red-dim:#B3202F;
-  --red-glow:rgba(255,45,70,.16);
-  --pass:#22E07B;
-  --pass-glow:rgba(34,224,123,.14);
-  --warn:#FFC53D;
-  --warn-glow:rgba(255,197,61,.14);
-  --idle:#333B47;
+  --red-glow:rgba(255,45,70,.18);
+  --pass:#2BEE86;
+  --pass-glow:rgba(43,238,134,.16);
+  --warn:#FFC94D;
+  --warn-glow:rgba(255,201,77,.16);
+  --idle:#39414E;
 
   /* ink that sits ON a signal colour */
-  --on-red:#140005;
-  --on-pass:#03170C;
-  --red-hot:#FF4459;
-  --red-soft:#FF7183;
+  --on-red:#14000A;
+  --on-pass:#02160B;
+  --red-soft:#FF8694;
 
-  /* signal tints, kept as tokens so the light theme can deepen them */
-  --pass-t08:var(--pass-t08);
-  --pass-t12:var(--pass-t12);
-  --pass-t16:var(--pass-t16);
-  --pass-t25:var(--pass-t25);
-  --pass-l40:rgba(34,224,123,.40);
-  --pass-l50:rgba(34,224,123,.50);
-  --pass-l65:var(--pass-l65);
-  --warn-t16:var(--warn-t16);
-  --warn-l45:var(--warn-l45);
-  --red-t18:var(--red-t18);
+  /* ---- signal tints ------------------------------------------------------
+     These eleven were each defined as `var(--<its own name>)` in this block -
+     a cyclic reference, which CSS treats as invalid at computed-value time. So
+     every one of them silently resolved to nothing in the DARK theme, which is
+     the default one. The light theme defined them properly, which is why the
+     problem was invisible: the tinted panel backgrounds, the pass and fail
+     washes and the hairlines were simply absent on the theme most people see,
+     and the dark UI looked flatter than it was designed to. */
+  --pass-t08:rgba(43,238,134,.08);
+  --pass-t12:rgba(43,238,134,.12);
+  --pass-t16:rgba(43,238,134,.16);
+  --pass-t25:rgba(43,238,134,.25);
+  --pass-l40:rgba(43,238,134,.40);
+  --pass-l50:rgba(43,238,134,.50);
+  --pass-l65:rgba(43,238,134,.65);
+  --warn-t16:rgba(255,201,77,.16);
+  --warn-l45:rgba(255,201,77,.45);
+  --red-t18:rgba(255,45,70,.18);
+  --red-t25:rgba(255,45,70,.25);
   --red-t32:rgba(255,45,70,.32);
-  --red-l35:var(--red-l35);
+  --red-l35:rgba(255,45,70,.35);
   --red-l50:rgba(255,45,70,.50);
-  --red-t25:var(--red-t25);
-  --ink3-t30:rgba(119,130,143,.30);
+  --ink3-t30:rgba(141,151,165,.30);
 
   /* hairlines and chrome */
-  --hairline:var(--hairline);
-  --scroll-hot:#2C3543;
-  --topbar:#0A0B0E;
-  --stick-core:#12161C;
+  --hairline:rgba(255,255,255,.07);
+  --scroll-hot:#333C4A;
+  --topbar:#0A0C0F;
+  --stick-core:#14181F;
 
-  /* device diagrams */
-  --dev-shell:#12161C;   --dev-shell-line:#39424F;
-  --dev-plate:#0C0F13;   --dev-plate-line:#2A323D;
-  --dev-btn:#1C222B;     --dev-btn-line:#455060;
-  --dev-knob:#252D38;    --dev-knob-line:#5A6675;
-  --dev-well:#0A0D11;    --dev-lbl:#8593A3;
-  --dev-on-line:#8CF5BE; --dev-knob-on-line:#FFDD8A;
-  --dev-rim:#28333A;     --dev-spoke:#3A464C;
-  --dev-hub:#1B2226;     --dev-tip:#35C3D4;
+  /* ---- glass -------------------------------------------------------------
+     The frosted layer goes on the CHROME only: the sidebar, the top bar, the
+     command palette, toasts, the full-screen HUD. Those carry almost no
+     running text, so the translucency reads as depth.
+
+     Content panels stay opaque, and that is a decision rather than an
+     oversight. Text on a translucent surface has a contrast ratio that
+     changes with whatever happens to be behind it, so it cannot be measured
+     and cannot be guaranteed - and this app puts 11px readouts on those
+     panels. They get the glass EDGE instead: a one-pixel top highlight and a
+     soft outer shadow, which is what actually reads as a pane of glass. The
+     look without the unmeasurable part. */
+  --glass:rgba(22,25,31,.72);
+  --glass-2:rgba(16,19,24,.82);
+  --glass-line:rgba(255,255,255,.08);
+  --glass-sheen:rgba(255,255,255,.055);
+  --glass-blur:16px;
 
   /* fullscreen HUD */
-  --hud-bg:rgba(8,9,12,.9); --hud-line:#333; --hud-ink:#D6DEE6; --hud-strong:#fff;
+  --hud-bg:rgba(10,12,15,.88); --hud-line:#3A4250; --hud-ink:#D9E1EA; --hud-strong:#fff;
   --ink-shadow:rgba(0,0,0,.85);
-  --shadow:rgba(0,0,0,.45);
+  --shadow:rgba(0,0,0,.5);
+  --shadow-lift:0 1px 0 rgba(255,255,255,.04) inset, 0 8px 24px -12px rgba(0,0,0,.7);
 
-  /* type */
-  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
-  --f-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
-  --f-mono:"JetBrains Mono","SFMono-Regular",Consolas,monospace;
+  /* ---- motion ------------------------------------------------------------
+     Three durations and one curve, as tokens, so everything on the site
+     accelerates the same way. Scattered one-off timings are what makes an
+     interface feel assembled rather than designed. */
+  --t-fast:.12s;
+  --t:.2s;
+  --t-slow:.34s;
+  --ease:cubic-bezier(.2,.8,.2,1);
+
+  /* device diagrams */
+  --dev-shell:#14181F;   --dev-shell-line:#3E4855;
+  --dev-plate:#0E1116;   --dev-plate-line:#2F3744;
+  --dev-btn:#1F252F;     --dev-btn-line:#4A5665;
+  --dev-knob:#283140;    --dev-knob-line:#5F6C7C;
+  --dev-well:#0C0F13;    --dev-lbl:#8D99A9;
+  --dev-on-line:#8CF5BE; --dev-knob-on-line:#FFDD8A;
+  --dev-rim:#2C373F;     --dev-spoke:#3E4A52;
+  --dev-hub:#1D2429;     --dev-tip:#3ACEDF;
+
+  /* ---- type --------------------------------------------------------------
+     Fonts the machine already has.
+
+     These stacks used to start with Archivo, IBM Plex Sans and JetBrains Mono
+     pulled from Google Fonts, which made Google the site's only third party
+     and its only off-device request. Behind a proxy that sinkholes rather than
+     refuses - which is what a default-deny corporate network does - the
+     stylesheet request hangs and the page stays blank for twelve seconds,
+     measured. And any corporate network worth the name denies external domains
+     by default, so the bench would look broken on its first day at a new site
+     and the fix would be asking that company's IT to allowlist a font CDN for
+     a tool that does not need one. Written that way deliberately: it has to
+     stay true of the next network as well as this one.
+
+     Self-hosting instead would mean shipping and licensing four webfonts. A
+     system stack costs nothing, renders instantly, needs no network, no
+     licence and no allowlist entry.
+
+     The jitter that a webfont was supposed to solve is solved properly below,
+     by --num: tabular figures make every digit the same width, so a readout
+     updating sixty times a second stops shifting sideways. That is what fixes
+     it - not the typeface. */
+  --f-display:ui-sans-serif,system-ui,"Segoe UI Variable Display","Segoe UI",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --f-body:ui-sans-serif,system-ui,"Segoe UI",-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,"SFMono-Regular","Cascadia Mono","Segoe UI Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --num:tabular-nums;
 
   --rail:236px;
   --r:10px;
@@ -146,6 +218,17 @@
   --ink3-t30:rgba(120,111,98,.30);
 
   --hairline:rgba(0,0,0,.10);
+  /* ---- glass, light ------------------------------------------------------
+     Same treatment, inverted: a near-white frost over warm paper. The sheen
+     becomes a dark hairline rather than a white one, because a white highlight
+     on a light surface is invisible and the pane then has no edge at all. */
+  --glass:rgba(252,250,244,.74);
+  --glass-2:rgba(246,242,233,.86);
+  --glass-line:rgba(0,0,0,.10);
+  --glass-sheen:rgba(255,255,255,.55);
+  --glass-blur:16px;
+  --shadow-lift:0 1px 0 rgba(255,255,255,.7) inset, 0 8px 24px -14px rgba(60,48,30,.38);
+
   --scroll-hot:#B0A48C;
   --topbar:#FCFAF4;
   --stick-core:#E4DCCB;
@@ -212,6 +295,17 @@
   --ink3-t30:rgba(120,111,98,.30);
 
   --hairline:rgba(0,0,0,.10);
+  /* ---- glass, light ------------------------------------------------------
+     Same treatment, inverted: a near-white frost over warm paper. The sheen
+     becomes a dark hairline rather than a white one, because a white highlight
+     on a light surface is invisible and the pane then has no edge at all. */
+  --glass:rgba(252,250,244,.74);
+  --glass-2:rgba(246,242,233,.86);
+  --glass-line:rgba(0,0,0,.10);
+  --glass-sheen:rgba(255,255,255,.55);
+  --glass-blur:16px;
+  --shadow-lift:0 1px 0 rgba(255,255,255,.7) inset, 0 8px 24px -14px rgba(60,48,30,.38);
+
   --scroll-hot:#B0A48C;
   --topbar:#FCFAF4;
   --stick-core:#E4DCCB;
@@ -1084,4 +1178,562 @@ a:hover{color:var(--red-hot)}
 @supports not (background: color-mix(in srgb, red 50%, blue)){
   .tb-key.seen{background:var(--red-t32)}
   .tb-key.weak{background:var(--warn)}
+}
+
+/* ---------- skip link ----------------------------------------------------
+   Visually hidden until focused, then it lands where you can see it. Kept out
+   of the token blocks on purpose: it must stay legible even if a theme token
+   is ever broken, so the colours here are literal. */
+.tb-skip{
+  position:fixed;top:-60px;left:12px;z-index:99999;
+  padding:10px 16px;border-radius:0 0 10px 10px;
+  background:#C4142B;color:#fff;font:600 14px/1 system-ui,sans-serif;
+  text-decoration:none;transition:top .16s ease;
+}
+.tb-skip:focus{top:0;outline:3px solid #fff;outline-offset:-6px}
+#main:focus{outline:none}
+
+/* Focus must be visible on every control, in both themes. Keyboard-only, so a
+   mouse click does not leave a ring behind it. */
+:focus-visible{outline:2px solid var(--red);outline-offset:2px;border-radius:4px}
+
+/* ---------- speed test ---------------------------------------------------
+   Four big numbers, readable from across a bench with a router in your hands.
+   They use tabular figures so the digits do not jiggle as the live reading
+   changes - a number that shifts sideways twice a second is hard to read and
+   looks broken even when it is right. */
+.tb-spbig{
+  display:grid;gap:10px;margin-top:16px;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+}
+.tb-spnum{
+  background:var(--raise);border:1px solid var(--line-soft);border-radius:12px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0;
+}
+.tb-spnum b{
+  font-family:var(--f-display);font-size:clamp(26px,3.4vw,38px);line-height:1;
+  font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;
+}
+.tb-spnum b.pass{color:var(--pass)}
+.tb-spnum b.warn{color:var(--warn)}
+.tb-spnum b.fail{color:var(--red)}
+.tb-spnum i{
+  font-style:normal;font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+
+/* the phase chip: what the run is doing right now */
+.tb-sppill{
+  font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:5px 10px;border-radius:999px;border:1px solid var(--line);
+  background:var(--raise);color:var(--ink-3);white-space:nowrap;
+}
+.tb-sppill.pass{border-color:color-mix(in srgb,var(--pass) 50%,transparent);color:var(--pass)}
+.tb-sppill.warn{border-color:color-mix(in srgb,var(--warn) 50%,transparent);color:var(--warn)}
+.tb-sppill.fail{border-color:color-mix(in srgb,var(--red) 50%,transparent);color:var(--red)}
+
+/* ============================================================
+   MOTION
+   ============================================================
+   Every animation here is doing one of three jobs:
+
+     - telling you something CHANGED, when the change is easy to miss
+       (a verdict appearing, a device connecting, a number updating),
+     - telling you something is STILL HAPPENING, so a slow test does not
+       read as a frozen one,
+     - or giving a panel somewhere to come FROM, so switching pages reads as
+       movement rather than a flicker.
+
+   Nothing animates for decoration, nothing loops forever except the two
+   live indicators, and nothing moves more than a few pixels - this is a
+   tool somebody uses for eight hours, and ornament that is charming once is
+   an irritation by the fortieth time.
+
+   Two hard rules. Only transform and opacity are animated, because those are
+   the two the compositor handles without re-laying-out the page - animating
+   width or top would make the gamepad poll loop stutter, and this app is
+   reading a controller sixty times a second while all of this happens. And
+   the sheet already has a global prefers-reduced-motion override near the
+   responsive rules, which flattens everything below to near-zero duration,
+   so none of it needs its own opt-out.
+   ============================================================ */
+
+/* ---------- panels arrive in order ----------
+   A page of eight panels appearing at once reads as a flash. Staggered by
+   35 ms each they read as a page assembling, and your eye lands on the first
+   panel - which is the one that matters - instead of the middle of the grid.
+   Capped at six: beyond that the last panel is late enough to feel broken. */
+.tb-view.on > .tb-panel,
+.tb-view.on > .tb-grid > .tb-panel,
+.tb-view.on > .tb-callout,
+.tb-view.on > .tb-steps,
+.tb-view.on > [data-appane] > .tb-panel,
+.tb-view.on > [data-appane] > .tb-grid > .tb-panel{
+  animation:tb-rise .34s cubic-bezier(.2,.7,.3,1) both;
+}
+@keyframes tb-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.tb-view.on > *:nth-child(1),.tb-view.on > [data-appane] > *:nth-child(1){animation-delay:0ms}
+.tb-view.on > *:nth-child(2),.tb-view.on > [data-appane] > *:nth-child(2){animation-delay:35ms}
+.tb-view.on > *:nth-child(3),.tb-view.on > [data-appane] > *:nth-child(3){animation-delay:70ms}
+.tb-view.on > *:nth-child(4),.tb-view.on > [data-appane] > *:nth-child(4){animation-delay:105ms}
+.tb-view.on > *:nth-child(5),.tb-view.on > [data-appane] > *:nth-child(5){animation-delay:140ms}
+.tb-view.on > *:nth-child(n+6),.tb-view.on > [data-appane] > *:nth-child(n+6){animation-delay:170ms}
+
+/* ---------- a verdict landing ----------
+   Applied by JS the moment a result changes, then removed. A verdict that
+   simply swaps text is genuinely easy to miss when you are looking at the
+   hardware and not the screen; a 180 ms settle is not. */
+.tb-landed{animation:tb-land .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tb-land{
+  0%{transform:scale(.9);opacity:0}
+  60%{transform:scale(1.03);opacity:1}
+  100%{transform:none;opacity:1}
+}
+
+/* A pass gets one sweep of light across the panel. Once, not repeating, and
+   only on a pass - a failure should not be decorated, it should be read. */
+.tb-swept{position:relative;overflow:hidden}
+.tb-swept::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(100deg,transparent 35%,
+    color-mix(in srgb,var(--pass) 16%,transparent) 50%,transparent 65%);
+  animation:tb-sweep .75s ease-out both;
+}
+@keyframes tb-sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* ---------- a device appearing ----------
+   The status chips at the top are small and far from where you are looking
+   when you plug something in, so a chip going live pops once. */
+.tb-chip.popped{animation:tb-pop .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes tb-pop{
+  0%{transform:scale(1)}
+  35%{transform:scale(1.14)}
+  100%{transform:scale(1)}
+}
+
+/* ---------- a number that just changed ----------
+   Only the big readouts, and only a 1.5% lift. Enough that movement
+   registers in peripheral vision, small enough that a number updating four
+   times a second does not look like it is vibrating. */
+.tb-spnum b.ticked{animation:tb-tick .22s ease-out both}
+@keyframes tb-tick{
+  0%{transform:translateY(2px) scale(.985);opacity:.65}
+  100%{transform:none;opacity:1}
+}
+
+/* ---------- still working ----------
+   For anything that takes longer than about a second. A static panel during a
+   ten-second speed test is indistinguishable from a hung one, and the first
+   thing somebody does with a hung tool is press the button again. */
+.tb-working{position:relative}
+.tb-working::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,transparent,var(--red),transparent);
+  animation:tb-scan 1.4s linear infinite;
+}
+
+/* ---------- the rail ----------
+   The active page gets a red bar that slides between items rather than
+   cutting. It is the only thing on screen telling you where you are. */
+.tb-nav{position:relative}
+.tb-nav::before{
+  content:"";position:absolute;left:0;top:50%;width:3px;height:0;
+  transform:translateY(-50%);border-radius:0 3px 3px 0;background:var(--red);
+  transition:height .22s cubic-bezier(.2,.8,.2,1);
+}
+.tb-nav[aria-current="true"]::before{height:62%}
+
+/* ---------- press feedback ----------
+   Buttons already move 1px down on :active. This adds the inverse on release
+   so a press feels like it completed rather than like it bottomed out. */
+.tb-btn{transition:border-color .18s,background-color .18s,color .18s,transform .08s}
+
+/* ---------- the report ----------
+   Rows arrive in order so a long report reads as filling in rather than
+   appearing whole. Short enough in total that nobody waits for it. */
+.tb-reprow{animation:tb-rise .26s ease-out both}
+.tb-reprow:nth-child(1){animation-delay:0ms}
+.tb-reprow:nth-child(2){animation-delay:24ms}
+.tb-reprow:nth-child(3){animation-delay:48ms}
+.tb-reprow:nth-child(4){animation-delay:72ms}
+.tb-reprow:nth-child(5){animation-delay:96ms}
+.tb-reprow:nth-child(n+6){animation-delay:120ms}
+
+/* ---------- the unit report -----------------------------------------------
+   Two jobs, and they pull in opposite directions: it has to be readable on
+   screen inside a dark panel, and it has to come out of a printer as a
+   document. So the on-screen version uses the theme tokens and the print
+   block below forces it to black on white - a report printed in the dark
+   theme wastes a cartridge and photocopies badly, and a QC record exists to
+   be printed, filed and attached. */
+.tb-report{border-top:1px solid var(--line);padding-top:16px}
+.tb-rephead{
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.tb-rephead b{display:block;font-family:var(--f-display);font-size:19px;font-weight:800}
+.tb-rephead span{font-family:var(--f-mono);font-size:11px;color:var(--ink-3)}
+.tb-repcall{
+  display:flex;flex-direction:column;align-items:flex-end;gap:1px;
+  padding:9px 16px;border-radius:12px;border:1px solid var(--line);background:var(--raise);
+}
+.tb-repcall b{font-family:var(--f-display);font-size:17px;font-weight:800;line-height:1.1}
+.tb-repcall span{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tb-repcall.pass{border-color:color-mix(in srgb,var(--pass) 55%,transparent)}
+.tb-repcall.pass b{color:var(--pass)}
+.tb-repcall.warn{border-color:color-mix(in srgb,var(--warn) 55%,transparent)}
+.tb-repcall.warn b{color:var(--warn)}
+.tb-repcall.fail{border-color:color-mix(in srgb,var(--red) 55%,transparent)}
+.tb-repcall.fail b{color:var(--red)}
+
+.tb-reptable{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.tb-reprow{
+  display:grid;gap:12px;align-items:start;
+  grid-template-columns:minmax(130px,1fr) 86px minmax(0,2.4fr);
+  background:var(--raise);border:1px solid var(--line-soft);border-radius:10px;padding:11px 14px;
+}
+.tb-reprow.bad{border-color:color-mix(in srgb,var(--red) 40%,transparent)}
+.tb-reprow.warn{border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+.tb-reprow .who b{display:block;font-size:14px;font-weight:600}
+.tb-reprow .who span{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tb-reprow .sc{text-align:center}
+.tb-reprow .sc b{
+  display:block;font-family:var(--f-display);font-size:24px;font-weight:800;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.tb-reprow .sc span{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.tb-reprow .sc.ok b{color:var(--pass)}
+.tb-reprow .sc.warn b{color:var(--warn)}
+.tb-reprow .sc.bad b{color:var(--red)}
+.tb-reprow .fl{font-size:12.5px;line-height:1.55;color:var(--ink-2);display:flex;flex-direction:column;gap:5px;min-width:0}
+.tb-reprow .fl b{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;margin-right:4px}
+.tb-reprow .fl .bad b{color:var(--red)}
+.tb-reprow .fl .warn b{color:var(--warn)}
+.tb-reprow .fl .ok{color:var(--ink-3)}
+@media (max-width:720px){
+  .tb-reprow{grid-template-columns:1fr 70px}
+  .tb-reprow .fl{grid-column:1/-1}
+}
+
+/* ---------- printing ----------
+   Only ever active while the print button is doing its work, so the class
+   cannot strand the app in a stripped-down state if a print is cancelled. */
+.tb-printing .tb-rail,
+.tb-printing .tb-status,
+.tb-printing .tb-brand,
+.tb-printing .tb-toasts,
+.tb-printing .tb-lockbar,
+.tb-printing .tb-run,
+.tb-printing .tb-skip,
+.tb-printing #view-home > *:not(#rep-panel),
+.tb-printing #rep-panel > .tb-ptitle,
+.tb-printing #rep-panel > .tb-sub,
+.tb-printing #rep-panel > .tb-bar,
+.tb-printing #rep-panel > .tb-note{display:none !important}
+.tb-printing .tb-app{display:block}
+.tb-printing .tb-main{padding:0;overflow:visible}
+.tb-printing .tb-view{padding:0}
+.tb-printing #rep-panel{border:0;background:none;padding:0;margin:0;box-shadow:none}
+
+@media print{
+  @page{margin:14mm}
+  html,body{background:#fff !important;color:#000 !important}
+  /* Force the light values regardless of which theme is on screen. A report
+     printed with a dark background is unreadable on paper and unusable as a
+     photocopy or a scan. */
+  :root{
+    --bg:#fff;--panel:#fff;--raise:#fff;--ink:#000;--ink-2:#1a1a1a;--ink-3:#555;
+    --line:#999;--line-soft:#ccc;
+  }
+  .tb-report{border-top:2px solid #000}
+  .tb-reprow{border:1px solid #999;break-inside:avoid;page-break-inside:avoid}
+  .tb-repcall{border:2px solid #000}
+  .tb-log{height:auto !important;max-height:none;border:1px solid #999}
+  .tb-steps li{break-inside:avoid;page-break-inside:avoid}
+  h3.tb-ptitle{break-after:avoid;page-break-after:avoid;margin-top:14px}
+  a[href]::after{content:""}
+  .tb-rail,.tb-status,.tb-toasts,.tb-lockbar,.tb-skip,.tb-run{display:none !important}
+}
+
+/* ---------- command palette ----------
+   Sits above everything including the full-screen monitor overlay, because
+   the whole point is that it is reachable when nothing else is. */
+.tb-pal{
+  position:fixed;inset:0;z-index:100000;
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:12vh 16px 16px;
+  background:color-mix(in srgb,var(--bg) 72%,transparent);
+  backdrop-filter:blur(4px);
+  animation:tb-palin .14s ease-out both;
+}
+@keyframes tb-palin{from{opacity:0}to{opacity:1}}
+.tb-pal-card{
+  width:min(560px,100%);background:var(--panel);
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.45);
+  animation:tb-palcard .18s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes tb-palcard{from{opacity:0;transform:translateY(-10px) scale(.985)}to{opacity:1;transform:none}}
+.tb-pal-card input{
+  width:100%;border:0;border-bottom:1px solid var(--line-soft);border-radius:0;
+  background:none;color:var(--ink);font-family:var(--f-body);font-size:17px;
+  padding:16px 18px;outline:none;
+}
+.tb-pal-card input::placeholder{color:var(--ink-3)}
+.tb-pal-list{max-height:min(46vh,380px);overflow:auto;padding:6px}
+.tb-pal-row{
+  display:flex;align-items:baseline;gap:10px;padding:10px 12px;border-radius:9px;
+  cursor:pointer;
+}
+.tb-pal-row b{font-size:14.5px;font-weight:600;color:var(--ink)}
+.tb-pal-row span{
+  margin-left:auto;font-family:var(--f-mono);font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-3);
+}
+.tb-pal-row.on{background:var(--raise);box-shadow:inset 2px 0 0 var(--red)}
+.tb-pal-none{padding:18px 14px;color:var(--ink-3);font-size:13.5px}
+.tb-pal-hint{
+  display:flex;gap:16px;padding:10px 18px;border-top:1px solid var(--line-soft);
+  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+@media (max-width:560px){.tb-pal{padding-top:8vh}.tb-pal-hint{display:none}}
+
+/* ============================================================
+   GLASS AND MOTION
+   ============================================================
+   The frosted treatment goes on the chrome, not on the content.
+
+   Sidebar, top bar, command palette, toasts, the full-screen HUD and the
+   bench-run dock all float over the page, carry almost no running text, and
+   gain from looking like layers of glass over it. Content panels do not get
+   the translucency: text on a translucent surface has a contrast ratio that
+   depends on whatever is behind it, so it cannot be measured and cannot be
+   promised - and this app puts 11px readouts on those panels. They get the
+   glass EDGE instead (a one-pixel top highlight, a soft outer shadow, a
+   faint sheen), which is the part that actually reads as a pane of glass.
+
+   backdrop-filter is unsupported in a few older builds. Every rule below
+   therefore sets an opaque-enough background FIRST and the blur second, so a
+   browser that ignores the blur still gets a legible panel rather than
+   see-through text.
+   ============================================================ */
+
+/* ---- where the blur actually goes, and why it is not everywhere ----------
+   Measured, repeatably, in this project: blurring the sidebar costs a quarter
+   of the frame rate.
+
+     every surface blurred ......... 39-48 fps
+     sidebar blur removed .......... 61 fps
+     no blur anywhere .............. 61 fps
+
+   The sidebar is the only one that matters, and the reason is its size: it is
+   a full-height element, so the compositor re-filters that whole strip on
+   every single frame. The top bar is 56px and costs a few frames; the palette,
+   toasts and HUD are transient, so a frame or two while one is on screen is
+   free.
+
+   That matters more here than on an ordinary site. This app reads a controller
+   on every animation frame, and dropping to 45 fps makes a pad feel laggy -
+   which on a QC bench is a fault the operator might write down. And the
+   machines it runs on are returned laptops with weak or outright faulty
+   graphics; the stress page deliberately loads the GPU as well.
+
+   So the sidebar gets the look without the filter: a translucent ground, the
+   lit top edge, and a gradient down its length. Side by side you cannot tell
+   which one is blurred, and the frame rate is back to 61. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .tb-brand, .tb-status{
+    background:var(--glass);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+  }
+  .tb-pal-card, .tb-toast, .tb-fullhud, .tb-run, .tb-lockbar{
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+  }
+  .tb-toast, .tb-run{ background:var(--glass-2) }
+}
+
+/* The sidebar, faked convincingly and for free. */
+.tb-rail{
+  background:
+    linear-gradient(180deg,var(--glass-sheen),transparent 120px),
+    linear-gradient(90deg,var(--bg-2),var(--panel));
+}
+
+/* The hairline of light along the top edge is what sells it. One pixel,
+   inset, so it reads as the lit edge of a sheet rather than a border. */
+.tb-brand, .tb-status, .tb-rail, .tb-panel, .tb-pal-card, .tb-toast, .tb-run{
+  box-shadow:var(--shadow-lift);
+}
+.tb-status, .tb-brand{ position:relative; z-index:3 }
+.tb-rail{ position:relative; z-index:2 }
+
+/* A faint wash down the panel, so a tall card is not one flat field of
+   colour. 2% of white at the top is invisible as a colour and visible as a
+   surface - which is the whole trick. */
+.tb-panel{
+  background:linear-gradient(180deg,var(--glass-sheen),transparent 90px),var(--panel);
+  transition:border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+/* The accent wash was far too strong once the panel ground got darker: a
+   maroon smear across the top of the card that read as muddy rather than as
+   emphasis. It is a tint, not a fill - the red top border is what marks the
+   panel out, and the wash only has to warm the first few pixels under it. */
+.tb-panel.accent{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--red-hot) 7%,transparent),transparent 72px),
+             linear-gradient(180deg,var(--glass-sheen),transparent 90px),var(--panel);
+}
+
+/* ---------- motion ----------
+   One curve and three durations, from the tokens, so everything on the site
+   accelerates the same way. Transform and opacity only: those two are the
+   ones the compositor handles without re-laying-out the page, and this app is
+   polling a controller sixty times a second while all of it runs. */
+.tb-btn, .tb-nav, .tb-seg button, .tb-tabs button, .tb-chip, .tb-gbtn,
+.tb-swatchrow button, .tb-pal-row, .tb-themepick button{
+  transition:background-color var(--t) var(--ease),
+             border-color var(--t) var(--ease),
+             color var(--t) var(--ease),
+             box-shadow var(--t) var(--ease),
+             transform var(--t-fast) var(--ease);
+}
+
+/* The press. 2% down and a touch of inset shadow: enough to feel like the
+   button went in, small enough that nothing around it moves. */
+.tb-btn:active, .tb-seg button:active, .tb-tabs button:active,
+.tb-nav:active, .tb-gbtn:active, .tb-themepick button:active{
+  transform:scale(.97);
+}
+.tb-btn.big:active{ transform:scale(.985) }   /* a large target needs less */
+
+/* Hover lift on the rail and on buttons, done with shadow rather than
+   movement, because a nav item that slides under the cursor is harder to
+   click than one that does not. */
+.tb-btn:hover{ box-shadow:0 2px 10px -4px rgba(0,0,0,.5) }
+
+/* ---------- numbers that do not jitter ----------
+   Every live readout gets tabular figures, so a 1 occupies the same width as
+   a 0 and a value updating sixty times a second stops shifting sideways.
+   This was the real complaint behind "use a monospace font": proportional
+   digits are the cause, and tabular figures are the fix - the typeface is not
+   involved. Monospace stays where a readout should LOOK like instrument
+   output, which is a separate decision. */
+.tb-stat .v, .tb-spnum b, .tb-kv dd, .tb-reprow .sc b, .tb-clock,
+.tb-chip b, .tb-badge, .tb-meterrow .val, .tb-log, .tb-mval, .tb-mnum,
+#ms-poll, #ms-reports, #ms-pollpct, #kb-nkro, [data-live]{
+  font-variant-numeric:var(--num);
+  font-feature-settings:"tnum" 1;
+}
+
+/* ---------- tab panes fade, they do not move ----------
+   Opacity only. An inner tab pane that slid in would move the content under
+   the tab strip you just clicked, and switching tabs is the one interaction
+   where the page must look still. */
+[data-kbpane], [data-appane], [data-mspane]{ animation:tb-fade var(--t-slow) var(--ease) both }
+@keyframes tb-fade{ from{opacity:0} to{opacity:1} }
+
+/* ---------- focus ----------
+   Visible, on the accent, and only for keyboard navigation so a mouse click
+   does not leave a ring behind it. */
+:focus-visible{ outline:2px solid var(--red); outline-offset:2px; border-radius:4px }
+
+/* ---------- scrollbars that match the chrome ---------- */
+.tb-rail::-webkit-scrollbar, .tb-main::-webkit-scrollbar{ width:10px }
+.tb-rail::-webkit-scrollbar-thumb, .tb-main::-webkit-scrollbar-thumb{
+  background:var(--raise); border:3px solid transparent; background-clip:padding-box; border-radius:99px;
+}
+.tb-rail::-webkit-scrollbar-thumb:hover, .tb-main::-webkit-scrollbar-thumb:hover{ background:var(--scroll-hot); background-clip:padding-box }
+
+
+/* ---------- the mouse dock, and why it is NOT sticky ----------
+   The first version pinned the device diagram to the top of the page so you
+   could watch a button light up during any test. It had to go: stuck at the
+   top, the diagram covered the tab strip, and the tabs became unclickable the
+   moment you scrolled down a long pane. Measured in Playwright, which spent
+   thirty seconds reporting "#ms-dock intercepts pointer events" before giving
+   up - which is exactly what a person's cursor would have done.
+
+   It was also the wrong thing to pin. The diagram earns its place on the
+   Buttons tab; on click speed, polling and the sensor trace you are not
+   looking at it, and a 300px panel welded to the top of the viewport is a
+   large price for three tabs out of four. So the diagram scrolls, which is
+   fine because it sits at the top of the page where you arrive, and the TAB
+   STRIP is sticky instead - that is the control you actually want within
+   reach at all times. */
+/* ---- the dock, side by side ----
+   Stacked, the diagram alone pushed the tab strip off the bottom of the
+   screen - you arrived on the page and could not see the controls. The
+   diagram is tall and narrow and the panel is wide, so putting the readouts
+   and the identification beside it instead of under it halves the height and
+   uses the space that was empty on both sides of the mouse. */
+@media (min-width:1100px){
+  #ms-dock .tb-dockgrid{
+    display:grid;
+    grid-template-columns:minmax(0,260px) minmax(0,1fr);
+    gap:clamp(18px,2.4vw,34px);
+    align-items:start;
+  }
+}
+
+/* One rule, not two.
+
+   The first attempt capped the drawing at 250px inside the media query and
+   290px in a general rule below it. Equal specificity, and the later one
+   wins - so the cap that applied was always 290 while the wrapper was sized
+   for 250, and the bottom 40px of the mouse, sensor label and all, was cut
+   off. A second rule written to "also" set something quietly replaced the
+   first.
+
+   max-width matters as much as max-height: with only a height cap the
+   browser derives the width from the aspect ratio, which on a tall drawing
+   can come out wider than the 260px column. */
+#ms-dock #ms-svg{ display:flex; justify-content:center }
+#ms-dock #ms-svg svg{
+  max-height:min(30vh,250px);
+  max-width:100%;
+  width:auto;
+  height:auto;
+  display:block;
+}
+#ms-dock .tb-stats{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) }
+
+/* ---------- sticky tab strips ----------
+   Every tabbed page gets this: the mouse's four, the keyboard's three, the
+   earbuds' five. Scroll down a long pane and the tabs stay on the top edge,
+   so switching test never means scrolling back up to find the control.
+
+   It needs an opaque background of its own - a sticky element with a
+   transparent one drags the content it passes over through itself - and a
+   z-index above the panels so the panels scroll under it rather than through
+   it. */
+@media (min-width:980px){
+  .tb-tabs{
+    position:sticky;
+    top:0;
+    z-index:5;
+    /* Solid behind the buttons, with the fade BELOW them rather than across
+       them. The first version faded from 60% of the strip's own height, which
+       left the top edge of the cards scrolling past showing faintly through
+       the lower half of the strip - a sliver of another panel sitting between
+       the tabs and the content. The fade now starts where the buttons end. */
+    background:var(--bg);
+    padding-top:12px;
+    padding-bottom:10px;
+    margin-bottom:0;
+    /* bleed to the view's padding edges so nothing shows through at the sides */
+    padding-left:var(--pad);
+    padding-right:var(--pad);
+    margin-left:calc(var(--pad) * -1);
+    margin-right:calc(var(--pad) * -1);
+  }
+  /* The soft edge, as its own layer under the strip, so content dissolves
+     into the chrome instead of being chopped off by a hard line. */
+  .tb-tabs::after{
+    content:"";position:absolute;left:0;right:0;top:100%;height:14px;
+    background:linear-gradient(180deg,var(--bg),transparent);
+    pointer-events:none;
+  }
 }

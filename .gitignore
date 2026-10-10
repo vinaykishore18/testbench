@@ -1,0 +1,11 @@
+# Playwright and its browser bundle are a test-time dependency, installed with
+# `npm install playwright` when you want to run the suites. They have no place
+# in the repository: hundreds of files, tens of megabytes, and a second copy of
+# a dependency that npm can fetch in four seconds.
+node_modules/
+package-lock.json
+
+# Scratch files from debugging a test. The pattern is deliberate: name a
+# throwaway script *.tmp.mjs and it cannot be committed by accident.
+*.tmp.mjs
+*.log

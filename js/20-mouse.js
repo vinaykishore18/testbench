@@ -243,6 +243,29 @@ function release(e) {
 }
 document.addEventListener("mousedown", function (e) { if (TB.view() === "mouse" && !onChrome(e)) press(e); }, true);
 document.addEventListener("mouseup", function (e) { if (TB.view() === "mouse" && !onChrome(e)) release(e); }, true);
+
+/* Same lost-release problem as the keyboard, and it bites harder here: the
+   natural way to test a side button is to hold it, and on many mice a side
+   button IS Back or Forward, so the browser may take focus away mid-press.
+   The release then never arrives and the button stays lit for the rest of the
+   session, which reads as a stuck switch on a working mouse.
+
+   Clearing is the honest state. lastUp is NOT stamped, because the
+   double-click and chatter measurements are differences between real
+   timestamps, and a timestamp we made up would quietly corrupt them. */
+function releaseAllButtons(why) {
+  var held = [];
+  for (var i = 0; i < 8; i++) if (st.down[i]) { held.push(i); st.down[i] = false; }
+  if (!held.length) return;
+  raw("FOCUS LOST", "button" + (held.length === 1 ? " " : "s ") + held.join(", ") +
+      " released without a mouseup (" + why + "). Not counted as a click \u2014 the " +
+      "release happened while this page was in the background.");
+  paint();
+}
+window.addEventListener("blur", function () { releaseAllButtons("window lost focus"); });
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) releaseAllButtons("tab went to the background");
+});
 document.addEventListener("auxclick", function (e) { if (TB.view() === "mouse") e.preventDefault(); }, true);
 document.addEventListener("contextmenu", function (e) {
   if ((TB.view() === "mouse" || TB.view() === "keyboard") && !onChrome(e)) e.preventDefault();
@@ -444,6 +467,12 @@ var navArmed = false, navBusy = false, navOK = true;
 function armNav() {
   if (navArmed || !navOK) return;
   try {
+    /* Sentinels from an earlier arming in this session are still sitting in
+       the history stack, so reuse them. Pushing a fresh pair every time grew
+       the stack by two entries per arming - measured 5 entries to 36 over
+       thirty visits - and once it is that deep, Back never leaves the site
+       again for the rest of the session. */
+    if (history.state && typeof history.state.tb === "number") { navArmed = true; return; }
     /* Pass the current URL explicitly. pushState with an omitted url keeps the
        current one today, but stepping back through these entries must never
        change the hash — that would look like a page change to the router. */
@@ -477,7 +506,18 @@ $("#ms-navtrap").onclick = function () {
   if (navArmed) { disarmNav(); this.textContent = "Hold back/forward: off"; this.classList.remove("on"); }
   else { armNav(); this.textContent = navArmed ? "Hold back/forward: on" : "Not supported here"; this.classList.toggle("on", navArmed); }
 };
-TB.onEnter("mouse", armNav);
+/* Deliberately NOT armed on entry any more.
+
+   It used to arm itself every time you opened this page, which meant the
+   browser's Back button stopped working across the whole site the moment you
+   so much as glanced at the mouse test - the trap swallows Back by design, and
+   nothing ever told the operator it was on. Trapping a browser control without
+   asking is not something a bench tool should do behind your back.
+
+   The Alt+Left / Alt+Right handler below still runs unarmed, and that is what
+   catches the common case: a side button the driver has mapped to Back or
+   Forward. You only need the trap for a mouse whose side buttons the browser
+   reports as real navigation, and for that there is a button to press. */
 TB.onLeave("mouse", disarmNav);
 
 /* ============================================================

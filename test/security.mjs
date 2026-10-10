@@ -124,5 +124,99 @@ console.log('\n8. no secrets committed');
   bad.length ? bad.forEach(fail) : pass('no API keys, tokens or private keys in the tree');
 }
 
+console.log('\n8b. the bundle is not a stale copy of an older site');
+{
+  /* dist/testbench.html is generated from the same sources, so it has to be
+     regenerated when they change. A stale bundle is how an old policy, a
+     removed claim or a string we deliberately took out quietly comes back -
+     it happened in this repo: the bundle still carried the Google Fonts CSP
+     and an eBay trading name hours after both were removed from the site. */
+  const distPath = 'dist/testbench.html';
+  if (!existsSync(distPath)) {
+    pass('no bundle in the tree, so nothing to go stale');
+  } else {
+    const bundle = readFileSync(distPath, 'utf8');
+    const bundleTime = statSync(distPath).mtimeMs;
+    const sources = ['index.html', 'css/testbench.css',
+      ...readdirSync('js').map((f) => join('js', f))];
+    const newer = sources.filter((f) => statSync(f).mtimeMs > bundleTime + 1000);
+    newer.length === 0 ? pass('the bundle is newer than every source it is built from')
+      : fail(`the bundle is older than ${newer.length} source file(s) - run build.py (${newer.slice(0, 3).join(', ')})`);
+
+    /* And the specific regressions a stale bundle brings back. */
+    /googleapis|gstatic/.test(bundle)
+      ? fail('the bundle still references Google Fonts, which the site no longer uses')
+      : pass('the bundle has no third-party origins either');
+    const distCSP = (bundle.match(/Content-Security-Policy"\s+content="([^"]*)"/) || [])[1] || '';
+    /unsafe-inline/.test((distCSP.match(/script-src([^;]*)/) || [])[1] || '')
+      ? fail("the bundle's script-src allows 'unsafe-inline'") : pass('the bundle still pins its script by hash');
+  }
+}
+
+console.log('\n8c. there is no server, and nothing can quietly add one');
+{
+  /* The whole security story is "there is no server to attack", so that has
+     to stay true by inspection rather than by memory. An api/ directory or a
+     functions block in vercel.json would turn this into a deployment with
+     running code on it, and the honest answer to any IT department would
+     change without anybody noticing. */
+  existsSync('api') ? fail('there is an api/ directory — this is no longer a static site') : pass('no api/ directory');
+  const vj = JSON.parse(vercel);
+  !vj.functions ? pass('no serverless functions declared') : fail('vercel.json declares functions: ' + JSON.stringify(Object.keys(vj.functions)));
+  vj.buildCommand === null ? pass('build command explicitly none') : fail('a build command is set: ' + JSON.stringify(vj.buildCommand));
+  vj.installCommand === null ? pass('install command explicitly none') : fail('an install command is set: ' + JSON.stringify(vj.installCommand));
+
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  /* Playwright is a test-time tool. Listed under dependencies it is a
+     production dependency, which invites the host to install it on deploy -
+     tens of megabytes of browser automation shipped alongside a site that
+     runs no code on a server. */
+  !pkg.dependencies || Object.keys(pkg.dependencies).length === 0
+    ? pass('no runtime dependencies') : fail('runtime dependencies declared: ' + Object.keys(pkg.dependencies).join(', '));
+  pkg.devDependencies && pkg.devDependencies.playwright
+    ? pass('Playwright is a devDependency, where it belongs') : fail('Playwright is not listed as a devDependency');
+  pkg.private === true ? pass('marked private, so it can never be published to npm by accident') : fail('package.json is not marked private');
+}
+
+console.log('\n9. the site stays out of search engines and crawlers');
+{
+  /* This is one of the few protections on a static site that genuinely works,
+     and it works in three places that have to agree. A header added to
+     vercel.json but not _headers means the protection vanishes the day the
+     site moves host, which is exactly the sort of silent regression this file
+     exists to catch. */
+  const robots = existsSync('robots.txt') ? readFileSync('robots.txt', 'utf8') : '';
+  robots ? pass('robots.txt exists') : fail('there is no robots.txt');
+  /User-agent:\s*\*[\s\S]*?Disallow:\s*\//.test(robots)
+    ? pass('it disallows everything for every crawler') : fail('robots.txt does not disallow the whole site');
+  for (const bot of ['GPTBot', 'ClaudeBot', 'CCBot', 'Bytespider', 'PerplexityBot', 'Google-Extended']) {
+    robots.includes(bot) ? pass(bot + ' named explicitly') : fail(bot + ' is not named — several of these treat a wildcard as advisory');
+  }
+  /Sitemap:/i.test(robots) ? fail('a sitemap is published, which exists to help crawlers find pages') : pass('no sitemap');
+
+  /* _headers is "Key: value" on one line; vercel.json splits the key and the
+     value across two JSON properties, so they need reading differently. */
+  const hdrRobots = (headers.match(/X-Robots-Tag:\s*(.*)/) || [])[1] || '';
+  hdrRobots ? pass('_headers: X-Robots-Tag set') : fail('_headers: no X-Robots-Tag, so that host would allow indexing');
+  /noindex/.test(hdrRobots) ? pass('_headers: it says noindex') : fail('_headers: X-Robots-Tag says ' + JSON.stringify(hdrRobots));
+
+  const vj = JSON.parse(vercel);
+  const vRobots = ((vj.headers || []).flatMap((h) => h.headers || [])
+    .find((h) => h.key === 'X-Robots-Tag') || {}).value || '';
+  vRobots ? pass('vercel.json: X-Robots-Tag set') : fail('vercel.json: no X-Robots-Tag, so this host would allow indexing');
+  /noindex/.test(vRobots) ? pass('vercel.json: it says noindex') : fail('vercel.json: X-Robots-Tag says ' + JSON.stringify(vRobots));
+  vRobots === hdrRobots ? pass('both hosts send the same instruction')
+    : fail('the two hosts disagree, so moving host would change whether the site is indexed');
+  /<meta name="robots"[^>]*noindex/.test(html)
+    ? pass('the page carries a noindex meta for when it is served without headers')
+    : fail('no noindex meta in the document');
+
+  /* A description meta exists only to furnish a search result. Telling
+     crawlers to stay away and then writing them a summary is incoherent. */
+  /<meta name="description"/.test(html)
+    ? fail('there is still a description meta, which only exists to feed a search result')
+    : pass('no description meta — nothing written for a search result');
+}
+
 console.log(failures ? '\n' + failures + ' FAILED' : '\nall checks passed');
 process.exit(failures ? 1 : 0);

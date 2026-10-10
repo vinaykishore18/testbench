@@ -25,6 +25,11 @@ var TB = (function () {
     t.appendChild(el("div", null, body));
     if (action) { var b = el("button", null, action.label); b.onclick = function () { action.fn(); t.remove(); }; t.appendChild(b); }
     box.appendChild(t);
+    /* Cap the stack. Measured: 40 button presses left 31 toasts on screen at
+       once, covering the panel they were describing until they aged out. A
+       notice that hides the thing it is about is worse than no notice, and the
+       oldest one is always the least relevant - so the oldest goes. */
+    while (box.childElementCount > 4) box.firstElementChild.remove();
     setTimeout(function () { t.style.transition = "opacity .4s"; t.style.opacity = "0"; setTimeout(function () { t.remove(); }, 420); }, action ? 9000 : 5200);
   }
 
@@ -37,7 +42,40 @@ var TB = (function () {
     var v = el("span", "val", "0%"); row.appendChild(v);
     return { node: row, fill: i, val: v };
   }
+  /* ---------- one place that decides what a result means ----------
+     Called by verdict() and by the modules that draw their own result panel,
+     so a score means the same thing everywhere and the report cannot disagree
+     with the page it came from.
+
+     Two bugs this closes. It used to classify on the RAW score and print the
+     ROUNDED one, so 69.9 rendered as "Faulty (70/100)" on a page whose own
+     rule is that 70 means check it - which reads as a broken tool to anyone
+     holding the printout. And it ignored the flags entirely, so a result
+     could score 97 and carry a flag reading "Connection dropped 40 times.
+     This router is faulty." while the headline said Passes. A flag marked bad
+     now caps the call, because a module that raises one is telling us
+     something the number did not. */
+  function classify(score, flags) {
+    var n = Math.round(Number(score));
+    if (!isFinite(n)) n = 0;                  /* NaN, Infinity: treat as a fail */
+    n = Math.max(0, Math.min(100, n));
+    var worst = "ok";
+    (flags || []).forEach(function (f) {
+      /* Anything that is not explicitly ok or warn counts as bad. Guessing in
+         the lenient direction is how a level nobody recognised - "critical",
+         "fail" - would get printed as merely marginal. */
+      var lv = f && f.level === "ok" ? "ok" : (f && f.level === "warn") ? "warn" : "bad";
+      if (lv === "bad") worst = "bad";
+      else if (lv === "warn" && worst === "ok") worst = "warn";
+    });
+    var byScore = n >= 90 ? "ok" : n >= 70 ? "warn" : "bad";
+    var rank = { ok: 0, warn: 1, bad: 2 };
+    var kind = rank[worst] > rank[byScore] ? worst : byScore;
+    return { n: n, kind: kind, word: kind === "ok" ? "Passes" : kind === "warn" ? "Check it" : "Faulty" };
+  }
+
   function verdict(node, score, flags, idleMsg) {
+    flags = flags || [];
     node.innerHTML = "";
     if (score == null) {
       var v0 = el("div", "tb-verdict idle");
@@ -45,10 +83,10 @@ var TB = (function () {
       var t0 = el("div", "txt"); t0.appendChild(el("b", null, "Waiting")); t0.appendChild(el("span", null, idleMsg || "No data yet."));
       v0.appendChild(t0); node.appendChild(v0); return;
     }
-    var kind = score >= 90 ? "ok" : score >= 70 ? "warn" : "bad";
-    var word = score >= 90 ? "Passes" : score >= 70 ? "Check it" : "Faulty";
+    var c = classify(score, flags);
+    var kind = c.kind, word = c.word;
     var v = el("div", "tb-verdict " + kind);
-    v.appendChild(el("div", "score", String(Math.round(score))));
+    v.appendChild(el("div", "score", String(c.n)));
     var t = el("div", "txt"); t.appendChild(el("b", null, word));
     var bad = flags.filter(function (f) { return f.level !== "ok"; }).length;
     t.appendChild(el("span", null, bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to look at" : "Nothing flagged."));
@@ -61,7 +99,132 @@ var TB = (function () {
       ul.appendChild(li);
     });
     node.appendChild(ul);
+
+    /* Tell the operator a result landed. Looking at the hardware rather than
+       the screen is the normal posture on a bench, so a verdict that merely
+       swaps its own text is easy to miss entirely; a short settle is not.
+       A pass also gets one sweep of light across its panel - a pass is the
+       result you can act on without reading, which is the only case where
+       decoration earns its place. A failure gets nothing, because a failure
+       needs reading. */
+    v.classList.add("tb-landed");
+    if (kind === "ok") {
+      var panel = node.closest ? node.closest(".tb-panel") : null;
+      if (panel) {
+        panel.classList.remove("tb-swept");
+        /* force the animation to restart if the same panel passes twice */
+        void panel.offsetWidth;
+        panel.classList.add("tb-swept");
+        setTimeout(function () { panel.classList.remove("tb-swept"); }, 900);
+      }
+    }
+
+    /* Record it. Every scored verdict in the app comes through this function,
+       so this is the one place that can collect a session's results without
+       each module having to remember to report in - and a report built from
+       something modules opt into is a report that silently omits whatever
+       was added last. */
+    record(node, c.n, kind, word, flags);
   }
+
+  /* ---------- session results ----------
+     Keyed by the view and the panel, so re-running a test replaces its result
+     rather than appending a second one. A QC report that lists a unit as both
+     failed and passed because it was tested twice is worse than no report. */
+  var results = Object.create(null), resultOrder = [];
+  function panelTitle(node) {
+    var panel = node.closest ? node.closest(".tb-panel") : null;
+    var h = panel && panel.querySelector(".tb-ptitle");
+    if (h) return h.textContent.replace(/\s+/g, " ").trim();
+    var sec = node.closest ? node.closest(".tb-view") : null;
+    var h1 = sec && sec.querySelector("h1");
+    return h1 ? h1.textContent.trim() : "Result";
+  }
+  function record(node, score, kind, word, flags) {
+    /* Take the view from the node's OWN section, not from whichever page the
+       operator happens to be looking at now. A module that finishes a
+       measurement a moment after you navigate away used to file its result
+       under the new page - which produced a report listing Routers as a
+       result AND under "not tested" in the same document. */
+    var sec = node.closest ? node.closest(".tb-view") : null;
+    var view = (sec && sec.id && sec.id.indexOf("view-") === 0) ? sec.id.slice(5) : currentView;
+    var key = view + "::" + (node.id || panelTitle(node));
+    if (!results[key]) resultOrder.push(key);
+    results[key] = {
+      view: view,
+      panel: panelTitle(node),
+      score: Math.round(score),
+      kind: kind,                 /* ok | warn | bad */
+      word: word,                 /* Passes | Check it | Faulty */
+      at: Date.now(),
+      flags: (flags || []).map(function (f) { return { level: f.level, tag: f.tag, text: f.text }; })
+    };
+  }
+  /* For a module that renders its own result panel instead of calling
+     verdict(). The speed test and the serial check both do - their results do
+     not fit the standard score-plus-flags block - and because they were not
+     going through verdict(), neither reached the report. Measured: a 3.1 Mbps
+     result with a red "below what one HD video call wants" row on screen, and
+     a report that printed "OVERALL: PASSES / Routers - Passes (100/100)".
+     Worse than a missing row, because the soak check HAD registered, so
+     Routers was claimed as a pass rather than listed as untested.
+
+     Same classification path as verdict(), so the two cannot drift. */
+  function report(view, panel, score, flags) {
+    var c = classify(score, flags);
+    var key = view + "::" + panel;
+    if (!results[key]) resultOrder.push(key);
+    results[key] = {
+      view: view, panel: panel, score: c.n, kind: c.kind, word: c.word,
+      at: Date.now(),
+      flags: (flags || []).map(function (f) { return { level: f.level, tag: f.tag, text: f.text }; })
+    };
+  }
+
+  function sessionResults() {
+    return resultOrder.map(function (k) { return results[k]; }).filter(Boolean);
+  }
+  function clearResults() { results = Object.create(null); resultOrder = []; }
+
+  /* ---------- two-press confirmation, in one place ----------
+     There were four copies of this pattern in the app and every one had the
+     same hole: a plain double-click armed and fired it in a single gesture.
+     Measured at 25 ms between the two clicks, which destroyed the earbuds
+     reference curve - a thing the code's own comment says needs a sealed
+     known-good pair and a quiet room to rebuild.
+
+     On any tool that would be bad. On this one it is worse: the Mouse page
+     exists to detect double-click chatter, so the operator is deliberately
+     holding mice that emit exactly this pattern. A press too soon after
+     arming is not a decision, so it is refused and the button says why. */
+  var ARM_GAP = 400;        /* below this, a second press is the same gesture */
+  var ARM_HOLD = 5000;      /* and it forgets if the decision never comes */
+  function arm(btn, idleText, armedText, fire) {
+    var at = 0, timer = null;
+    function disarm() {
+      if (timer) { clearTimeout(timer); timer = null; }
+      at = 0;
+      btn.textContent = idleText;
+      btn.classList.remove("on");
+    }
+    btn.onclick = function () {
+      if (!at) {
+        at = Date.now();
+        timer = setTimeout(disarm, ARM_HOLD);
+        btn.textContent = typeof armedText === "function" ? armedText() : armedText;
+        btn.classList.add("on");
+        return;
+      }
+      if (Date.now() - at < ARM_GAP) {
+        btn.textContent = "Not that fast \u2014 press again";
+        return;
+      }
+      disarm();
+      fire();
+    };
+    return { disarm: disarm };
+  }
+
   function checklist(items) {
     var ul = el("ul", "tb-check");
     var map = {};
@@ -197,9 +360,19 @@ var TB = (function () {
   function badge(v, txt, on) { var b = $("#badge-" + v); if (!b) return; b.textContent = txt || ""; b.classList.toggle("on", !!on); }
   function chip(id, live, val) {
     var c = $("#chip-" + id); if (!c) return;
+    /* Pop only on the transition INTO live, not on every value update. The pad
+       chip's value changes sixty times a second while a stick is moving, and
+       a chip that pulsed on each of those would be unreadable. */
+    var wasLive = c.classList.contains("live");
     c.classList.toggle("live", live === true);
     c.classList.toggle("warn", live === "warn");
     c.querySelector("b").textContent = val;
+    if (live === true && !wasLive) {
+      c.classList.remove("popped");
+      void c.offsetWidth;
+      c.classList.add("popped");
+      setTimeout(function () { c.classList.remove("popped"); }, 450);
+    }
   }
 
   /* ---------- device identity over USB (WebHID) ---------- */
@@ -268,7 +441,12 @@ var TB = (function () {
   }
 
   /* ---------- gamepad core ---------- */
-  var PADS = {}, padListeners = [];
+  /* Object.create(null) rather than {}: PADS is keyed by gp.index, and with a
+     plain object a pad reporting index "__proto__" would write through to
+     Object.prototype and corrupt every object on the page. The index comes from
+     the browser so this is defence in depth, not a live bug - but a
+     null-prototype map costs nothing and Object.keys still works on it. */
+  var PADS = Object.create(null), padListeners = [];
   function onPads(fn) { padListeners.push(fn); }
   function pads() { return PADS; }
 
@@ -474,8 +652,20 @@ var TB = (function () {
 
   /* poll() only reads — scheduling lives in loop(). Keeping them apart means
      calling poll() from an event handler cannot start a second animation loop
-     running alongside the first. */
-  function loop() { poll(); requestAnimationFrame(loop); }
+     running alongside the first.
+
+     The rAF is scheduled BEFORE poll() runs, and poll() is wrapped. Written the
+     other way round, a single throw inside poll - one unexpected pad shape, one
+     listener that blew up - ended the animation loop permanently, and polling
+     silently fell back to the 400 ms safety interval: 2.5 Hz instead of 60,
+     which reads as "this controller feels laggy" and is very hard to trace. */
+  var pollFails = 0;
+  function loop() {
+    requestAnimationFrame(loop);
+    try { poll(); } catch (e) {
+      if (++pollFails === 1) watch("POLL ERROR", (e && e.message) || "a controller read threw; polling continues");
+    }
+  }
   requestAnimationFrame(loop);
 
   /* The loop above runs on requestAnimationFrame, which the browser slows right
@@ -512,12 +702,59 @@ var TB = (function () {
   function tabs(stripSel, paneAttr, onChange) {
     var strip = $(stripSel); if (!strip) return;
     var btns = $$("button", strip);
-    function show(name) {
+    function show(name, fromClick) {
+      /* ---- switching a tab must not move the page ----------------------
+         Panes are shown and hidden, so the document height changes the
+         instant one is swapped. Two things went wrong because of that.
+
+         If the new pane is shorter than the scroll position, the browser
+         clamps the scroll and the page appears to lurch upward. And if you
+         had scrolled down inside a long pane, the tab strip you just clicked
+         was often left somewhere off-screen, so the click seemed to do
+         nothing until you scrolled back up to look.
+
+         Both are fixed by deciding where the view should be rather than
+         letting the clamp decide: if the strip is already on screen, hold the
+         scroll exactly where it was; if it is not, bring it just under the
+         sticky header. Only on a real click - a programmatic show() during
+         page setup must not scroll anything. */
+      var main = $("#main");
+      var keep = null;
+      if (fromClick && main) {
+        var sr = strip.getBoundingClientRect();
+        var mr = main.getBoundingClientRect();
+        keep = (sr.top >= mr.top && sr.bottom <= mr.bottom) ? main.scrollTop : null;
+      }
+
       btns.forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.t === name)); });
       $$("[" + paneAttr + "]").forEach(function (p) { p.hidden = p.getAttribute(paneAttr) !== name; });
       if (onChange) onChange(name);
+
+      if (fromClick && main) {
+        if (keep != null) {
+          /* The strip was visible, so the operator's eye is already in the
+             right place. Put the scroll back where the clamp may have moved
+             it from.
+
+             Restoring can fail, and that is the original bug rather than an
+             edge case: a shorter pane makes the document shorter, so the
+             maximum scroll drops and the position simply does not exist any
+             more. When that happens, holding the scroll number is impossible
+             but holding the STRIP steady is not - so pin the strip to the top
+             instead. What the operator cares about is that the control they
+             just clicked did not move, not what scrollTop happens to be. */
+          main.scrollTop = keep;
+          if (Math.abs(main.scrollTop - keep) > 1) {
+            var t2 = strip.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop;
+            main.scrollTop = Math.max(0, t2 - 12);
+          }
+        } else {
+          var top = strip.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop;
+          main.scrollTop = Math.max(0, top - 12);
+        }
+      }
     }
-    btns.forEach(function (b) { b.onclick = function () { show(b.dataset.t); }; });
+    btns.forEach(function (b) { b.onclick = function () { show(b.dataset.t, true); }; });
     return show;
   }
 
@@ -544,9 +781,11 @@ var TB = (function () {
     $: $, $$: $$, el: el, svgEl: svgEl, clamp: clamp, esc: esc, stamp: stamp,
     isMobile: isMobile, isCoarse: isCoarse, isNarrow: isNarrow,
     callout: callout, tabs: tabs, steps: steps, activity: activity,
-    toast: toast, verdict: verdict, ptitle: ptitle, meterRow: meterRow, checklist: checklist,
+    toast: toast, verdict: verdict, ptitle: ptitle, meterRow: meterRow, checklist: checklist, arm: arm,
     go: go, onEnter: onEnter, onLeave: onLeave, view: view, badge: badge, chip: chip,
     hidMount: hidMount, watch: watch,
+    results: sessionResults, clearResults: clearResults, report: report, classify: classify,
+    watchLog: function () { return watchLog.slice(); },
     pads: pads, onPads: onPads, shortName: shortName, labelFor: labelFor, glyphFor: glyphFor,
     beginRestSample: beginRestSample,
     paint: paint, onTheme: function (f) { themeFns.push(f); }, setTheme: setTheme,

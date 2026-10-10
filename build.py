@@ -41,8 +41,7 @@ js_hash = base64.b64encode(hashlib.sha256(js.encode()).digest()).decode()
 # its own inline script and nothing else.
 BUNDLE_CSP = (
     "default-src 'none'; script-src 'sha256-%s'; "
-    "style-src 'unsafe-inline' https://fonts.googleapis.com; "
-    "font-src https://fonts.gstatic.com; img-src 'self' data:; "
+    "style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; "
     "media-src 'self' blob:; connect-src 'self'; worker-src blob:; "
     "base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'"
 ) % js_hash

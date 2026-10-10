@@ -333,6 +333,42 @@ var KB=(function(){
     readLocks(e,code);   /* by keyup the lock has flipped, so this is where it is caught */
     repaint(); stats();
   },true);
+  /* ---- the lost keyup ----------------------------------------------------
+     Hold a key, Alt-Tab or click into another window, let go. The release
+     happens while this page does not have focus, so no keyup ever arrives -
+     the key stays lit, and seven hundred milliseconds later the stuck-key
+     watcher below logs "STUCK A - held over 5 s with no release" against a
+     keyboard that is perfectly fine.
+
+     A false fault report is the worst output a QC tool can produce. It is
+     worse than missing a real fault, because the operator acts on it: a good
+     board gets graded down or sent back.
+
+     So any key still marked down when focus leaves is released rather than
+     held. It cannot be counted as a press-and-hold, because we genuinely do
+     not know when it came up - the honest state is "no longer observing it".
+     Nothing is recorded as tested-and-released either: lastUp is deliberately
+     NOT stamped, because a chatter measurement taken against a timestamp we
+     invented would be a made-up number.
+
+     The rollover pane had this handler already. The main layout, which is the
+     pane the stuck-key watcher runs against, did not. */
+  function releaseAll(why) {
+    var codes = Object.keys(state.down);
+    if (!codes.length) return;
+    codes.forEach(function (c) { delete state.down[c]; delete state.stuck[c]; });
+    log("FOCUS LOST", codes.length + " key" + (codes.length === 1 ? "" : "s") +
+        " released without a keyup (" + why + "). Not counted as stuck \u2014 the " +
+        "release happened while this page was in the background, so the browser never sent it.");
+    repaint(); stats();
+  }
+  window.addEventListener("blur", function () { releaseAll("window lost focus"); });
+  /* Alt-Tab on some platforms, and a switch to another virtual desktop, fire
+     visibilitychange without a blur. Both routes end the same way. */
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) releaseAll("tab went to the background");
+  });
+
   setInterval(function(){
     var now=performance.now(), ch=false;
     Object.keys(state.down).forEach(function(c){
@@ -462,8 +498,15 @@ if (TB.isCoarse()) {
     m.className = "v " + (maxN >= 6 ? "pass" : maxN >= 4 ? "warn" : "");
     var v = $("#ro-verdict");
     if (!maxN) { v.textContent = "—"; v.className = "v"; }
-    else if (maxN >= 6) { v.textContent = "N-key rollover"; v.className = "v pass"; }
-    else if (maxN >= 4) { v.textContent = "4-key rollover"; v.className = "v warn"; }
+    /* Six is NOT proof of N-key rollover, and calling it that was an
+       overclaim. The USB boot protocol carries exactly six keys plus
+       modifiers, and plenty of boards never leave that mode because no driver
+       asked them to - so six is frequently the protocol's ceiling rather than
+       the keyboard's. Seven or more can only have come from the richer report
+       mode, so that is where the NKRO claim becomes safe to make. */
+    else if (maxN >= 7) { v.textContent = maxN + "-key \u2014 true NKRO"; v.className = "v pass"; }
+    else if (maxN === 6) { v.textContent = "6 \u2014 at the USB limit"; v.className = "v pass"; }
+    else if (maxN >= 4) { v.textContent = maxN + "-key rollover"; v.className = "v warn"; }
     else { v.textContent = "2-key — membrane"; v.className = "v fail"; }
     box.textContent = "";
     codes.forEach(function (c) {

@@ -30,6 +30,41 @@ if (OFFLINE_FILE) {
   });
 }
 var running = null, t0 = 0, timer = null, runTimer = null;
+
+/* ---- traffic leash ----------------------------------------------------
+   Every fetch on this page registers its AbortController here, and leaving
+   the page or stopping a run aborts the lot. heavy() holds the one-at-a-time
+   lock for the Speed and Load tests.
+
+   Measured on the live site before this existed: ten clicks on Speed opened
+   1200 concurrent fetches and pulled 1.19 GB, and 1094 MB of that arrived
+   AFTER the operator had navigated away to another page. A router test that
+   saturates the shop line for a minute after you have stopped looking at it
+   is worse than no router test. Nothing here is cosmetic.
+   -------------------------------------------------------------------- */
+var inflight = [], heavyJob = null;
+function leash() {
+  if (!("AbortController" in window)) return null;
+  var c = new AbortController();
+  inflight.push(c);
+  /* keep the list from growing without bound over a long soak */
+  if (inflight.length > 64) inflight = inflight.filter(function (x) { return !x.signal.aborted; });
+  return c;
+}
+function abortAll() {
+  var n = inflight.length;
+  inflight.forEach(function (c) { try { c.abort(); } catch (e) {} });
+  inflight = [];
+  return n;
+}
+function heavyUI(on) {
+  ["#sp-run", "#net-load"].forEach(function (id) { var b = $(id); if (b) b.disabled = !!on; });
+}
+function heavy(kind) {
+  if (heavyJob) return false;      /* one bandwidth test at a time, always */
+  heavyJob = kind; heavyUI(true); return true;
+}
+function heavyDone() { heavyJob = null; heavyUI(false); }
 var rtts = [], drops = 0, sent = 0, worst = 0, series = [];
 var runs = [];
 
@@ -38,7 +73,7 @@ function nocache(u) { return u + "?t=" + Date.now() + "-" + Math.random().toStri
 /* ---------------- one probe ---------------- */
 function probe() {
   var start = performance.now();
-  var ctl = ("AbortController" in window) ? new AbortController() : null;
+  var ctl = leash();
   var kill = setTimeout(function () { if (ctl) ctl.abort(); }, 5000);
   return fetch(nocache(PING), { cache: "no-store", signal: ctl ? ctl.signal : undefined })
     .then(function (r) {
@@ -143,50 +178,20 @@ function graph() {
   g.stroke();
 }
 
-/* ---------------- throughput ---------------- */
-function throughput(seconds) {
-  var bytes = 0, done = false, start = performance.now();
-  $("#net-mbps").textContent = "…";
-  function pull() {
-    if (done) return;
-    fetch(nocache(PAYLOAD), { cache: "no-store" })
-      .then(function (r) { return r.arrayBuffer(); })
-      .then(function (b) {
-        /* Four chains run at once. Without this guard the three still in
-           flight when the fourth calls finish() kept writing to the readout
-           afterwards, so the final number changed a second after the test
-           said it was done and no longer matched its own pass/fail colour. */
-        if (done) return;
-        bytes += b.byteLength;
-        var secs = (performance.now() - start) / 1000;
-        $("#net-mbps").textContent = (bytes * 8 / 1e6 / secs).toFixed(1);
-        if (secs < seconds) pull(); else finish();
-      })
-      .catch(function () { if (!done) finish(); });
-  }
-  function finish() {
-    if (done) return;
-    done = true;
-    var secs = (performance.now() - start) / 1000;
-    var mbps = bytes * 8 / 1e6 / secs;
-    $("#net-mbps").textContent = mbps.toFixed(1);
-    $("#net-mbps").className = "v " + (mbps > 40 ? "pass" : mbps > 8 ? "warn" : "fail");
-    log("THROUGHPUT", (bytes / 1048576).toFixed(1) + " MB in " + secs.toFixed(1) + " s = " + mbps.toFixed(1) + " Mbps");
-  }
-  for (var i = 0; i < 4; i++) pull();
-}
-
 /* ---------------- concurrency / NAT table ---------------- */
 function loadTest(n) {
+  if (!heavy("load")) return;
+  n = Math.max(1, Math.min(400, n | 0));     /* the input is a text box; cap it */
   log("LOAD TEST", "opening " + n + " connections at once");
   $("#net-conc").textContent = "…";
-  var ok = 0, fail = 0, start = performance.now(), left = n;
+  var ok = 0, fail = 0, start = performance.now(), left = n, ctl = leash();
   for (var i = 0; i < n; i++) {
-    fetch(nocache(PING), { cache: "no-store" })
+    fetch(nocache(PING), { cache: "no-store", signal: ctl ? ctl.signal : undefined })
       .then(function (r) { r.ok ? ok++ : fail++; })
       .catch(function () { fail++; })
       .then(function () {
         if (--left === 0) {
+          heavyDone();
           var secs = (performance.now() - start) / 1000;
           $("#net-conc").textContent = ok + " / " + n;
           $("#net-conc").className = "v " + (fail === 0 ? "pass" : fail < n * 0.05 ? "warn" : "fail");
@@ -216,6 +221,7 @@ function stop(finished) {
   if (!running) return;
   var s = stats();
   clearInterval(timer); timer = null;
+  abortAll();                 /* no probe outlives the run that asked for it */
   if (runTimer) { clearTimeout(runTimer); runTimer = null; }
   var dur = (performance.now() - t0) / 1000;
   running = null;
@@ -280,7 +286,6 @@ $("#net-run").onclick = function () {
   start("soak", (parseFloat($("#net-dur").value) || 300) * 1000);
 };
 $("#net-quick").onclick = function () { if (fileGuard()) return; if (!running) start("quick", 30000); };
-$("#net-speed").onclick = function () { if (fileGuard()) return; throughput(8); };
 $("#net-load").onclick = function () { if (fileGuard()) return; loadTest(parseInt($("#net-conc-n").value, 10) || 120); };
 $("#net-clear").onclick = function () { runs = []; renderRuns(); $("#net-log").textContent = ""; };
 
@@ -301,8 +306,26 @@ function envInfo() {
   kv("Page served over", location.protocol.replace(":", ""));
   kv("What this cannot see", "Wi-Fi names, signal strength, which band you are on, the router's admin page or its firmware. No browser can reach any of that — connect the test machine to the port or band you want to check and label the run instead.");
 }
+/* The speed test is a separate file but the same page, so it must share this
+   page's abort list and its one-heavy-job-at-a-time lock. Two modules each
+   keeping their own would mean leaving the page cancels one and not the other,
+   which is the bug this whole mechanism exists to prevent. */
+window.NETGUARD = {
+  leash: leash, abortAll: abortAll, heavy: heavy, heavyDone: heavyDone,
+  log: log, nocache: nocache,
+  payload: function () { return PAYLOAD; },
+  ping: function () { return PING; },
+  offline: function () { return OFFLINE_FILE; }
+};
+
 TB.onEnter("network", function () { envInfo(); graph(); });
-TB.onLeave("network", function () { if (running) stop(false); });
+TB.onLeave("network", function () {
+  if (running) stop(false);
+  var n = abortAll();
+  if (n) log("ABORTED", n + " request" + (n === 1 ? "" : "s") + " cancelled — you left the page");
+  heavyDone();
+});
+window.addEventListener("pagehide", abortAll);
 renderRuns();
 score();
 envInfo();

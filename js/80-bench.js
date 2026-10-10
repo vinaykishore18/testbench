@@ -28,7 +28,9 @@ var box = $("#devcards"), cards = {};
 defs.forEach(function (d) {
   var c = el("button", "tb-devcard");
   var top = el("div", "top");
-  top.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">' + d.ic + '</svg>' + d.t + '<span class="st">ready</span>';
+  /* aria-hidden: the icon repeats what the card's own title says, so a screen
+     reader reading it out loud adds nothing but an unlabelled graphic. */
+  top.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false">' + d.ic + '</svg>' + d.t + '<span class="st">ready</span>';
   c.appendChild(top);
   c.appendChild(el("p", null, d.d));
   c.onclick = function () { TB.go(d.v); };
@@ -55,7 +57,7 @@ function refresh() {
       var v = el("div"); row.appendChild(v);
       verdict(v, rec.score, rec.flags.slice(0, 3), "Sampling at rest…");
       var nm = el("div");
-      nm.style.cssText = "font-family:var(--font-m);font-size:10.5px;color:var(--ink-faint);margin:6px 0 0;letter-spacing:.05em";
+      nm.style.cssText = "font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);margin:6px 0 0;letter-spacing:.05em";
       nm.textContent = shortName(rec).toUpperCase() + " · " + (rec.wheel ? "WHEEL" : "CONTROLLER") + " · SLOT " + rec.index;
       row.appendChild(nm);
       var b = el("button", "tb-btn", "Open full test"); b.style.marginTop = "8px";

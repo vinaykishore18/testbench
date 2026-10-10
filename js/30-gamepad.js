@@ -102,11 +102,12 @@ var sel = $("#gp-sel"), body = $("#gp-body"), activeIdx = null, ui = null, sig =
 function stickBlock(name) {
   var w = el("div");
   var t = el("div");
-  t.style.cssText = "font-family:var(--font-m);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:7px";
+  t.style.cssText = "font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px";
   t.textContent = name; w.appendChild(t);
   var s = el("div", "tb-stick"), c = el("canvas"); s.appendChild(c); w.appendChild(s);
-  var r = el("div");
-  r.style.cssText = "font-family:var(--font-m);font-size:11px;color:var(--ink-dim);margin-top:7px;font-variant-numeric:tabular-nums";
+  /* A class, not inline styles: the readout turns red when the stick rests
+     outside the deadzone, and an inline colour would beat the class. */
+  var r = el("div", "tb-stickread");
   w.appendChild(r);
   return { node: w, canvas: c, read: r, trace: new Array(72).fill(0), ret: 0, wasOut: false, outAt: 0 };
 }
@@ -153,10 +154,10 @@ function build() {
   var pv = el("div", "tb-panel");
   var head = el("div");
   head.style.cssText = "display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;margin-bottom:11px";
-  var h = el("h2"); h.style.cssText = "font-family:var(--font-d);font-size:17px;letter-spacing:.03em";
+  var h = el("h2"); h.style.cssText = "font-family:var(--f-display);font-size:17px;letter-spacing:.03em";
   h.textContent = shortName(rec); head.appendChild(h);
   var meta = el("span");
-  meta.style.cssText = "font-family:var(--font-m);font-size:10.5px;color:var(--ink-faint);letter-spacing:.06em";
+  meta.style.cssText = "font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.06em";
   meta.textContent = rec.brand.b.toUpperCase() + " · slot " + rec.index + " · " + rec.buttons.length + " buttons · " + rec.axes.length + " axes · mapping “" + rec.mapping + "”";
   head.appendChild(meta);
   pv.appendChild(head);
@@ -307,7 +308,14 @@ function rumble(rec, strong, weak) {
   try { a.playEffect("dual-rumble", { startDelay: 0, duration: 700, strongMagnitude: strong, weakMagnitude: weak }); } catch (e) {}
 }
 
-function drawStick(blk, x, y, pressed) {
+/* The conventional deadzone a game applies to a thumbstick. Not a standard -
+   engines pick their own, and 8% is the middle of the range most of them use.
+   It is drawn so the operator can see whether a stick's drift falls inside
+   what a game would ignore or outside it, which is the difference between a
+   pad that is fine and a pad that walks the camera on its own. */
+var DEADZONE = 0.08;
+
+function drawStick(blk, x, y, pressed, rest) {
   var c = blk.canvas, dpr = Math.min(2, window.devicePixelRatio || 1);
   var w = c.clientWidth || 180, h = c.clientHeight || 180;
   if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
@@ -320,6 +328,45 @@ function drawStick(blk, x, y, pressed) {
   g.beginPath(); g.arc(cx, cy, R2, 0, 7); g.stroke();
   g.beginPath(); g.arc(cx, cy, R2 * 0.5, 0, 7); g.stroke();
   g.beginPath(); g.moveTo(cx - R2, cy); g.lineTo(cx + R2, cy); g.moveTo(cx, cy - R2); g.lineTo(cx, cy + R2); g.stroke();
+
+  /* ---- the deadzone, and where this stick actually rests -----------------
+     The numbers were already on the page and the drift score already read
+     them, but a figure like "rests at 0.071" means nothing at a glance. Drawn,
+     it is instant: a dashed ring at the deadzone, and a marker at the rest
+     point measured during the settle sample on connect. A stick resting dead
+     centre puts the marker in the middle of the crosshair. A drifting one puts
+     it visibly off, and you can see at once whether it has crept outside the
+     ring a game would ignore - which is the difference between a pad that is
+     fine and one that walks the camera on its own. */
+  g.save();
+  g.setLineDash([3, 4]);
+  g.strokeStyle = TB.paint("ink3-t30"); g.lineWidth = 1;
+  g.beginPath(); g.arc(cx, cy, R2 * DEADZONE, 0, 7); g.stroke();
+  g.restore();
+
+  if (rest && isFinite(rest.x) && isFinite(rest.y)) {
+    var rmag = Math.sqrt(rest.x * rest.x + rest.y * rest.y);
+    var rx = cx + rest.x * R2, ry = cy + rest.y * R2;
+    var out = rmag > DEADZONE;
+    /* A halo at the rest magnitude, so the size of the drift is visible as an
+       area rather than only as a position. */
+    if (rmag > 0.004) {
+      g.strokeStyle = out ? TB.paint("red-l35") : TB.paint("pass-l40");
+      g.lineWidth = 1;
+      g.beginPath(); g.arc(cx, cy, Math.max(2, rmag * R2), 0, 7); g.stroke();
+    }
+    g.strokeStyle = out ? TB.paint("red") : TB.paint("pass");
+    g.lineWidth = 2;
+    g.beginPath(); g.arc(rx, ry, 4.5, 0, 7); g.stroke();
+    g.beginPath();
+    g.moveTo(rx - 7, ry); g.lineTo(rx - 2.5, ry);
+    g.moveTo(rx + 2.5, ry); g.lineTo(rx + 7, ry);
+    g.moveTo(rx, ry - 7); g.lineTo(rx, ry - 2.5);
+    g.moveTo(rx, ry + 2.5); g.lineTo(rx, ry + 7);
+    g.stroke();
+    blk.drift = rmag;
+    blk.driftOut = out;
+  }
   g.strokeStyle = TB.paint("dev-tip"); g.lineWidth = 1.4; g.beginPath();
   for (var i = 0; i < blk.trace.length; i++) {
     var a = (i / blk.trace.length) * Math.PI * 2 - Math.PI, r = blk.trace[i] * R2;
@@ -332,7 +379,11 @@ function drawStick(blk, x, y, pressed) {
   g.fillStyle = pressed ? TB.paint("warn") : TB.paint("pass");
   g.beginPath(); g.arc(ddx, ddy, 6, 0, 7); g.fill();
   g.strokeStyle = TB.paint("pass-l40"); g.beginPath(); g.moveTo(cx, cy); g.lineTo(ddx, ddy); g.stroke();
-  blk.read.textContent = "X " + x.toFixed(3) + "   Y " + y.toFixed(3) + "   mag " + (mag * 100).toFixed(1) + "%";
+  blk.read.textContent = "X " + x.toFixed(3) + "   Y " + y.toFixed(3) + "   mag " + (mag * 100).toFixed(1) + "%" +
+    (blk.drift != null
+      ? "   \u00b7 rests " + (blk.drift * 100).toFixed(1) + "%" + (blk.driftOut ? " OUTSIDE the deadzone" : " (inside the deadzone)")
+      : "");
+  blk.read.className = "tb-stickread" + (blk.driftOut ? " bad" : blk.drift != null ? " ok" : "");
 
   /* return-to-centre */
   var now = performance.now();
@@ -391,8 +442,16 @@ function tick() {
   rec.buttons.forEach(function (_, i) { ui.cl.set(i, !!rec.seenBtn[i]); });
 
   if (rec.standard) {
-    drawStick(ui.L, rec.axes[0] || 0, rec.axes[1] || 0, rec.pressed[10]);
-    if (rec.axes.length >= 4) drawStick(ui.R, rec.axes[2] || 0, rec.axes[3] || 0, rec.pressed[11]);
+    /* The rest means come from the two-phase settle sample the core takes on
+       connect, so they are a measurement rather than whatever the stick
+       happens to read at this instant. */
+    var rm = rec.rest && rec.rest.means;
+    drawStick(ui.L, rec.axes[0] || 0, rec.axes[1] || 0, rec.pressed[10],
+              rm ? { x: rm[0] || 0, y: rm[1] || 0 } : null);
+    if (rec.axes.length >= 4) {
+      drawStick(ui.R, rec.axes[2] || 0, rec.axes[3] || 0, rec.pressed[11],
+                rm ? { x: rm[2] || 0, y: rm[3] || 0 } : null);
+    }
   }
   /* drawStick, which is what moves .ret, only runs for standard pads. A
      leverless or arcade stick was being handed a green "0.0%" for a figure the

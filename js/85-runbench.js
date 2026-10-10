@@ -50,25 +50,28 @@ var FLOWS = {
     strip: "#ms-tabs",
     label: "Mouse",
     steps: [
+      /* The mouse page's nine tabs were grouped into four, so these are the
+         new names. Scroll lives with Buttons now, and the double-click, drag
+         and click-speed tests all sit under Switch health. */
       { tab: "buttons", title: "Press every button on the mouse",
         hint: "Left, right, wheel click, both side buttons. Remapped side buttons count too.",
         read: function () { return num("#ms-btnseen") + num("#ms-macros"); },
         abs: true, settle: 2600, min: 3, unit: "buttons" },
 
-      { tab: "scroll", title: "Spin the wheel both ways",
+      { tab: "buttons", title: "Spin the wheel both ways",
         hint: "Five clicks up, five down. Feel for a notch that slips or skips.",
         read: function () { return Math.min(num("#scroll-up"), num("#scroll-dn")); },
         abs: true, need: 5, unit: "clicks each way" },
 
-      { tab: "dbl", title: "Click left thirty times, steadily",
+      { tab: "switches", title: "Click left thirty times, steadily",
         hint: "This is the fault that kills most returned mice — one press registering as two.",
         read: function () { return num("#dbl-clicks"); }, need: 30, unit: "clicks" },
 
-      { tab: "track", title: "Move the mouse around the pad",
+      { tab: "sensor", title: "Move the mouse around the pad",
         hint: "Wide circles, then slow straight lines. Watch for the trace jumping or stalling.",
         read: function () { return num("#ms-poll"); }, abs: true, need: 100, unit: "Hz peak" },
 
-      { tab: "drag", title: "Hold left and drag through all six boxes",
+      { tab: "switches", title: "Hold left and drag through all six boxes",
         hint: "One hold, all six. A worn switch lets go halfway.",
         read: function () { return num("#drag-done"); }, need: 1, unit: "clean runs" }
     ]

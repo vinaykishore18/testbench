@@ -126,7 +126,21 @@ for (const theme of ['light', 'dark']) {
         const lf = lum(cs.color), lb = lum(bgOf(el));
         if (lf === null || lb === null) continue;
         const ratio = (Math.max(lf, lb) + 0.05) / (Math.min(lf, lb) + 0.05);
-        if (ratio < 2.6) out.push({ tag: el.tagName + '.' + (el.className || '').toString().split(' ')[0], ratio: +ratio.toFixed(2), color: cs.color, bg: bgOf(el) });
+        /* The real WCAG AA thresholds, not a placeholder.
+
+           This gated at 2.6 for a long time, which is well below AA for any
+           text size and meant the suite could never have caught the two
+           failures the audit found by hand (.tb-badge and the bold lead-in in
+           .tb-steps, both 3.99:1). A test that cannot fail on the thing it is
+           named after is worse than no test, because it reads as a pass.
+
+           AA is 4.5:1 for normal text and 3:1 for large text, where large
+           means 24px or more, or 18.66px or more when bold. */
+        const px = parseFloat(cs.fontSize) || 16;
+        const weight = parseInt(cs.fontWeight, 10) || 400;
+        const large = px >= 24 || (px >= 18.66 && weight >= 700);
+        const need = large ? 3 : 4.5;
+        if (ratio < need) out.push({ tag: el.tagName + '.' + (el.className || '').toString().split(' ')[0], ratio: +ratio.toFixed(2), need, px, weight, color: cs.color, bg: bgOf(el) });
       }
       return out;
     });
@@ -176,6 +190,48 @@ console.log('\n5. the monitor test patterns ignore the theme');
 
 console.log('\n6. no console errors in either theme');
 errors.length ? errors.forEach(fail) : pass('clean');
+
+console.log('\nX. every CSS variable the code names actually exists');
+{
+  /* Three separate bugs today came from a token that was never defined, or
+     defined as a reference to itself. A custom property with no value fails
+     silently: the declaration is dropped and the element inherits whatever
+     was there before, so the element looks almost right and nobody
+     investigates. Eleven tint tokens were dead in the dark theme, and five
+     more were named in JS inline styles with names the stylesheet had never
+     heard of - including --fail on the battery bar, so a nearly-flat battery
+     drew with no colour at all instead of red.
+
+     This check is cheap and it ends that whole class of bug. */
+  const { readFileSync, readdirSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const css = readFileSync('css/testbench.css', 'utf8');
+  const defined = new Set([...css.matchAll(/--([\w-]+)\s*:/g)].map((m) => m[1]));
+
+  /* A token defined as var(--itself) is worse than missing: it reads as
+     defined. CSS treats the cycle as invalid at computed-value time. */
+  const cyclic = [...css.matchAll(/--([\w-]+)\s*:\s*var\(--([\w-]+)\)/g)]
+    .filter((m) => m[1] === m[2]).map((m) => m[1]);
+  cyclic.length === 0 ? pass('no token is defined as a reference to itself')
+    : fail(`${cyclic.length} cyclic token definition(s), dead wherever that block applies: ${[...new Set(cyclic)].join(', ')}`);
+
+  const sources = ['index.html', ...readdirSync('js').filter((f) => f.endsWith('.js')).map((f) => join('js', f))];
+  const missing = new Map();
+  for (const f of sources) {
+    const text = readFileSync(f, 'utf8');
+    for (const m of text.matchAll(/var\(\s*--([\w-]+)/g)) {
+      /* --u is set from JavaScript at runtime (the keyboard key unit), so it
+         is legitimately absent from the stylesheet. */
+      if (m[1] === 'u' || defined.has(m[1])) continue;
+      if (!missing.has(m[1])) missing.set(m[1], new Set());
+      missing.get(m[1]).add(f);
+    }
+  }
+  missing.size === 0
+    ? pass(`all ${defined.size} tokens resolve, across ${sources.length} source files`)
+    : fail('tokens used but never defined: ' +
+        [...missing].map(([t, fs]) => `--${t} (${[...fs].join(', ')})`).join('; '));
+}
 
 await browser.close();
 console.log(failures ? '\n' + failures + ' FAILED' : '\nall checks passed');

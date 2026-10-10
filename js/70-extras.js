@@ -5,7 +5,13 @@
 (function () {
 var $ = TB.$, el = TB.el, toast = TB.toast;
 var stream = null, v = $("#cam-video"), frames = 0, t0 = 0, timer = null;
+/* pending/gen pair for the same reason as the microphone: without it, repeated
+   clicks on Start leave orphaned video tracks that Stop never sees, and the
+   camera light stays on while the page claims the preview is off. */
+var pending = false, gen = 0;
 function stop() {
+  gen++;                 /* cancels any getUserMedia still in flight */
+  pending = false;
   if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
   stream = null; v.srcObject = null;
   $("#cam-start").disabled = false; $("#cam-stop").disabled = true; $("#cam-shot").disabled = true;
@@ -13,10 +19,19 @@ function stop() {
   TB.chip("cam", false, "off"); TB.badge("camera", "");
 }
 $("#cam-start").onclick = function () {
+  if (stream || pending) return;
+  pending = true;
+  var myGen = gen;
+  $("#cam-start").disabled = true;
   var id = $("#cam-dev").value;
   var c = { video: { width: { ideal: 1920 }, height: { ideal: 1080 } } };
   if (id && id.length > 4) c.video.deviceId = { exact: id };
   navigator.mediaDevices.getUserMedia(c).then(function (s) {
+    pending = false;
+    if (myGen !== gen || stream) {
+      s.getTracks().forEach(function (t) { t.stop(); });
+      return;
+    }
     stream = s; v.srcObject = s;
     var tr = s.getVideoTracks()[0], st = tr.getSettings();
     $("#cam-res").innerHTML = (st.width || "?") + "×" + (st.height || "?");
@@ -37,12 +52,19 @@ $("#cam-start").onclick = function () {
       frames = 0; t0 = performance.now();
     }, 1000);
   }).catch(function (err) {
+    pending = false;
+    $("#cam-start").disabled = false;
     toast("Camera blocked", err.name === "NotAllowedError" ? "Permission was denied for this page." : "Could not open that camera (" + err.name + ").", "bad");
   });
 };
 $("#cam-stop").onclick = stop;
 window.addEventListener("pagehide", stop);
-TB.onLeave("camera", function () { /* preview keeps running only while the page is open */ });
+/* This used to be an empty function with a comment claiming the preview only
+   runs while the page is open. It does not: nothing stopped the tracks, so the
+   webcam stayed live for the rest of the session once you navigated away. A
+   camera that is on while the operator believes it is off is not acceptable on
+   someone else's laptop, so leaving the page now really does release it. */
+TB.onLeave("camera", stop);
 $("#cam-shot").onclick = function () {
   if (!stream) return;
   var c = $("#cam-canvas"); c.width = v.videoWidth; c.height = v.videoHeight;
@@ -117,7 +139,7 @@ function fill() {
         var pct = Math.round(b.level * 100);
         var bar = $("#sy-battbar");
         bar.querySelector("i").style.width = pct + "%";
-        bar.querySelector("i").style.background = pct > 40 ? "var(--pass)" : pct > 15 ? "var(--warn)" : "var(--fail)";
+        bar.querySelector("i").style.background = pct > 40 ? "var(--pass)" : pct > 15 ? "var(--warn)" : "var(--red)";
         bar.querySelector("span").textContent = pct + "% " + (b.charging ? "· charging" : "· on battery");
         var d = $("#sy-batt"); d.innerHTML = "";
         kv(d, "Charge", pct + "%");
