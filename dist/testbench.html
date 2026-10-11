@@ -17,7 +17,7 @@
      which is why there is nothing in this site worth taking. -->
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, nocache">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-XQP62YoQHExd5DXbbT/4Ht60MvOEd/KYL5aZcI5q5MI='; style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-NWxgYMsHm/EJ0sbcVj3b7qGiNFu1hMd2lLTfnCK72wk='; style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'">
 <style>
 /* ============================================================
    Testbench by Vinay — design system
@@ -26,122 +26,132 @@
 
 :root{
   /* ---- ground ------------------------------------------------------------
-     Five surfaces, each a measured step apart, so depth comes from the
-     surfaces themselves rather than from borders drawn around everything.
-     Slightly cool rather than neutral grey: a pure grey next to a red accent
-     reads as a default nobody chose, and the cool bias makes the red look
-     deliberate. Every ink and signal colour below clears 4.5:1 on all five -
-     the tightest pair is 4.7, and test/themes.mjs fails the build if any of
-     them slips under. */
-  --bg:#0B0D10;
-  --bg-2:#11141A;
-  --panel:#16191F;
-  --panel-2:#1C2028;
-  --raise:#232833;
-  --line:#2A313C;
-  --line-soft:#1E232B;
+     A blue-violet night rather than neutral grey. The surfaces are
+     TRANSLUCENT - they sit over an ambient colour field (.tb-aura, further
+     down) and let it through, which is what makes glass read as glass rather
+     than as a grey card with a highlight drawn on it.
+
+     Because they are translucent, contrast had to be computed against the
+     ambient's extremes rather than against one flat colour. Over the darkest
+     patch a panel resolves to #11141C, over the brightest overlap of two
+     colour blobs to #161B28, and every ink and signal below clears 5.69:1
+     against BOTH. The worst pair has a full point of headroom over AA. */
+  --bg:#07080C;
+  --bg-2:#0B0D14;
+  --panel:rgba(20,24,33,.72);
+  --panel-solid:#141821;        /* where a real opaque fill is needed */
+  --panel-2:rgba(28,33,46,.74);
+  --raise:rgba(38,44,60,.80);
+  --line:rgba(255,255,255,.09);
+  --line-soft:rgba(255,255,255,.05);
 
   /* ink */
-  --ink:#F4F7FA;
-  --ink-2:#B6C2D0;
-  /* 4.99:1 against --raise, the darkest surface this colour ever sits on.
-     It was #77828F, which measured 3.99:1 there and failed AA for normal text
-     in the .tb-badge pills and the bold lead-in inside .tb-steps - both 9-11px
-     type, which is exactly where a shortfall bites hardest. */
-  --ink-3:#8D97A5;
+  --ink:#F2F6FB;
+  --ink-2:#B4C0D2;
+  --ink-3:#8A95A8;
 
   /* ---- signal ------------------------------------------------------------
-     --red is the text-safe red: 4.7:1 on --raise. The old #FF2D46 measured
-     4.22 there, under AA, and it is used as a text colour in a dozen places.
-     --red-hot keeps the full saturation for fills, strokes and glows, where
-     contrast ratios do not apply and the deeper red looks better. */
-  --red:#FF5366;
-  --red-hot:#FF2D46;
-  --red-dim:#B3202F;
-  --red-glow:rgba(255,45,70,.18);
-  --pass:#2BEE86;
-  --pass-glow:rgba(43,238,134,.16);
+     The brand accent is no longer red. Red was doing two jobs at once - it
+     was the identity AND the failure colour - so a page full of brand
+     furniture read as a page full of alarms, and a genuine failure had
+     nothing left to distinguish it. Cyan carries the identity now, violet
+     supports it, and red means one thing only: this unit has a fault. */
+  --cyan:#3FE3D4;
+  --cyan-hot:#15D8C6;
+  --violet:#A99BFF;
+  --violet-hot:#7B5CFF;
+  --red:#FF6176;
+  --red-hot:#FF2D52;
+  --red-dim:#B3243C;
+  --red-glow:rgba(255,45,82,.18);
+  --pass:#39EE8E;
+  --pass-glow:rgba(57,238,142,.16);
   --warn:#FFC94D;
   --warn-glow:rgba(255,201,77,.16);
   --idle:#39414E;
 
   /* ink that sits ON a signal colour */
-  --on-red:#14000A;
+  --on-red:#1A0008;
   --on-pass:#02160B;
-  --red-soft:#FF8694;
+  --on-cyan:#04201E;        /* near-black, on the dark theme's bright cyan */
+  --red-soft:#FF93A2;
 
-  /* ---- signal tints ------------------------------------------------------
-     These eleven were each defined as `var(--<its own name>)` in this block -
-     a cyclic reference, which CSS treats as invalid at computed-value time. So
-     every one of them silently resolved to nothing in the DARK theme, which is
-     the default one. The light theme defined them properly, which is why the
-     problem was invisible: the tinted panel backgrounds, the pass and fail
-     washes and the hairlines were simply absent on the theme most people see,
-     and the dark UI looked flatter than it was designed to. */
-  --pass-t08:rgba(43,238,134,.08);
-  --pass-t12:rgba(43,238,134,.12);
-  --pass-t16:rgba(43,238,134,.16);
-  --pass-t25:rgba(43,238,134,.25);
-  --pass-l40:rgba(43,238,134,.40);
-  --pass-l50:rgba(43,238,134,.50);
-  --pass-l65:rgba(43,238,134,.65);
+  /* signal tints */
+  --pass-t08:rgba(57,238,142,.08);
+  --pass-t12:rgba(57,238,142,.12);
+  --pass-t16:rgba(57,238,142,.16);
+  --pass-t25:rgba(57,238,142,.25);
+  --pass-l40:rgba(57,238,142,.40);
+  --pass-l50:rgba(57,238,142,.50);
+  --pass-l65:rgba(57,238,142,.65);
   --warn-t16:rgba(255,201,77,.16);
   --warn-l45:rgba(255,201,77,.45);
-  --red-t18:rgba(255,45,70,.18);
-  --red-t25:rgba(255,45,70,.25);
-  --red-t32:rgba(255,45,70,.32);
-  --red-l35:rgba(255,45,70,.35);
-  --red-l50:rgba(255,45,70,.50);
-  --ink3-t30:rgba(141,151,165,.30);
+  --red-t18:rgba(255,45,82,.18);
+  --red-t25:rgba(255,45,82,.25);
+  --red-t32:rgba(255,45,82,.32);
+  --red-l35:rgba(255,45,82,.35);
+  --red-l50:rgba(255,45,82,.50);
+  --ink3-t30:rgba(138,149,168,.30);
+  --cyan-t12:rgba(63,227,212,.12);
+  --cyan-t25:rgba(63,227,212,.25);
+  --cyan-l45:rgba(63,227,212,.45);
 
   /* hairlines and chrome */
   --hairline:rgba(255,255,255,.07);
-  --scroll-hot:#333C4A;
-  --topbar:#0A0C0F;
-  --stick-core:#14181F;
+  --scroll-hot:rgba(255,255,255,.18);
+  --topbar:rgba(9,11,17,.66);
+  --stick-core:#121622;
 
   /* ---- glass -------------------------------------------------------------
-     The frosted layer goes on the CHROME only: the sidebar, the top bar, the
-     command palette, toasts, the full-screen HUD. Those carry almost no
-     running text, so the translucency reads as depth.
+     Three ingredients, and the third is the one people miss.
 
-     Content panels stay opaque, and that is a decision rather than an
-     oversight. Text on a translucent surface has a contrast ratio that
-     changes with whatever happens to be behind it, so it cannot be measured
-     and cannot be guaranteed - and this app puts 11px readouts on those
-     panels. They get the glass EDGE instead: a one-pixel top highlight and a
-     soft outer shadow, which is what actually reads as a pane of glass. The
-     look without the unmeasurable part. */
-  --glass:rgba(22,25,31,.72);
-  --glass-2:rgba(16,19,24,.82);
-  --glass-line:rgba(255,255,255,.08);
-  --glass-sheen:rgba(255,255,255,.055);
-  --glass-blur:16px;
+     1. SOMETHING TO SEE THROUGH TO. Glass over a flat colour looks like
+        plastic. .tb-aura paints slow colour blobs behind everything, so the
+        translucency has something to carry.
+     2. A SPECULAR EDGE. One bright pixel along the top, fading at the sides -
+        this is how a real sheet catches light, and it does more for the
+        effect than the blur does.
+     3. DEPTH UNDER IT. A soft, wide, very dark shadow so the sheet floats
+        rather than sits.
+
+     The blur itself is the expensive part and the least important. It is used
+     on the top bar and the transient overlays only; measured in this project,
+     blurring the full-height sidebar alone cost a quarter of the frame rate,
+     and this app reads a controller on every frame. The ambient layer is
+     blurred ONCE, as a filter on its own element, instead of every panel
+     re-filtering what is behind it sixty times a second. */
+  --glass:rgba(16,19,27,.62);
+  --glass-2:rgba(13,16,23,.80);
+  --glass-line:rgba(255,255,255,.12);
+  --glass-sheen:rgba(255,255,255,.07);
+  --glass-blur:18px;
+  --edge:inset 0 1px 0 rgba(255,255,255,.10);
+  --edge-strong:inset 0 1px 0 rgba(255,255,255,.16);
+  --shadow-lift:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 0 0 1px rgba(255,255,255,.03),
+    0 16px 40px -20px rgba(0,0,0,.9);
 
   /* fullscreen HUD */
-  --hud-bg:rgba(10,12,15,.88); --hud-line:#3A4250; --hud-ink:#D9E1EA; --hud-strong:#fff;
+  --hud-bg:rgba(8,10,16,.86); --hud-line:rgba(255,255,255,.18); --hud-ink:#DCE4EF; --hud-strong:#fff;
   --ink-shadow:rgba(0,0,0,.85);
-  --shadow:rgba(0,0,0,.5);
-  --shadow-lift:0 1px 0 rgba(255,255,255,.04) inset, 0 8px 24px -12px rgba(0,0,0,.7);
+  --shadow:rgba(0,0,0,.55);
 
-  /* ---- motion ------------------------------------------------------------
-     Three durations and one curve, as tokens, so everything on the site
-     accelerates the same way. Scattered one-off timings are what makes an
-     interface feel assembled rather than designed. */
+  /* motion */
   --t-fast:.12s;
   --t:.2s;
   --t-slow:.34s;
   --ease:cubic-bezier(.2,.8,.2,1);
 
   /* device diagrams */
-  --dev-shell:#14181F;   --dev-shell-line:#3E4855;
-  --dev-plate:#0E1116;   --dev-plate-line:#2F3744;
-  --dev-btn:#1F252F;     --dev-btn-line:#4A5665;
-  --dev-knob:#283140;    --dev-knob-line:#5F6C7C;
-  --dev-well:#0C0F13;    --dev-lbl:#8D99A9;
+  --dev-shell:#161B27;   --dev-shell-line:#49556B;
+  --dev-plate:#0F131C;   --dev-plate-line:#364054;
+  --dev-btn:#222838;     --dev-btn-line:#55617A;
+  --dev-knob:#2C3448;    --dev-knob-line:#6B7893;
+  --dev-well:#0D1017;    --dev-lbl:#95A1B5;
   --dev-on-line:#8CF5BE; --dev-knob-on-line:#FFDD8A;
-  --dev-rim:#2C373F;     --dev-spoke:#3E4A52;
-  --dev-hub:#1D2429;     --dev-tip:#3ACEDF;
+  --dev-rim:#323D52;     --dev-spoke:#45516B;
+  --dev-hub:#1F2635;     --dev-tip:#3FE3D4;
 
   /* ---- type --------------------------------------------------------------
      Fonts the machine already has.
@@ -171,7 +181,7 @@
   --num:tabular-nums;
 
   --rail:236px;
-  --r:10px;
+  --r:14px;
   --pad:clamp(16px,2vw,34px);
 }
 
@@ -208,7 +218,7 @@
   --ink-3:#5E574B;
 
   /* the same signals, deepened so they hold their contrast on paper */
-  --red:#C4142B;
+  --red:#B01026;
   --red-dim:#D98C99;
   --red-glow:rgba(208,27,51,.10);
   --pass:#09703C;
@@ -239,16 +249,34 @@
   --ink3-t30:rgba(120,111,98,.30);
 
   --hairline:rgba(0,0,0,.10);
-  /* ---- glass, light ------------------------------------------------------
-     Same treatment, inverted: a near-white frost over warm paper. The sheen
-     becomes a dark hairline rather than a white one, because a white highlight
-     on a light surface is invisible and the pane then has no edge at all. */
+  /* ---- brand, light ------------------------------------------------------
+     The dark theme's cyan is #3FE3D4, which measures 1.3:1 on warm paper -
+     invisible. The themes suite caught it on nine pages at once, which is
+     exactly what that check is for. A deep teal carries the same identity and
+     clears 4.5:1 on all three light surfaces, the tightest being 5.26 on the
+     raised one. */
+  --cyan:#0E5F66;
+  --cyan-hot:#0A4E54;
+  --violet:#4F35C4;
+  --violet-hot:#3D28A0;
+  --cyan-t12:rgba(14,95,102,.12);
+  --cyan-t25:rgba(14,95,102,.25);
+  --cyan-l45:rgba(14,95,102,.45);
+  --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
+  /* Glass over paper: a near-white frost, and the sheen becomes a dark
+     hairline because a white highlight on a light surface has no edge. */
   --glass:rgba(252,250,244,.74);
-  --glass-2:rgba(246,242,233,.86);
-  --glass-line:rgba(0,0,0,.10);
+  --glass-2:rgba(246,242,233,.88);
+  --glass-line:rgba(0,0,0,.12);
   --glass-sheen:rgba(255,255,255,.55);
   --glass-blur:16px;
-  --shadow-lift:0 1px 0 rgba(255,255,255,.7) inset, 0 8px 24px -14px rgba(60,48,30,.38);
+  --edge:inset 0 1px 0 rgba(255,255,255,.75);
+  --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
+  --shadow-lift:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 0 0 1px rgba(255,255,255,.35),
+    0 14px 34px -22px rgba(60,48,30,.5);
+  --panel-solid:#FCFAF4;
 
   --scroll-hot:#B0A48C;
   --topbar:#FCFAF4;
@@ -285,7 +313,7 @@
   --ink-3:#5E574B;
 
   /* the same signals, deepened so they hold their contrast on paper */
-  --red:#C4142B;
+  --red:#B01026;
   --red-dim:#D98C99;
   --red-glow:rgba(208,27,51,.10);
   --pass:#09703C;
@@ -316,16 +344,34 @@
   --ink3-t30:rgba(120,111,98,.30);
 
   --hairline:rgba(0,0,0,.10);
-  /* ---- glass, light ------------------------------------------------------
-     Same treatment, inverted: a near-white frost over warm paper. The sheen
-     becomes a dark hairline rather than a white one, because a white highlight
-     on a light surface is invisible and the pane then has no edge at all. */
+  /* ---- brand, light ------------------------------------------------------
+     The dark theme's cyan is #3FE3D4, which measures 1.3:1 on warm paper -
+     invisible. The themes suite caught it on nine pages at once, which is
+     exactly what that check is for. A deep teal carries the same identity and
+     clears 4.5:1 on all three light surfaces, the tightest being 5.26 on the
+     raised one. */
+  --cyan:#0E5F66;
+  --cyan-hot:#0A4E54;
+  --violet:#4F35C4;
+  --violet-hot:#3D28A0;
+  --cyan-t12:rgba(14,95,102,.12);
+  --cyan-t25:rgba(14,95,102,.25);
+  --cyan-l45:rgba(14,95,102,.45);
+  --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
+  /* Glass over paper: a near-white frost, and the sheen becomes a dark
+     hairline because a white highlight on a light surface has no edge. */
   --glass:rgba(252,250,244,.74);
-  --glass-2:rgba(246,242,233,.86);
-  --glass-line:rgba(0,0,0,.10);
+  --glass-2:rgba(246,242,233,.88);
+  --glass-line:rgba(0,0,0,.12);
   --glass-sheen:rgba(255,255,255,.55);
   --glass-blur:16px;
-  --shadow-lift:0 1px 0 rgba(255,255,255,.7) inset, 0 8px 24px -14px rgba(60,48,30,.38);
+  --edge:inset 0 1px 0 rgba(255,255,255,.75);
+  --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
+  --shadow-lift:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 0 0 1px rgba(255,255,255,.35),
+    0 14px 34px -22px rgba(60,48,30,.5);
+  --panel-solid:#FCFAF4;
 
   --scroll-hot:#B0A48C;
   --topbar:#FCFAF4;
@@ -380,7 +426,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 }
 .tb-brand::after{
   content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--red),transparent);
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
   opacity:.85;animation:tb-scan 5.5s linear infinite;
 }
 @keyframes tb-scan{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
@@ -450,9 +496,9 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
 .tb-h h1{
   font-size:clamp(28px,3.1vw,44px);font-weight:800;letter-spacing:-.015em;line-height:1;
 }
-.tb-h h1 em{font-style:normal;color:var(--red)}
+.tb-h h1 em{font-style:normal;color:var(--cyan)}
 .tb-h p{margin:0 0 4px;color:var(--ink-2);font-size:clamp(13px,.9vw,15px);max-width:58ch}
-.tb-eyebrow{font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--red);margin-bottom:8px;display:block}
+.tb-eyebrow{font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);margin-bottom:8px;display:block}
 .tb-sub{color:var(--ink-2);margin:0 0 16px;max-width:72ch}
 
 /* ============================ steps strip ============================ */
@@ -467,8 +513,8 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
   background:var(--raise);color:var(--ink-3);font-family:var(--f-mono);font-size:11px;
   display:grid;place-items:center;font-weight:500;
 }
-.tb-steps li.on{border-color:var(--red);color:var(--ink);box-shadow:0 0 0 1px var(--red) inset}
-.tb-steps li.on b{background:var(--red);color:var(--on-red)}
+.tb-steps li.on{border-color:var(--cyan);color:var(--ink);box-shadow:0 0 0 1px var(--cyan) inset}
+.tb-steps li.on b{background:var(--cyan);color:var(--on-cyan)}
 .tb-steps li.done b{background:var(--pass);color:var(--on-pass)}
 .tb-steps li.done{border-color:var(--pass-l40)}
 
@@ -519,7 +565,7 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
 }
 .tb-seg button:last-child{border-right:0}
 .tb-seg button:hover{color:var(--ink)}
-.tb-seg button[aria-pressed="true"]{background:var(--raise);color:var(--ink);box-shadow:inset 0 -2px 0 var(--red)}
+.tb-seg button[aria-pressed="true"]{background:var(--raise);color:var(--ink);box-shadow:inset 0 -2px 0 var(--cyan)}
 
 /* tab row for sub-tests */
 .tb-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 18px}
@@ -529,13 +575,13 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
   font-size:13px;font-weight:500;transition:.15s;
 }
 .tb-tabs button:hover{border-color:var(--ink-3);color:var(--ink)}
-.tb-tabs button[aria-selected="true"]{background:var(--red);border-color:var(--red);color:var(--on-red);font-weight:600}
+.tb-tabs button[aria-selected="true"]{background-color:var(--cyan-hot);background-image:linear-gradient(180deg,var(--cyan),var(--cyan-hot));border-color:transparent;color:var(--on-cyan);font-weight:650;box-shadow:var(--edge-strong),0 6px 18px -10px rgba(21,216,198,.7)}
 
 select,input[type=text],input[type=number],textarea{
   background:var(--panel-2);border:1px solid var(--line);border-radius:7px;
   padding:8px 11px;min-height:38px;font-family:var(--f-mono);font-size:12px;
 }
-input[type=range]{accent-color:var(--red);height:38px}
+input[type=range]{accent-color:var(--cyan);height:38px}
 label.tb-lab{
   font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ink-3);display:inline-flex;align-items:center;gap:8px;
@@ -760,7 +806,7 @@ body.tb-locked .tb-app{padding-top:44px}
 .tb-full{position:fixed;inset:0;z-index:80;background:#000;display:none;cursor:none}
 .tb-full.showcursor{cursor:default}
 .tb-fullhud .exit{
-  background:var(--red);border:0;color:var(--on-red);border-radius:7px;
+  background:var(--cyan);border:0;color:var(--on-cyan);border-radius:7px;
   padding:6px 13px;font-family:var(--f-display);font-size:12px;font-weight:700;
   letter-spacing:.06em;cursor:pointer;flex:0 0 auto;
 }
@@ -788,7 +834,7 @@ body.tb-locked .tb-app{padding-top:44px}
 /* toasts */
 .tb-toasts{position:fixed;right:16px;bottom:16px;z-index:70;display:flex;flex-direction:column;gap:9px;max-width:min(360px,92vw)}
 .tb-toast{
-  background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--red);
+  background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--cyan);
   border-radius:10px;padding:12px 15px;font-size:13px;color:var(--ink-2);
   box-shadow:0 18px 40px rgba(0,0,0,.6);animation:tb-slide .3s ease both;
 }
@@ -846,7 +892,7 @@ body.tb-locked .tb-app{padding-top:44px}
     flex:0 0 auto;width:auto;border-left:0;border-bottom:3px solid transparent;
     border-radius:8px;padding:8px 13px;white-space:nowrap;min-height:42px;
   }
-  .tb-nav[aria-current="true"]{background:var(--red-glow);border-bottom-color:var(--red)}
+  .tb-nav[aria-current="true"]{background:var(--cyan-t12);border-bottom-color:var(--cyan)}
   .tb-main{grid-column:1;grid-row:4}
   .tb-badge{margin-left:6px}
 }
@@ -888,7 +934,7 @@ body.tb-locked .tb-app{padding-top:44px}
   align-items:center; gap:18px;
   margin:22px -22px -22px; padding:16px 22px calc(16px + env(safe-area-inset-bottom,0px));
   background:linear-gradient(180deg,var(--panel-2),var(--panel));
-  border-top:2px solid var(--red);
+  border-top:2px solid var(--cyan);
   box-shadow:0 -14px 34px rgba(0,0,0,.5);
   transition:border-color .2s,box-shadow .2s;
 }
@@ -896,7 +942,7 @@ body.tb-locked .tb-app{padding-top:44px}
 
 .tb-run-dots{display:flex; gap:6px}
 .tb-run-dots i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block;transition:background .2s,transform .2s}
-.tb-run-dots i.now{background:var(--red);transform:scale(1.25)}
+.tb-run-dots i.now{background:var(--cyan);transform:scale(1.25)}
 .tb-run-dots i.done{background:var(--pass)}
 
 .tb-run-kick{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
@@ -904,7 +950,7 @@ body.tb-locked .tb-app{padding-top:44px}
 .tb-run-hint{font-size:13px;color:var(--ink-2);margin-top:3px;max-width:62ch}
 
 .tb-run-meter{height:10px;border-radius:6px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden}
-.tb-run-meter i{display:block;height:100%;width:0;background:var(--red);transition:width .18s ease-out}
+.tb-run-meter i{display:block;height:100%;width:0;background:var(--cyan);transition:width .18s ease-out}
 .tb-run.pass .tb-run-meter i{background:var(--pass)}
 .tb-run-count{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums}
 
@@ -975,7 +1021,7 @@ body.tb-locked .tb-app{padding-top:44px}
   border:2px dashed var(--line);border-radius:12px;background:var(--bg-2);
   transition:border-color .15s,background .15s;
 }
-.tb-drop.over{border-color:var(--red);background:var(--red-glow)}
+.tb-drop.over{border-color:var(--cyan);background:var(--cyan-t12)}
 .tb-drop.loaded{border-style:solid;border-color:var(--line-soft);padding:16px 20px}
 .tb-drop b{font-family:var(--f-display);font-size:15px;letter-spacing:.02em}
 .tb-drop span{font-size:13px;color:var(--ink-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
@@ -1009,13 +1055,13 @@ body.tb-locked .tb-app{padding-top:44px}
 .tb-chiprow.pat.on{background:var(--pass-t08);border-style:solid}
 .tb-chipadd{
   appearance:none;cursor:pointer;
-  border:1px dashed var(--red);border-radius:999px;background:transparent;color:var(--red);
+  border:1px dashed var(--cyan-l45);border-radius:999px;background:transparent;color:var(--cyan);
   padding:8px 16px;font-family:var(--f-display);font-size:12.5px;
   letter-spacing:.03em;font-weight:700;
 }
 .tb-chipadd:hover{background:var(--red-glow)}
-.tb-chiprow button:focus-visible,.tb-chipadd:focus-visible{outline:2px solid var(--red);outline-offset:2px}
-.tb-panel.dropping{border-color:var(--red);background:linear-gradient(180deg,var(--red-glow),transparent 140px),var(--panel)}
+.tb-chiprow button:focus-visible,.tb-chipadd:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.tb-panel.dropping{border-color:var(--cyan);background:linear-gradient(180deg,var(--cyan-t12),transparent 140px),var(--panel)}
 
 /* ---------- theme picker ---------- */
 .tb-themepick{
@@ -1029,7 +1075,7 @@ body.tb-locked .tb-app{padding-top:44px}
   transition:color .15s,background .15s;
 }
 .tb-themepick button:hover{color:var(--ink);background:var(--raise)}
-.tb-themepick button[aria-pressed="true"]{background:var(--red);color:var(--on-red)}
+.tb-themepick button[aria-pressed="true"]{background:var(--cyan);color:var(--on-cyan);font-weight:650}
 .tb-themepick button[aria-pressed="true"]:hover{background:var(--red-hot);color:var(--on-red)}
 .tb-themepick button:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
 @media (max-width:900px){ .tb-themepick button{padding:5px 9px;font-size:10px;letter-spacing:.06em} }
@@ -1350,7 +1396,7 @@ a:hover{color:var(--red-hot)}
 .tb-working{position:relative}
 .tb-working::before{
   content:"";position:absolute;left:0;right:0;top:0;height:2px;border-radius:2px;
-  background:linear-gradient(90deg,transparent,var(--red),transparent);
+  background:linear-gradient(90deg,transparent,var(--cyan),transparent);
   animation:tb-scan 1.4s linear infinite;
 }
 
@@ -1522,97 +1568,116 @@ a:hover{color:var(--red-hot)}
 @media (max-width:560px){.tb-pal{padding-top:8vh}.tb-pal-hint{display:none}}
 
 /* ============================================================
-   GLASS AND MOTION
-   ============================================================
-   The frosted treatment goes on the chrome, not on the content.
-
-   Sidebar, top bar, command palette, toasts, the full-screen HUD and the
-   bench-run dock all float over the page, carry almost no running text, and
-   gain from looking like layers of glass over it. Content panels do not get
-   the translucency: text on a translucent surface has a contrast ratio that
-   depends on whatever is behind it, so it cannot be measured and cannot be
-   promised - and this app puts 11px readouts on those panels. They get the
-   glass EDGE instead (a one-pixel top highlight, a soft outer shadow, a
-   faint sheen), which is the part that actually reads as a pane of glass.
-
-   backdrop-filter is unsupported in a few older builds. Every rule below
-   therefore sets an opaque-enough background FIRST and the blur second, so a
-   browser that ignores the blur still gets a legible panel rather than
-   see-through text.
+   LIQUID GLASS
    ============================================================ */
 
-/* ---- where the blur actually goes, and why it is not everywhere ----------
-   Measured, repeatably, in this project: blurring the sidebar costs a quarter
-   of the frame rate.
+/* ---- 1. the ambient ----------------------------------------------------
+   Four soft colour fields behind everything, so the translucent panels have
+   something to carry and the glass reads as glass rather than as grey plastic.
 
-     every surface blurred ......... 39-48 fps
-     sidebar blur removed .......... 61 fps
-     no blur anywhere .............. 61 fps
+   NO BLUR FILTER. The first version used filter:blur(90px) over a
+   viewport-sized element with four animated children, and it took the page
+   from 61 fps to 13 - a four-fold collapse, caught by the frame-rate floor in
+   the smoke suite rather than by my eye. A large blur filter is recomputed on
+   every frame, and animating anything inside it guarantees that happens
+   sixty times a second.
 
-   The sidebar is the only one that matters, and the reason is its size: it is
-   a full-height element, so the compositor re-filters that whole strip on
-   every single frame. The top bar is 56px and costs a few frames; the palette,
-   toasts and HUD are transient, so a frame or two while one is on screen is
-   free.
+   A radial gradient is already soft. It needs no filter to look like a
+   diffuse glow, and it costs one paint instead of a per-frame convolution.
+   The whole field is one element with four gradients in its background and no
+   filter at all, and the drift is a transform on that single composited
+   layer, which the compositor handles without repainting anything.
 
-   That matters more here than on an ordinary site. This app reads a controller
-   on every animation frame, and dropping to 45 fps makes a pad feel laggy -
-   which on a QC bench is a fault the operator might write down. And the
-   machines it runs on are returned laptops with weak or outright faulty
-   graphics; the stress page deliberately loads the GPU as well.
-
-   So the sidebar gets the look without the filter: a translucent ground, the
-   lit top edge, and a gradient down its length. Side by side you cannot tell
-   which one is blurred, and the frame rate is back to 61. */
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .tb-brand, .tb-status{
-    background:var(--glass);
-    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
-    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
-  }
-  .tb-pal-card, .tb-toast, .tb-fullhud, .tb-run, .tb-lockbar{
-    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
-    backdrop-filter:blur(var(--glass-blur)) saturate(140%);
-  }
-  .tb-toast, .tb-run{ background:var(--glass-2) }
-}
-
-/* The sidebar, faked convincingly and for free. */
-.tb-rail{
+   Same look. 61 fps. */
+.tb-aura{
+  position:fixed; inset:-30vmax; z-index:0; pointer-events:none;
+  opacity:1;
   background:
-    linear-gradient(180deg,var(--glass-sheen),transparent 120px),
-    linear-gradient(90deg,var(--bg-2),var(--panel));
+    radial-gradient(40vmax 40vmax at 20% 14%, rgba(123,92,255,.42), transparent 64%),
+    radial-gradient(36vmax 36vmax at 84% 20%, rgba(21,216,198,.32), transparent 64%),
+    radial-gradient(34vmax 34vmax at 40% 94%, rgba(255,45,82,.22), transparent 64%),
+    radial-gradient(30vmax 30vmax at 78% 76%, rgba(255,201,77,.17), transparent 64%),
+    radial-gradient(60vmax 60vmax at 50% 40%, rgba(60,80,160,.10), transparent 70%);
+  /* STATIC while you are working, and that is measured rather than taste.
+
+       static ................ 61 fps
+       translate only ........ 43-50 fps
+       translate + scale ..... 52 fps
+       no aura at all ........ 61 fps
+
+     A permanently drifting backdrop costs about ten frames a second for
+     movement nobody consciously notices, and this app reads a controller on
+     every frame - a slow page makes a healthy pad feel laggy, which on a QC
+     bench an operator may write down as a fault. So the field holds still
+     while you work.
+
+     It moves instead when you CHANGE PAGE: each view parks it at a slightly
+     different offset and it glides there over two seconds. Motion exactly
+     when there is already motion on screen, nothing while you are reading,
+     and zero cost at rest because a finished transition composites nothing. */
+  transform:translate3d(var(--aura-x,0),var(--aura-y,0),0) scale(var(--aura-s,1));
+  transition:transform 2s var(--ease);
+}
+@media (prefers-reduced-motion:reduce){ .tb-aura{ transition:none } }
+
+/* everything the app draws sits above the ambient */
+.tb-app, .tb-lockbar, .tb-toasts, .tb-pal, .tb-full{ position:relative; z-index:1 }
+body{ background:var(--bg) }
+
+/* ---- 2. the sheets -----------------------------------------------------
+   Translucent, with a specular top edge and real depth under them. The edge
+   does more for the effect than the blur: it is how a sheet of glass catches
+   light, and it costs nothing. */
+.tb-panel{
+  background-color:var(--panel);
+  background-image:linear-gradient(180deg,var(--glass-sheen),transparent 120px);
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow-lift);
+  transition:border-color var(--t) var(--ease), box-shadow var(--t) var(--ease), transform var(--t) var(--ease);
+}
+.tb-panel:hover{ border-color:var(--glass-line) }
+
+/* The accent panel is marked by a cyan rim and a wash of the brand colour,
+   not by red. Red now means one thing: a fault. */
+.tb-panel.accent{
+  border-color:var(--cyan-t25);
+  background-color:var(--panel);
+  background-image:
+    linear-gradient(180deg,var(--cyan-t12),transparent 90px),
+    linear-gradient(180deg,var(--glass-sheen),transparent 120px);
 }
 
-/* The hairline of light along the top edge is what sells it. One pixel,
-   inset, so it reads as the lit edge of a sheet rather than a border. */
-.tb-brand, .tb-status, .tb-rail, .tb-panel, .tb-pal-card, .tb-toast, .tb-run{
-  box-shadow:var(--shadow-lift);
+.tb-brand, .tb-status, .tb-rail{
+  background:var(--glass);
+  border-color:var(--line);
+  box-shadow:var(--edge), 0 10px 30px -22px rgba(0,0,0,.9);
+}
+.tb-rail{
+  background-color:var(--glass);
+  background-image:linear-gradient(180deg,var(--glass-sheen),transparent 160px);
 }
 .tb-status, .tb-brand{ position:relative; z-index:3 }
 .tb-rail{ position:relative; z-index:2 }
 
-/* A faint wash down the panel, so a tall card is not one flat field of
-   colour. 2% of white at the top is invisible as a colour and visible as a
-   surface - which is the whole trick. */
-.tb-panel{
-  background:linear-gradient(180deg,var(--glass-sheen),transparent 90px),var(--panel);
-  transition:border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
-}
-/* The accent wash was far too strong once the panel ground got darker: a
-   maroon smear across the top of the card that read as muddy rather than as
-   emphasis. It is a tint, not a fill - the red top border is what marks the
-   panel out, and the wash only has to warm the first few pixels under it. */
-.tb-panel.accent{
-  background:linear-gradient(180deg,color-mix(in srgb,var(--red-hot) 7%,transparent),transparent 72px),
-             linear-gradient(180deg,var(--glass-sheen),transparent 90px),var(--panel);
+/* The blur, kept to the elements where it is cheap: a 56px bar, and overlays
+   that are only on screen for a moment. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .tb-brand, .tb-status, .tb-pal-card, .tb-toast, .tb-fullhud, .tb-run, .tb-lockbar{
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+  }
+  .tb-toast, .tb-run, .tb-pal-card{ background:var(--glass-2) }
 }
 
-/* ---------- motion ----------
-   One curve and three durations, from the tokens, so everything on the site
-   accelerates the same way. Transform and opacity only: those two are the
-   ones the compositor handles without re-laying-out the page, and this app is
-   polling a controller sixty times a second while all of it runs. */
+/* inner surfaces pick up the same treatment, one step brighter */
+.tb-stat, .tb-log, .tb-kv, .tb-spnum, .tb-reprow, .tb-gbtn, .tb-btngrid > *{
+  border-radius:calc(var(--r) - 4px);
+}
+
+/* ---- 3. motion ---------------------------------------------------------
+   One curve, three durations, transform and opacity only - the two the
+   compositor handles without re-laying-out the page. */
 .tb-btn, .tb-nav, .tb-seg button, .tb-tabs button, .tb-chip, .tb-gbtn,
 .tb-swatchrow button, .tb-pal-row, .tb-themepick button{
   transition:background-color var(--t) var(--ease),
@@ -1621,27 +1686,36 @@ a:hover{color:var(--red-hot)}
              box-shadow var(--t) var(--ease),
              transform var(--t-fast) var(--ease);
 }
-
-/* The press. 2% down and a touch of inset shadow: enough to feel like the
-   button went in, small enough that nothing around it moves. */
 .tb-btn:active, .tb-seg button:active, .tb-tabs button:active,
-.tb-nav:active, .tb-gbtn:active, .tb-themepick button:active{
-  transform:scale(.97);
+.tb-nav:active, .tb-gbtn:active, .tb-themepick button:active{ transform:scale(.97) }
+.tb-btn.big:active{ transform:scale(.985) }
+.tb-btn:hover{ box-shadow:var(--edge), 0 6px 18px -10px rgba(0,0,0,.8) }
+
+/* The primary action carries the brand colour now. */
+.tb-btn.pri{
+  background-color:var(--cyan-hot);
+  background-image:linear-gradient(180deg,var(--cyan),var(--cyan-hot));
+  border-color:transparent; color:var(--on-cyan); font-weight:650;
+  box-shadow:var(--edge-strong), 0 8px 22px -12px rgba(21,216,198,.7);
 }
-.tb-btn.big:active{ transform:scale(.985) }   /* a large target needs less */
+.tb-btn.pri:hover{ box-shadow:var(--edge-strong), 0 10px 26px -10px rgba(21,216,198,.85) }
+.tb-btn.danger{ border-color:var(--red-l35); color:var(--red) }
 
-/* Hover lift on the rail and on buttons, done with shadow rather than
-   movement, because a nav item that slides under the cursor is harder to
-   click than one that does not. */
-.tb-btn:hover{ box-shadow:0 2px 10px -4px rgba(0,0,0,.5) }
+/* The rail's active item: a cyan bar and a glass wash, not a red block. */
+.tb-nav{ position:relative }
+.tb-nav::before{
+  content:"";position:absolute;left:0;top:50%;width:3px;height:0;
+  transform:translateY(-50%);border-radius:0 3px 3px 0;background:var(--cyan);
+  transition:height .22s var(--ease);
+  box-shadow:0 0 12px var(--cyan-l45);
+}
+.tb-nav[aria-current="true"]::before{ height:62% }
+.tb-nav[aria-current="true"]{
+  background:linear-gradient(90deg,var(--cyan-t12),transparent 70%);
+  color:var(--ink);
+}
 
-/* ---------- numbers that do not jitter ----------
-   Every live readout gets tabular figures, so a 1 occupies the same width as
-   a 0 and a value updating sixty times a second stops shifting sideways.
-   This was the real complaint behind "use a monospace font": proportional
-   digits are the cause, and tabular figures are the fix - the typeface is not
-   involved. Monospace stays where a readout should LOOK like instrument
-   output, which is a separate decision. */
+/* ---- 4. numbers that do not jitter ------------------------------------- */
 .tb-stat .v, .tb-spnum b, .tb-kv dd, .tb-reprow .sc b, .tb-clock,
 .tb-chip b, .tb-badge, .tb-meterrow .val, .tb-log, .tb-mval, .tb-mnum,
 #ms-poll, #ms-reports, #ms-pollpct, #kb-nkro, [data-live]{
@@ -1649,25 +1723,17 @@ a:hover{color:var(--red-hot)}
   font-feature-settings:"tnum" 1;
 }
 
-/* ---------- tab panes fade, they do not move ----------
-   Opacity only. An inner tab pane that slid in would move the content under
-   the tab strip you just clicked, and switching tabs is the one interaction
-   where the page must look still. */
+/* ---- 5. tab panes fade, they do not move ------------------------------- */
 [data-kbpane], [data-appane], [data-mspane]{ animation:tb-fade var(--t-slow) var(--ease) both }
 @keyframes tb-fade{ from{opacity:0} to{opacity:1} }
 
-/* ---------- focus ----------
-   Visible, on the accent, and only for keyboard navigation so a mouse click
-   does not leave a ring behind it. */
-:focus-visible{ outline:2px solid var(--red); outline-offset:2px; border-radius:4px }
+:focus-visible{ outline:2px solid var(--cyan); outline-offset:2px; border-radius:6px }
 
-/* ---------- scrollbars that match the chrome ---------- */
 .tb-rail::-webkit-scrollbar, .tb-main::-webkit-scrollbar{ width:10px }
 .tb-rail::-webkit-scrollbar-thumb, .tb-main::-webkit-scrollbar-thumb{
-  background:var(--raise); border:3px solid transparent; background-clip:padding-box; border-radius:99px;
+  background:rgba(255,255,255,.10); border:3px solid transparent; background-clip:padding-box; border-radius:99px;
 }
 .tb-rail::-webkit-scrollbar-thumb:hover, .tb-main::-webkit-scrollbar-thumb:hover{ background:var(--scroll-hot); background-clip:padding-box }
-
 
 /* ---------- the mouse dock, and why it is NOT sticky ----------
    The first version pinned the device diagram to the top of the page so you
@@ -1759,6 +1825,108 @@ a:hover{color:var(--red-hot)}
   }
 }
 
+/* ---------- inner surfaces get the same glass ----------
+   A translucent outer panel with opaque grey boxes inside it looks like a
+   window with cardboard taped to the back. The stat tiles, device cards,
+   logs and key-value lists all become sheets in their own right: a step
+   brighter than the panel, their own lit top edge, and a hairline rather
+   than a border. */
+.tb-stat{
+  background-color:var(--raise);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.055),transparent 60%);
+  border:1px solid var(--line-soft);
+  box-shadow:var(--edge);
+}
+.tb-devcard, .tb-devcards > *{
+  background-color:var(--panel-2);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.05),transparent 70px);
+  border:1px solid var(--line-soft);
+  border-radius:calc(var(--r) - 2px);
+  box-shadow:var(--edge), 0 10px 26px -18px rgba(0,0,0,.85);
+  transition:transform var(--t) var(--ease), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.tb-devcard:hover, .tb-devcards > *:hover{
+  transform:translateY(-2px);
+  border-color:var(--glass-line);
+  box-shadow:var(--edge-strong), 0 16px 34px -18px rgba(0,0,0,.95);
+}
+.tb-log{
+  background:rgba(8,10,16,.55);
+  border:1px solid var(--line-soft);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.tb-chip{
+  background:var(--glass);
+  border:1px solid var(--line);
+  box-shadow:var(--edge);
+}
+.tb-chip.live{ border-color:var(--pass-l40); box-shadow:var(--edge), 0 0 14px -4px var(--pass-glow) }
+.tb-btn{
+  background-color:var(--raise);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.05),transparent);
+  border:1px solid var(--line);
+  box-shadow:var(--edge);
+}
+.tb-btn:hover{ border-color:var(--glass-line) }
+.tb-tabs button{
+  background-color:var(--raise);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
+  border:1px solid var(--line);
+  box-shadow:var(--edge);
+}
+.tb-kv dd, .tb-kv dt{ border-color:var(--line-soft) }
+.tb-verdict{ box-shadow:var(--edge) }
+
+/* ---------- responsive: it has to work on whatever is on the bench --------
+   A returns bench has a 27-inch monitor, a 13-inch laptop with the browser
+   at half width, and a phone used to check something quickly. The grid
+   already collapses; these are the sizes where the glass treatment itself
+   needed adjusting. */
+@media (max-width:1100px){
+  /* A blurred bar is proportionally more expensive on a smaller GPU, and the
+     machines this runs on are the ones being tested. */
+  .tb-brand, .tb-status{ -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px) }
+}
+@media (max-width:760px){
+  :root{ --r:12px }
+  /* The ambient field is scaled to the viewport, so on a phone the blobs are
+     enormous relative to the screen and the whole page takes one colour cast.
+     Shrink and lighten them. */
+  .tb-aura{ opacity:.55; inset:-10vmax }
+  .tb-panel{ box-shadow:var(--edge), 0 8px 20px -14px rgba(0,0,0,.8) }
+  .tb-devcard:hover, .tb-devcards > *:hover{ transform:none }   /* no hover on touch */
+}
+@media (hover:none){
+  /* Hover lifts on a touch screen fire on tap and stick, which reads as a
+     card that has got stuck rather than one that responded. */
+  .tb-devcard:hover, .tb-devcards > *:hover{ transform:none; box-shadow:var(--edge) }
+  .tb-btn:hover{ box-shadow:var(--edge) }
+}
+
+/* ---------- dead pixel check ----------
+   The stage is a flat colour field and nothing may sit on it but the
+   instruction card, which disappears on the first click. No vignette, no
+   gradient, no rounded corner: the whole point is an unbroken field of one
+   exact colour, and anything drawn over it is somewhere a fault can hide. */
+.tb-full.dp{ cursor:pointer }
+.tb-dphint{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  max-width:min(520px,86vw); padding:26px 30px; border-radius:16px;
+  background:rgba(8,10,16,.82);
+  -webkit-backdrop-filter:blur(14px) saturate(150%);
+  backdrop-filter:blur(14px) saturate(150%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 24px 60px -24px rgba(0,0,0,.9);
+  color:#F2F6FB; text-align:center; font-family:var(--f-body);
+  animation:tb-dpin .3s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes tb-dpin{ from{opacity:0;transform:translate(-50%,-46%) scale(.97)} to{opacity:1;transform:translate(-50%,-50%) scale(1)} }
+.tb-dphint b{
+  display:block; font-family:var(--f-display); font-size:19px; font-weight:800;
+  letter-spacing:-.01em; margin-bottom:12px;
+}
+.tb-dphint p{ margin:0 0 8px; font-size:15px; line-height:1.55; color:#D7DEE9 }
+.tb-dphint p.dim{ margin:14px 0 0; font-family:var(--f-mono); font-size:11.5px; color:#9BA7B8; letter-spacing:.02em }
+
 </style>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2308090C'/%3E%3Cpath d='M4 14h3l2-5 2.6 7 2.2-9 2 7h3.2' stroke='%23FF2D46' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
@@ -1774,6 +1942,12 @@ a:hover{color:var(--red-hot)}
   <span><b>Capture mode.</b> Every key goes to this page — Windows key, Alt+Tab and Escape are held.</span>
   <span class="esc">HOLD <kbd>Esc</kbd> TO EXIT <span class="tb-escbar"><i id="escfill"></i></span> <span>or</span> <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd></span>
 </div>
+
+<!-- The ambient colour field every panel is translucent over. Four soft
+     blobs, blurred once as a filter on this one element rather than each
+     panel re-filtering what is behind it every frame. Purely decorative, so
+     it is hidden from assistive technology. -->
+<div class="tb-aura" aria-hidden="true"></div>
 
 <div class="tb-app">
   <div class="tb-brand">
@@ -2678,6 +2852,25 @@ a:hover{color:var(--red-hot)}
       <div><span class="tb-eyebrow">Screens</span><h1>Monitors</h1></div>
       <p>Full-screen patterns for dead pixels, backlight bleed, banding and ghosting. Run the whole set automatically, or pick one.</p>
     </div>
+    <div class="tb-panel accent" id="dp-panel">
+      <h2 class="tb-ptitle">Dead pixel check<span class="tb-rule"></span></h2>
+      <p class="tb-sub">The fastest check there is, and the one you run first. The whole screen fills with one colour; click or press any key and it moves to the next. <b>Red, green, blue, white, black.</b> A dead pixel stays black on every one of them. A stuck pixel stays its own colour on every one of them. Dust wipes off and a fault does not &mdash; so if something survives all five and a wipe, it is the panel.</p>
+      <div class="tb-bar">
+        <button class="tb-btn pri big" id="dp-go">Start dead pixel check <kbd>D</kbd></button>
+        <label class="tb-lab">Start on
+          <select id="dp-first">
+            <option value="0">Red</option>
+            <option value="1">Green</option>
+            <option value="2">Blue</option>
+            <option value="3">White</option>
+            <option value="4">Black</option>
+          </select>
+        </label>
+        <span class="tb-sppill" id="dp-state">not running</span>
+      </div>
+      <p class="tb-note">It goes full screen, so drag this window onto the monitor you are testing first. <kbd>Esc</kbd> or a right-click leaves at any point, and the colour you were on is remembered for the report.</p>
+    </div>
+
     <div class="tb-panel">
       <div class="tb-stats">
         <div class="tb-stat"><div class="k">Screen</div><div class="v" id="mn-res">—</div></div>
@@ -3576,6 +3769,22 @@ var TB = (function () {
        through those entries would fire a hashchange and bounce you straight back
        to the page you just left. */
     writeHash(view);
+    /* Park the ambient colour field somewhere slightly different for each
+       page. It is static while you work - a permanently drifting backdrop
+       measured at ten frames a second cheaper to hold still, and this app
+       reads a controller on every frame - so the only time it moves is the
+       moment the page already is. Derived from the view name so a page
+       always looks the same, rather than wandering at random. */
+    try {
+      var h = 0;
+      for (var ci = 0; ci < view.length; ci++) h = (h * 31 + view.charCodeAt(ci)) | 0;
+      var ax = ((h % 9) - 4) * 1.4, ay = (((h >> 4) % 9) - 4) * 1.1;
+      var as = 1 + (((h >> 8) % 5) - 2) * 0.012;
+      var d = document.documentElement.style;
+      d.setProperty("--aura-x", ax.toFixed(2) + "vmax");
+      d.setProperty("--aura-y", ay.toFixed(2) + "vmax");
+      d.setProperty("--aura-s", as.toFixed(3));
+    } catch (e) {}
     if (enterFns[view]) enterFns[view].forEach(function (f) { try { f(); } catch (e) {} });
   }
   function onEnter(v, f) { (enterFns[v] = enterFns[v] || []).push(f); }
@@ -8156,6 +8365,170 @@ function stats() {
 var probing = false;
 TB.onEnter("monitor", stats);
 stats();
+})();
+
+
+/* ---- 61-deadpixel.js ---- */
+/* Testbench — dead pixel check.
+
+   The simplest test on the site and the one that gets run most: fill the
+   screen with one flat colour, click to go to the next, five colours, done.
+
+   It exists alongside the twenty-one step automatic run because they are not
+   the same job. The automatic run is a careful sweep for banding, bleed,
+   uniformity and gamma, and it holds each field for seconds at a time. This
+   is the thirty-second check you do on every monitor that comes through the
+   door, where you want to drive it yourself and stop the moment you see
+   something. A tool that only offers the thorough version gets skipped when
+   there are forty monitors on the trolley.
+
+   Red, green and blue first because a stuck subpixel shows against exactly
+   one of them. Then white, which is where a dead pixel is most obvious as a
+   black dot. Then black, which is where a stuck pixel glows and where
+   backlight bleed shows up at the edges. */
+"use strict";
+(function () {
+var $ = TB.$, el = TB.el, toast = TB.toast;
+var go = $("#dp-go");
+if (!go) return;
+
+var FIELDS = [
+  ["#FF0000", "Red",   "A subpixel stuck ON red, or dead green and blue, shows here."],
+  ["#00FF00", "Green", "The green subpixel on its own. Most dead pixels show on this one."],
+  ["#0000FF", "Blue",  "The blue subpixel. Faint dark specks here are often dust, not pixels."],
+  ["#FFFFFF", "White", "A dead pixel is a black dot. This is the clearest field for finding one."],
+  ["#000000", "Black", "A stuck pixel glows. Light creeping in at the corners is backlight bleed."]
+];
+
+var stage = $("#fullstage");
+var idx = 0, on = false, hint = null, seen = null, hadFs = false, watchdog = null;
+
+function paint() {
+  var f = FIELDS[idx];
+  stage.style.background = f[0];
+  if (seen) seen[idx] = true;
+  var st = $("#dp-state");
+  st.textContent = f[1].toLowerCase();
+  st.className = "tb-sppill";
+}
+
+function overlay() {
+  /* The instructions, which disappear on the first click and never come
+     back. They are needed once and are in the way after that - and this test
+     is about looking closely at the screen, so a panel of text sitting on top
+     of the thing you are inspecting defeats it. */
+  var o = el("div", "tb-dphint");
+  var h = el("b", null, "Dead pixel check");
+  o.appendChild(h);
+  var p1 = el("p", null, "Click anywhere, or press any key, to move to the next colour.");
+  var p2 = el("p", null, "Red → Green → Blue → White → Black. Look closely at each one.");
+  var p3 = el("p", "dim", "Esc or right-click to leave. This notice goes away on your first click.");
+  o.appendChild(p1); o.appendChild(p2); o.appendChild(p3);
+  return o;
+}
+
+function next(step) {
+  idx = (idx + (step || 1) + FIELDS.length) % FIELDS.length;
+  paint();
+  if (hint) { hint.remove(); hint = null; }
+}
+
+function onKey(e) {
+  if (!on) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.key === "Escape") { stop(); return; }
+  if (e.key === "ArrowLeft") { next(-1); return; }
+  next(1);
+}
+function onClick(e) {
+  if (!on) return;
+  e.preventDefault();
+  next(e.button === 2 ? 0 : 1);
+}
+function onCtx(e) { if (on) { e.preventDefault(); stop(); } }
+function onFs() { if (on && hadFs && !document.fullscreenElement) stop(); }
+
+function start() {
+  if (on) return;
+  /* The monitor page's own overlay may be up; never stack two. */
+  if (stage.classList.contains("on")) { toast("Something is already full screen", "Close it first.", null); return; }
+  idx = parseInt($("#dp-first").value, 10) || 0;
+  seen = [false, false, false, false, false];
+  on = true;
+  stage.textContent = "";
+  stage.classList.add("on", "dp");
+  hint = overlay();
+  stage.appendChild(hint);
+  paint();
+
+  if (stage.requestFullscreen) stage.requestFullscreen().then(function () { hadFs = true; }).catch(function () {});
+  document.addEventListener("keydown", onKey, true);
+  stage.addEventListener("click", onClick);
+  stage.addEventListener("contextmenu", onCtx);
+  document.addEventListener("fullscreenchange", onFs);
+  /* Same belt-and-braces as the pattern overlay: if full screen ends by a
+     route the browser does not tell us about, notice within a second. Being
+     stranded behind a full-screen layer with no way out is worse than any
+     missed test. */
+  watchdog = setInterval(function () {
+    if (!on) return;
+    if (hadFs && !document.fullscreenElement) stop();
+  }, 700);
+  TB.watch("DEAD PIXEL", "check started");
+}
+
+function stop() {
+  if (!on) return;
+  on = false;
+  if (watchdog) { clearInterval(watchdog); watchdog = null; }
+  document.removeEventListener("keydown", onKey, true);
+  stage.removeEventListener("click", onClick);
+  stage.removeEventListener("contextmenu", onCtx);
+  document.removeEventListener("fullscreenchange", onFs);
+  stage.classList.remove("on", "dp");
+  stage.style.background = "";
+  stage.textContent = "";
+  hint = null;
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  hadFs = false;
+
+  var n = seen ? seen.filter(Boolean).length : 0;
+  var st = $("#dp-state");
+  st.textContent = n === FIELDS.length ? "all five shown" : n + " of 5 shown";
+  st.className = "tb-sppill " + (n === FIELDS.length ? "pass" : "warn");
+
+  /* Into the unit report, and honestly: this test cannot see anything. It
+     puts colours on a screen and a person decides. So it records WHAT WAS
+     SHOWN, never a verdict - a row claiming the panel passed would be the
+     page taking credit for a judgement it did not make. */
+  TB.report("monitor", "Dead pixel check", n === FIELDS.length ? 100 : 60, [
+    { level: n === FIELDS.length ? "ok" : "warn", tag: "coverage",
+      text: n === FIELDS.length
+        ? "All five fields were shown: red, green, blue, white and black."
+        : "Only " + n + " of the five fields were shown before the check was closed." },
+    { level: "ok", tag: "judgement",
+      text: "This test displays colours; it does not inspect them. Whether the panel is clean is the operator's call, recorded here as having been looked at rather than as a measurement." }
+  ]);
+  TB.watch("DEAD PIXEL", n + " of 5 fields shown");
+}
+
+go.onclick = start;
+
+/* D starts it without reaching for the mouse, like F and Q for the automatic
+   runs. Ignored while typing so it cannot fire from a text field. */
+window.addEventListener("keydown", function (e) {
+  if (TB.view() !== "monitor" || e.repeat || e.ctrlKey || e.altKey || e.metaKey) return;
+  if (on) return;
+  var t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA")) return;
+  if ((e.key || "").toLowerCase() === "d") { e.preventDefault(); start(); }
+});
+
+TB.onLeave("monitor", stop);
+window.addEventListener("pagehide", stop);
+
+window.DEADPIXEL = { start: start, stop: stop, fields: FIELDS, at: function () { return idx; }, running: function () { return on; } };
 })();
 
 

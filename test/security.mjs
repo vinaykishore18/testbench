@@ -162,11 +162,33 @@ console.log('\n8c. there is no server, and nothing can quietly add one');
      change without anybody noticing. */
   existsSync('api') ? fail('there is an api/ directory — this is no longer a static site') : pass('no api/ directory');
   const vj = JSON.parse(vercel);
-  !vj.functions ? pass('no serverless functions declared') : fail('vercel.json declares functions: ' + JSON.stringify(Object.keys(vj.functions)));
-  vj.buildCommand === null ? pass('build command explicitly none') : fail('a build command is set: ' + JSON.stringify(vj.buildCommand));
-  vj.installCommand === null ? pass('install command explicitly none') : fail('an install command is set: ' + JSON.stringify(vj.installCommand));
-
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+  !vj.functions ? pass('no serverless functions declared') : fail('vercel.json declares functions: ' + JSON.stringify(Object.keys(vj.functions)));
+  /* Empty string, NOT null. This broke a production deploy: null means "use
+     the default" to Vercel, and the default is to auto-detect a build script
+     in package.json and run `npm run build`. An empty string means "run
+     nothing", which is what a static site wants. I set null believing it meant
+     the opposite, and the config written to prove there was no build step is
+     what created one. */
+  vj.buildCommand === '' ? pass("build command is an empty string, so nothing runs")
+    : fail('buildCommand is ' + JSON.stringify(vj.buildCommand) + ' — null means "use the default", which auto-runs npm run build');
+  vj.installCommand === '' ? pass("install command is an empty string")
+    : fail('installCommand is ' + JSON.stringify(vj.installCommand));
+
+  /* And the other half of the same failure: Vercel reads package.json and runs
+     whatever "build" script it finds there, whatever vercel.json says. The
+     script was `python3 build.py`, and build.py is in .vercelignore - so the
+     deploy ran a command against a file it had deliberately not uploaded and
+     exited 2. */
+  !(pkg.scripts && pkg.scripts.build)
+    ? pass('package.json has no "build" script for a host to auto-detect')
+    : fail('package.json defines a build script (' + JSON.stringify(pkg.scripts.build) + '), which Vercel will run on deploy');
+
+  const vi = readFileSync('.vercelignore', 'utf8');
+  /^package\.json$/m.test(vi) ? pass('and package.json is kept out of the deploy entirely')
+    : fail('package.json is uploaded, so the host still sees a Node project');
+
+
   /* Playwright is a test-time tool. Listed under dependencies it is a
      production dependency, which invites the host to install it on deploy -
      tens of megabytes of browser automation shipped alongside a site that

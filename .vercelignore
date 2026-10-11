@@ -13,3 +13,10 @@ Testbench-IT-review.pdf
 _redirects
 dist/
 docs/
+
+# Vercel reads package.json and runs whatever "build" script it finds. There is
+# no build here, so the safest thing is for the host not to see a Node project
+# at all. Playwright is a test-time tool; none of this belongs in a deploy.
+package.json
+package-lock.json
+node_modules

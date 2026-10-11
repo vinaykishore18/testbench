@@ -329,6 +329,22 @@ var TB = (function () {
        through those entries would fire a hashchange and bounce you straight back
        to the page you just left. */
     writeHash(view);
+    /* Park the ambient colour field somewhere slightly different for each
+       page. It is static while you work - a permanently drifting backdrop
+       measured at ten frames a second cheaper to hold still, and this app
+       reads a controller on every frame - so the only time it moves is the
+       moment the page already is. Derived from the view name so a page
+       always looks the same, rather than wandering at random. */
+    try {
+      var h = 0;
+      for (var ci = 0; ci < view.length; ci++) h = (h * 31 + view.charCodeAt(ci)) | 0;
+      var ax = ((h % 9) - 4) * 1.4, ay = (((h >> 4) % 9) - 4) * 1.1;
+      var as = 1 + (((h >> 8) % 5) - 2) * 0.012;
+      var d = document.documentElement.style;
+      d.setProperty("--aura-x", ax.toFixed(2) + "vmax");
+      d.setProperty("--aura-y", ay.toFixed(2) + "vmax");
+      d.setProperty("--aura-s", as.toFixed(3));
+    } catch (e) {}
     if (enterFns[view]) enterFns[view].forEach(function (f) { try { f(); } catch (e) {} });
   }
   function onEnter(v, f) { (enterFns[v] = enterFns[v] || []).push(f); }

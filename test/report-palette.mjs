@@ -297,6 +297,22 @@ console.log('\n12b. switching a tab does not move the page');
       const r = document.querySelector(sel).getBoundingClientRect();
       return Math.round(r.top - document.querySelector('#main').getBoundingClientRect().top);
     }, strip);
+    /* Wait for the layout to stop moving rather than sleeping a fixed
+       interval. A tab switch kicks off a pane fade and, on a page change, a
+       two-second ambient transition; under the load of twenty browser suites
+       back to back, 180 ms was not enough and the reading was taken
+       mid-flight. The check then failed on a page that behaves correctly,
+       which is the worst kind of test - it trains you to ignore it. */
+    const settled = async () => {
+      let prev = null, same = 0;
+      for (let i = 0; i < 30 && same < 3; i++) {
+        await page.waitForTimeout(60);
+        const now = await stripTop();
+        same = now === prev ? same + 1 : 0;
+        prev = now;
+      }
+      return prev;
+    };
     /* Movement has a floor that is not the page's fault. If the new pane is
        shorter, the document gets shorter, and the maximum scroll drops - so a
        strip that was pinned to the top physically cannot stay there, because
@@ -313,11 +329,10 @@ console.log('\n12b. switching a tab does not move the page');
     });
     let worst = 0, explained = 0, vanished = 0;
     for (const t of names) {
-      const before = await stripTop();
+      const before = await settled();
       const roomBefore = await scrollRoom();
       await page.click(`${strip} [data-t="${t}"]`);
-      await page.waitForTimeout(180);
-      const after = await stripTop();
+      const after = await settled();
       const roomAfter = await scrollRoom();
       const moved = Math.abs(after - before);
       const allowed = Math.max(0, roomBefore - roomAfter) + 14;

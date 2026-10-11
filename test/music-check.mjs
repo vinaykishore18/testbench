@@ -149,10 +149,23 @@ await page.waitForTimeout(1400);
 
 console.log('\n6. left-only really silences the right cup');
 await page.click('[data-mupan="-1"]');
-await page.waitForTimeout(700);
+/* Wait for the pan to SETTLE rather than for a fixed 700 ms. The pan is an
+   audio-rate ramp, and on a loaded machine it had not finished when the
+   reading was taken - the right meter was caught mid-sweep at 25% and the
+   suite failed, while the same check passed three times in a row on its own.
+   Poll until the value stops moving, with a ceiling so a genuinely stuck
+   meter still fails instead of hanging. */
 {
-  const [l, r] = await page.evaluate(() =>
+  const read = () => page.evaluate(() =>
     [document.querySelector('#mu-l').style.width, document.querySelector('#mu-r').style.width]);
+  let prev = null, stable = 0;
+  for (let i = 0; i < 40 && stable < 3; i++) {
+    await page.waitForTimeout(100);
+    const now = (await read()).join('|');
+    stable = now === prev ? stable + 1 : 0;
+    prev = now;
+  }
+  const [l, r] = await read();
   const ln = parseFloat(l) || 0, rn = parseFloat(r) || 0;
   ln > 50 ? pass('left meter at ' + l) : fail('left meter only ' + l);
   rn < 10 ? pass('right meter down at ' + r) : fail('right still at ' + r);

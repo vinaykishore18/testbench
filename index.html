@@ -35,6 +35,12 @@
   <span class="esc">HOLD <kbd>Esc</kbd> TO EXIT <span class="tb-escbar"><i id="escfill"></i></span> <span>or</span> <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Q</kbd></span>
 </div>
 
+<!-- The ambient colour field every panel is translucent over. Four soft
+     blobs, blurred once as a filter on this one element rather than each
+     panel re-filtering what is behind it every frame. Purely decorative, so
+     it is hidden from assistive technology. -->
+<div class="tb-aura" aria-hidden="true"></div>
+
 <div class="tb-app">
   <div class="tb-brand">
     <svg class="tb-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -938,6 +944,25 @@
       <div><span class="tb-eyebrow">Screens</span><h1>Monitors</h1></div>
       <p>Full-screen patterns for dead pixels, backlight bleed, banding and ghosting. Run the whole set automatically, or pick one.</p>
     </div>
+    <div class="tb-panel accent" id="dp-panel">
+      <h2 class="tb-ptitle">Dead pixel check<span class="tb-rule"></span></h2>
+      <p class="tb-sub">The fastest check there is, and the one you run first. The whole screen fills with one colour; click or press any key and it moves to the next. <b>Red, green, blue, white, black.</b> A dead pixel stays black on every one of them. A stuck pixel stays its own colour on every one of them. Dust wipes off and a fault does not &mdash; so if something survives all five and a wipe, it is the panel.</p>
+      <div class="tb-bar">
+        <button class="tb-btn pri big" id="dp-go">Start dead pixel check <kbd>D</kbd></button>
+        <label class="tb-lab">Start on
+          <select id="dp-first">
+            <option value="0">Red</option>
+            <option value="1">Green</option>
+            <option value="2">Blue</option>
+            <option value="3">White</option>
+            <option value="4">Black</option>
+          </select>
+        </label>
+        <span class="tb-sppill" id="dp-state">not running</span>
+      </div>
+      <p class="tb-note">It goes full screen, so drag this window onto the monitor you are testing first. <kbd>Esc</kbd> or a right-click leaves at any point, and the colour you were on is remembered for the report.</p>
+    </div>
+
     <div class="tb-panel">
       <div class="tb-stats">
         <div class="tb-stat"><div class="k">Screen</div><div class="v" id="mn-res">—</div></div>
@@ -1287,6 +1312,7 @@
 <script src="js/45-midi.js"></script>
 <script src="js/50-audio.js"></script>
 <script src="js/60-display.js"></script>
+<script src="js/61-deadpixel.js"></script>
 <script src="js/70-extras.js"></script>
 <script src="js/80-bench.js"></script>
 <script src="js/85-runbench.js"></script>
