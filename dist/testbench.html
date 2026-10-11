@@ -17,7 +17,7 @@
      which is why there is nothing in this site worth taking. -->
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, nocache">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-NWxgYMsHm/EJ0sbcVj3b7qGiNFu1hMd2lLTfnCK72wk='; style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Pzt3bn1Q0PmLHK65y0J/QZYzXS8vuVq+sBQs5QNp3Ow='; style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'">
 <style>
 /* ============================================================
    Testbench by Vinay — design system
@@ -120,11 +120,11 @@
      and this app reads a controller on every frame. The ambient layer is
      blurred ONCE, as a filter on its own element, instead of every panel
      re-filtering what is behind it sixty times a second. */
-  --glass:rgba(16,19,27,.62);
-  --glass-2:rgba(13,16,23,.80);
+  --glass:rgba(13,16,23,.86);
+  --glass-2:rgba(11,14,20,.93);
   --glass-line:rgba(255,255,255,.12);
   --glass-sheen:rgba(255,255,255,.07);
-  --glass-blur:18px;
+  --glass-blur:8px;
   --edge:inset 0 1px 0 rgba(255,255,255,.10);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.16);
   --shadow-lift:
@@ -265,11 +265,11 @@
   --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
   /* Glass over paper: a near-white frost, and the sheen becomes a dark
      hairline because a white highlight on a light surface has no edge. */
-  --glass:rgba(252,250,244,.74);
-  --glass-2:rgba(246,242,233,.88);
+  --glass:rgba(250,247,240,.90);
+  --glass-2:rgba(248,245,237,.95);
   --glass-line:rgba(0,0,0,.12);
   --glass-sheen:rgba(255,255,255,.55);
-  --glass-blur:16px;
+  --glass-blur:8px;
   --edge:inset 0 1px 0 rgba(255,255,255,.75);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
   --shadow-lift:
@@ -360,11 +360,11 @@
   --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
   /* Glass over paper: a near-white frost, and the sheen becomes a dark
      hairline because a white highlight on a light surface has no edge. */
-  --glass:rgba(252,250,244,.74);
-  --glass-2:rgba(246,242,233,.88);
+  --glass:rgba(250,247,240,.90);
+  --glass-2:rgba(248,245,237,.95);
   --glass-line:rgba(0,0,0,.12);
   --glass-sheen:rgba(255,255,255,.55);
-  --glass-blur:16px;
+  --glass-blur:8px;
   --edge:inset 0 1px 0 rgba(255,255,255,.75);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
   --shadow-lift:
@@ -1664,8 +1664,8 @@ body{ background:var(--bg) }
    that are only on screen for a moment. */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   .tb-brand, .tb-status, .tb-pal-card, .tb-toast, .tb-fullhud, .tb-run, .tb-lockbar{
-    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
-    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(118%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(118%);
   }
   .tb-toast, .tb-run, .tb-pal-card{ background:var(--glass-2) }
 }
@@ -1913,8 +1913,8 @@ body{ background:var(--bg) }
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   max-width:min(520px,86vw); padding:26px 30px; border-radius:16px;
   background:rgba(8,10,16,.82);
-  -webkit-backdrop-filter:blur(14px) saturate(150%);
-  backdrop-filter:blur(14px) saturate(150%);
+  -webkit-backdrop-filter:blur(8px) saturate(118%);
+  backdrop-filter:blur(8px) saturate(118%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 24px 60px -24px rgba(0,0,0,.9);
   color:#F2F6FB; text-align:center; font-family:var(--f-body);
   animation:tb-dpin .3s cubic-bezier(.2,.8,.2,1) both;
@@ -1926,6 +1926,64 @@ body{ background:var(--bg) }
 }
 .tb-dphint p{ margin:0 0 8px; font-size:15px; line-height:1.55; color:#D7DEE9 }
 .tb-dphint p.dim{ margin:14px 0 0; font-family:var(--f-mono); font-size:11.5px; color:#9BA7B8; letter-spacing:.02em }
+
+/* ---------- the SKU bar ----------
+   Docked bottom-centre, above the bench-run dock's z-index so it is never
+   buried, and narrow enough that it does not cover the device you are
+   looking at. It is an offer: "Not now" dismisses it for that device and it
+   does not come back. */
+.tb-skubar{
+  position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+  z-index:95; width:min(820px,calc(100vw - 32px));
+  display:flex; align-items:center; gap:16px;
+  padding:14px 18px; border-radius:16px;
+  background:var(--glass-2); border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(8px) saturate(118%);
+  backdrop-filter:blur(8px) saturate(118%);
+  box-shadow:var(--edge-strong), 0 24px 60px -24px rgba(0,0,0,.85);
+  animation:tb-skuin .26s var(--ease) both;
+}
+@keyframes tb-skuin{ from{opacity:0;transform:translate(-50%,14px)} to{opacity:1;transform:translate(-50%,0)} }
+.tb-skubar .ic{
+  flex:0 0 auto; width:38px; height:38px; border-radius:11px;
+  display:grid; place-items:center; font-size:17px;
+  background:var(--cyan-t12); color:var(--cyan); border:1px solid var(--cyan-t25);
+}
+.tb-skubar .txt{ flex:1 1 260px; min-width:0 }
+.tb-skubar .txt b{ display:block; font-size:14px; font-weight:650; color:var(--ink) }
+.tb-skubar .txt b .what{ color:var(--cyan); font-weight:600 }
+.tb-skubar .txt span{ display:block; font-size:12.5px; line-height:1.5; color:var(--ink-2) }
+.tb-skubar .act{ flex:0 0 auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+.tb-skubar input{
+  width:150px; padding:9px 12px; border-radius:9px;
+  border:1px solid var(--line); background:var(--raise); color:var(--ink);
+  font-family:var(--f-mono); font-size:13px;
+}
+.tb-skubar input:focus{ outline:2px solid var(--cyan); outline-offset:1px }
+
+/* A field that needs filling in says so by moving, not by turning red - the
+   operator is not being told off, they are being pointed at. */
+input.empty, .tb-skubar input.empty{
+  animation:tb-nudge .4s ease-in-out;
+  border-color:var(--warn) !important;
+}
+@keyframes tb-nudge{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+.tb-chip.sku{ border-color:var(--cyan-t25); color:var(--ink) }
+.tb-chip.sku b{ color:var(--cyan); margin-left:3px }
+.tb-chip.sku .tb-dot{ background:var(--cyan) }
+
+.tb-rephead .repno{
+  display:block; font-family:var(--f-mono); font-size:12px; letter-spacing:.08em;
+  color:var(--cyan); margin-top:2px; text-transform:uppercase;
+}
+
+@media (max-width:720px){
+  .tb-skubar{ flex-wrap:wrap; bottom:12px; padding:12px 14px }
+  .tb-skubar .ic{ display:none }
+  .tb-skubar .act{ width:100%; }
+  .tb-skubar input{ flex:1 1 120px; width:auto }
+}
 
 </style>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2308090C'/%3E%3Cpath d='M4 14h3l2-5 2.6 7 2.2-9 2 7h3.2' stroke='%23FF2D46' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -2028,7 +2086,7 @@ body{ background:var(--bg) }
       <h2 class="tb-ptitle">Unit report<span class="tb-rule"></span></h2>
       <p class="tb-sub">Everything you test in this tab is recorded as you go. Fill in the unit details and this turns the session into a one-page QC record you can print, save as a PDF, or paste straight into a listing or a returns dispute. It is built from the results themselves, not typed up afterwards &mdash; so it says what the bench actually found, including the parts that failed.</p>
       <div class="tb-bar">
-        <label class="tb-lab">Unit / SKU <input type="text" id="rep-unit" placeholder="e.g. DS4-CUH-ZCT2 / lot 418" style="min-width:210px;text-transform:none"></label>
+        <label class="tb-lab">SKU &mdash; this is the report number <input type="text" id="rep-unit" placeholder="e.g. DS4-CUH-ZCT2 / lot 418" style="min-width:230px;text-transform:none" required></label>
         <label class="tb-lab">Condition
           <select id="rep-grade">
             <option value="">not graded</option>
@@ -12285,6 +12343,11 @@ function build() {
   left.appendChild(el("b", null, "Hardware test report"));
   var sub = el("span", null, "Testbench · " + when(Date.now()));
   left.appendChild(sub);
+  if (m.unit) {
+    var no = el("span", null, "Report " + m.unit);
+    no.className = "repno";
+    left.appendChild(no);
+  }
   head.appendChild(left);
   var call = el("div", "tb-repcall " + o.cls);
   call.appendChild(el("b", null, o.word));
@@ -12295,7 +12358,7 @@ function build() {
   /* ---- unit details ---- */
   var dl = el("dl", "tb-kv");
   function kv(k, v) { dl.appendChild(el("dt", null, k)); dl.appendChild(el("dd", null, v)); }
-  kv("Unit / SKU", m.unit || "not recorded");
+  kv("Report number", m.unit || "not recorded");
   kv("Condition grade", m.grade || "not graded");
   kv("Tested by", m.by || "not recorded");
   kv("Tested on", when(Date.now()));
@@ -12402,7 +12465,7 @@ function asText() {
   var L = [];
   L.push("HARDWARE TEST REPORT");
   L.push("Tested on   " + when(Date.now()));
-  if (m.unit) L.push("Unit / SKU  " + m.unit);
+  if (m.unit) L.push("Report no.  " + m.unit);
   if (m.grade) L.push("Condition   " + m.grade);
   if (m.by) L.push("Tested by   " + m.by);
   if (m.note) L.push("Notes       " + m.note);
@@ -12540,18 +12603,24 @@ function slug() {
 }
 
 $("#rep-csv").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Export CSV")) return;
   if (!TB.results().length) { toast("Nothing to export", "No test has produced a result yet.", null); return; }
   download("testbench_" + slug() + ".csv", asCSV(), "text/csv");
   toast("CSV saved", "One row per test, including the pages that were not tested. Opens straight in Excel or Sheets.", "ok");
 };
 
 $("#rep-json").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Export JSON")) return;
   if (!TB.results().length) { toast("Nothing to export", "No test has produced a result yet.", null); return; }
   download("testbench_" + slug() + ".json", asJSON(), "application/json");
   toast("JSON saved", "Every result with its flags and timestamps, for anything that reads the file rather than looks at it.", "ok");
 };
 
 $("#rep-build").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Build the report")) return;
   var r = build();
   toast("Report built",
         r.res.length
@@ -12561,6 +12630,8 @@ $("#rep-build").onclick = function () {
 };
 
 $("#rep-print").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Print")) return;
   if (!$("#rep-out").firstChild) build();
   /* The print stylesheet hides the rail, the status bar and every panel except
      the report, so what comes out is the record and not a screenshot of the
@@ -12576,6 +12647,8 @@ $("#rep-print").onclick = function () {
 };
 
 $("#rep-copy").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Copy as text")) return;
   var txt = asText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(function () {
@@ -12590,7 +12663,15 @@ $("#rep-copy").onclick = function () {
 
 TB.arm($("#rep-reset"), "Start a new unit", "Press again \u2014 this clears the results", function () {
   TB.clearResults();
-  ["#rep-unit", "#rep-by", "#rep-note"].forEach(function (id) { $(id).value = ""; });
+  /* Dispatch input as well as clearing the value. Other modules listen for
+     it - the SKU badge in the status bar is painted from this field, and
+     setting .value in script fires nothing, so the badge went on claiming a
+     unit was being recorded after the unit had been cleared. A status bar
+     naming the wrong unit is the exact failure the badge exists to prevent. */
+  ["#rep-unit", "#rep-by", "#rep-note"].forEach(function (id) {
+    $(id).value = "";
+    $(id).dispatchEvent(new Event("input", { bubbles: true }));
+  });
   $("#rep-grade").value = "";
   $("#rep-out").textContent = "";
   countLine();
@@ -12603,6 +12684,176 @@ countLine();
 
 /* for the test suite */
 window.REPORT = { build: build, asText: asText, asCSV: asCSV, asJSON: asJSON, pages: PAGES };
+})();
+
+
+/* ---- 99-sku.js ---- */
+/* Testbench — SKU gate.
+
+   A report has to be ABOUT something. Without a unit number it is a page of
+   scores that could belong to any of the forty units on the trolley, and a
+   file called testbench_unit_20261011.csv in an inventory folder is worse
+   than no file - somebody will match it to the wrong item.
+
+   So: the SKU is the report number, and nothing exports without one. The
+   bench itself stays unlocked. You can plug a controller in and test it
+   without typing anything, which is most of what happens on a bench - the
+   gate is on the REPORT, not on the work.
+
+   The prompt appears when a device is plugged in, because that is the moment
+   a new unit has arrived and the moment the operator has it in their hand.
+   Dismiss it and it stays dismissed for that device; it is an offer, not a
+   demand. */
+"use strict";
+(function () {
+var $ = TB.$, el = TB.el, toast = TB.toast;
+var field = $("#rep-unit");
+if (!field) return;
+
+var bar = null, dismissed = Object.create(null), lastSig = "";
+
+function sku() { return (field.value || "").trim(); }
+
+/* ---------- the prompt ---------- */
+function offer(what) {
+  if (sku()) return;                 /* already working on a unit */
+  if (dismissed[what]) return;
+  if (bar) { bar.querySelector(".what").textContent = what; return; }
+
+  bar = el("div", "tb-skubar");
+  var ic = el("div", "ic");
+  ic.appendChild(document.createTextNode("⬚"));
+  bar.appendChild(ic);
+
+  var txt = el("div", "txt");
+  var b = el("b");
+  b.appendChild(document.createTextNode("New device — "));
+  var w = el("span", "what", what);
+  b.appendChild(w);
+  txt.appendChild(b);
+  txt.appendChild(el("span", null, "Give it a SKU and everything you test gets recorded against that number. Skip it and the bench works exactly as normal."));
+  bar.appendChild(txt);
+
+  var form = el("div", "act");
+  var inp = el("input");
+  inp.type = "text";
+  inp.placeholder = "SKU or lot number";
+  inp.setAttribute("aria-label", "SKU for this unit");
+  inp.setAttribute("autocomplete", "off");
+  form.appendChild(inp);
+
+  var go = el("button", "tb-btn pri", "Start report");
+  go.onclick = function () {
+    var v = (inp.value || "").trim();
+    if (!v) { inp.focus(); inp.classList.add("empty"); setTimeout(function(){ inp.classList.remove("empty"); }, 600); return; }
+    field.value = v;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    close();
+    paintBadge();
+    toast("Report started", "Everything you test from here is recorded against " + v + ". Open the Bench page to build it.", "ok");
+    TB.watch("REPORT", "opened for " + v);
+  };
+  inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); go.click(); } });
+  form.appendChild(go);
+
+  var no = el("button", "tb-btn", "Not now");
+  no.onclick = function () { dismissed[what] = true; close(); };
+  form.appendChild(no);
+  bar.appendChild(form);
+
+  document.body.appendChild(bar);
+  /* Focus the field, but not on a touch device - raising the on-screen
+     keyboard unasked covers half the screen while somebody is holding a
+     controller. */
+  if (!matchMedia("(hover:none)").matches) setTimeout(function () { inp.focus(); }, 60);
+}
+
+function close() { if (bar) { bar.remove(); bar = null; } }
+
+/* ---------- the badge in the top bar ---------- */
+/* So the operator can always see which unit they are recording against. A
+   session that silently files results under the wrong SKU is the failure
+   this whole feature exists to prevent, so the number is on screen the whole
+   time rather than only on the Bench page. */
+function paintBadge() {
+  var host = $("#statusbar");
+  if (!host) return;
+  var b = $("#sku-badge");
+  var v = sku();
+  if (!v) { if (b) b.remove(); return; }
+  if (!b) {
+    b = el("button", "tb-chip sku", "");
+    b.id = "sku-badge";
+    b.title = "The unit everything is being recorded against. Click to go to the report.";
+    b.onclick = function () { TB.go("home"); setTimeout(function () { field.focus(); field.select(); }, 250); };
+    host.insertBefore(b, host.firstChild);
+  }
+  b.textContent = "";
+  b.appendChild(el("span", "tb-dot"));
+  b.appendChild(document.createTextNode("Unit "));
+  b.appendChild(el("b", null, v));
+  b.classList.add("live");
+}
+field.addEventListener("input", paintBadge);
+TB.onEnter("home", paintBadge);
+
+/* ---------- the gate ---------- */
+/* Build, print, copy and both exports all go through here. */
+function gate(action) {
+  if (sku()) return true;
+  TB.go("home");
+  setTimeout(function () {
+    field.focus();
+    field.classList.add("empty");
+    setTimeout(function () { field.classList.remove("empty"); }, 900);
+  }, 220);
+  toast("This report needs a unit number",
+        "The SKU is the report number — without it the file cannot be matched to anything on the shelf. Type it in and press " + action + " again.", null);
+  return false;
+}
+window.SKUGATE = { ok: gate, value: sku, set: function (v) { field.value = v; paintBadge(); } };
+
+/* ---------- what counts as a device being plugged in ---------- */
+var SEEN = Object.create(null);
+function arrived(kind, name) {
+  var sig = kind + ":" + name;
+  if (SEEN[sig]) return;
+  SEEN[sig] = true;
+  if (sig === lastSig) return;
+  lastSig = sig;
+  offer(name);
+}
+
+window.addEventListener("gamepadconnected", function (e) {
+  var id = (e.gamepad && e.gamepad.id) || "controller";
+  arrived("pad", id.replace(/\s*\([^)]*\)\s*$/, "").trim().slice(0, 48) || "controller");
+});
+if (navigator.hid && navigator.hid.addEventListener) {
+  navigator.hid.addEventListener("connect", function (e) {
+    arrived("hid", (e.device && e.device.productName) || "HID device");
+  });
+}
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+  navigator.mediaDevices.addEventListener("devicechange", function () {
+    /* A device list change fires for a monitor waking up as well as for a
+       headset being plugged in, so this one is deliberately quiet: it only
+       offers once per session and never interrupts a running test. */
+    if (bar || sku()) return;
+    arrived("media", "audio or video device");
+  });
+}
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess({ sysex: false }).then(function (a) {
+    a.onstatechange = function (e) {
+      if (e.port && e.port.state === "connected" && e.port.type === "input") {
+        arrived("midi", e.port.name || "MIDI device");
+      }
+    };
+  }).catch(function () {});
+}
+
+/* for the test suite */
+window.SKUBAR = { offer: offer, close: close, shown: function () { return !!bar; } };
 })();
 </script>
 </body>

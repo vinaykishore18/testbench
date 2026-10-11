@@ -120,7 +120,7 @@
       <h2 class="tb-ptitle">Unit report<span class="tb-rule"></span></h2>
       <p class="tb-sub">Everything you test in this tab is recorded as you go. Fill in the unit details and this turns the session into a one-page QC record you can print, save as a PDF, or paste straight into a listing or a returns dispute. It is built from the results themselves, not typed up afterwards &mdash; so it says what the bench actually found, including the parts that failed.</p>
       <div class="tb-bar">
-        <label class="tb-lab">Unit / SKU <input type="text" id="rep-unit" placeholder="e.g. DS4-CUH-ZCT2 / lot 418" style="min-width:210px;text-transform:none"></label>
+        <label class="tb-lab">SKU &mdash; this is the report number <input type="text" id="rep-unit" placeholder="e.g. DS4-CUH-ZCT2 / lot 418" style="min-width:230px;text-transform:none" required></label>
         <label class="tb-lab">Condition
           <select id="rep-grade">
             <option value="">not graded</option>
@@ -1324,6 +1324,7 @@
 <script src="js/98-joycon.js"></script>
 <script src="js/99-privacy.js"></script>
 <script src="js/99-report.js"></script>
+<script src="js/99-sku.js"></script>
 <script src="js/99-palette.js"></script>
 </body>
 </html>

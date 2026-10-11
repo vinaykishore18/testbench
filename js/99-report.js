@@ -138,6 +138,11 @@ function build() {
   left.appendChild(el("b", null, "Hardware test report"));
   var sub = el("span", null, "Testbench · " + when(Date.now()));
   left.appendChild(sub);
+  if (m.unit) {
+    var no = el("span", null, "Report " + m.unit);
+    no.className = "repno";
+    left.appendChild(no);
+  }
   head.appendChild(left);
   var call = el("div", "tb-repcall " + o.cls);
   call.appendChild(el("b", null, o.word));
@@ -148,7 +153,7 @@ function build() {
   /* ---- unit details ---- */
   var dl = el("dl", "tb-kv");
   function kv(k, v) { dl.appendChild(el("dt", null, k)); dl.appendChild(el("dd", null, v)); }
-  kv("Unit / SKU", m.unit || "not recorded");
+  kv("Report number", m.unit || "not recorded");
   kv("Condition grade", m.grade || "not graded");
   kv("Tested by", m.by || "not recorded");
   kv("Tested on", when(Date.now()));
@@ -255,7 +260,7 @@ function asText() {
   var L = [];
   L.push("HARDWARE TEST REPORT");
   L.push("Tested on   " + when(Date.now()));
-  if (m.unit) L.push("Unit / SKU  " + m.unit);
+  if (m.unit) L.push("Report no.  " + m.unit);
   if (m.grade) L.push("Condition   " + m.grade);
   if (m.by) L.push("Tested by   " + m.by);
   if (m.note) L.push("Notes       " + m.note);
@@ -393,18 +398,24 @@ function slug() {
 }
 
 $("#rep-csv").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Export CSV")) return;
   if (!TB.results().length) { toast("Nothing to export", "No test has produced a result yet.", null); return; }
   download("testbench_" + slug() + ".csv", asCSV(), "text/csv");
   toast("CSV saved", "One row per test, including the pages that were not tested. Opens straight in Excel or Sheets.", "ok");
 };
 
 $("#rep-json").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Export JSON")) return;
   if (!TB.results().length) { toast("Nothing to export", "No test has produced a result yet.", null); return; }
   download("testbench_" + slug() + ".json", asJSON(), "application/json");
   toast("JSON saved", "Every result with its flags and timestamps, for anything that reads the file rather than looks at it.", "ok");
 };
 
 $("#rep-build").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Build the report")) return;
   var r = build();
   toast("Report built",
         r.res.length
@@ -414,6 +425,8 @@ $("#rep-build").onclick = function () {
 };
 
 $("#rep-print").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Print")) return;
   if (!$("#rep-out").firstChild) build();
   /* The print stylesheet hides the rail, the status bar and every panel except
      the report, so what comes out is the record and not a screenshot of the
@@ -429,6 +442,8 @@ $("#rep-print").onclick = function () {
 };
 
 $("#rep-copy").onclick = function () {
+  /* The SKU is the report number; nothing leaves without one. */
+  if (window.SKUGATE && !window.SKUGATE.ok("Copy as text")) return;
   var txt = asText();
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(function () {
@@ -443,7 +458,15 @@ $("#rep-copy").onclick = function () {
 
 TB.arm($("#rep-reset"), "Start a new unit", "Press again \u2014 this clears the results", function () {
   TB.clearResults();
-  ["#rep-unit", "#rep-by", "#rep-note"].forEach(function (id) { $(id).value = ""; });
+  /* Dispatch input as well as clearing the value. Other modules listen for
+     it - the SKU badge in the status bar is painted from this field, and
+     setting .value in script fires nothing, so the badge went on claiming a
+     unit was being recorded after the unit had been cleared. A status bar
+     naming the wrong unit is the exact failure the badge exists to prevent. */
+  ["#rep-unit", "#rep-by", "#rep-note"].forEach(function (id) {
+    $(id).value = "";
+    $(id).dispatchEvent(new Event("input", { bubbles: true }));
+  });
   $("#rep-grade").value = "";
   $("#rep-out").textContent = "";
   countLine();

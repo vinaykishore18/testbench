@@ -56,14 +56,32 @@ const feed = (view, id, score, flags) => page.evaluate(([v, i, sc, fl]) => {
   TB.verdict(host, sc, fl);
 }, [view, id, score, flags]);
 
-console.log('\n1. nothing recorded, nothing exported');
+console.log('\n1. no SKU, no report');
 {
+  /* The SKU is the report number. A file called testbench_unit_...csv sitting
+     in an inventory folder is worse than no file, because somebody will match
+     it to the wrong item on the shelf - so nothing exports until the unit has
+     a number. */
   await page.click('button[data-view="home"]');
   await page.click('#rep-csv');
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
+  const t = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
+  /needs a unit number/.test(t) ? pass('refuses to export without a SKU')
+    : fail('exported with no unit number: ' + t.slice(0, 140));
+  const focused = await page.evaluate(() => document.activeElement.id);
+  focused === 'rep-unit' ? pass('and puts the cursor in the field it wants')
+    : fail('focus went to ' + JSON.stringify(focused) + ' instead of the SKU field');
+}
+
+console.log('\n1b. a SKU but no results is still refused');
+{
+  await page.fill('#rep-unit', 'SKU-EMPTY-1');
+  await page.waitForTimeout(150);
+  await page.click('#rep-csv');
+  await page.waitForTimeout(500);
   const t = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
   /Nothing to export/.test(t) ? pass('refuses to write a report with no results')
-    : fail('wrote an empty report: ' + t.slice(0, 120));
+    : fail('wrote an empty report: ' + t.slice(0, 140));
 }
 
 console.log('\n2. the CSV survives commas, quotes and newlines in every field');

@@ -99,11 +99,11 @@
      and this app reads a controller on every frame. The ambient layer is
      blurred ONCE, as a filter on its own element, instead of every panel
      re-filtering what is behind it sixty times a second. */
-  --glass:rgba(16,19,27,.62);
-  --glass-2:rgba(13,16,23,.80);
+  --glass:rgba(13,16,23,.86);
+  --glass-2:rgba(11,14,20,.93);
   --glass-line:rgba(255,255,255,.12);
   --glass-sheen:rgba(255,255,255,.07);
-  --glass-blur:18px;
+  --glass-blur:8px;
   --edge:inset 0 1px 0 rgba(255,255,255,.10);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.16);
   --shadow-lift:
@@ -244,11 +244,11 @@
   --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
   /* Glass over paper: a near-white frost, and the sheen becomes a dark
      hairline because a white highlight on a light surface has no edge. */
-  --glass:rgba(252,250,244,.74);
-  --glass-2:rgba(246,242,233,.88);
+  --glass:rgba(250,247,240,.90);
+  --glass-2:rgba(248,245,237,.95);
   --glass-line:rgba(0,0,0,.12);
   --glass-sheen:rgba(255,255,255,.55);
-  --glass-blur:16px;
+  --glass-blur:8px;
   --edge:inset 0 1px 0 rgba(255,255,255,.75);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
   --shadow-lift:
@@ -339,11 +339,11 @@
   --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
   /* Glass over paper: a near-white frost, and the sheen becomes a dark
      hairline because a white highlight on a light surface has no edge. */
-  --glass:rgba(252,250,244,.74);
-  --glass-2:rgba(246,242,233,.88);
+  --glass:rgba(250,247,240,.90);
+  --glass-2:rgba(248,245,237,.95);
   --glass-line:rgba(0,0,0,.12);
   --glass-sheen:rgba(255,255,255,.55);
-  --glass-blur:16px;
+  --glass-blur:8px;
   --edge:inset 0 1px 0 rgba(255,255,255,.75);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
   --shadow-lift:
@@ -1643,8 +1643,8 @@ body{ background:var(--bg) }
    that are only on screen for a moment. */
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   .tb-brand, .tb-status, .tb-pal-card, .tb-toast, .tb-fullhud, .tb-run, .tb-lockbar{
-    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);
-    backdrop-filter:blur(var(--glass-blur)) saturate(160%);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(118%);
+    backdrop-filter:blur(var(--glass-blur)) saturate(118%);
   }
   .tb-toast, .tb-run, .tb-pal-card{ background:var(--glass-2) }
 }
@@ -1892,8 +1892,8 @@ body{ background:var(--bg) }
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   max-width:min(520px,86vw); padding:26px 30px; border-radius:16px;
   background:rgba(8,10,16,.82);
-  -webkit-backdrop-filter:blur(14px) saturate(150%);
-  backdrop-filter:blur(14px) saturate(150%);
+  -webkit-backdrop-filter:blur(8px) saturate(118%);
+  backdrop-filter:blur(8px) saturate(118%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 24px 60px -24px rgba(0,0,0,.9);
   color:#F2F6FB; text-align:center; font-family:var(--f-body);
   animation:tb-dpin .3s cubic-bezier(.2,.8,.2,1) both;
@@ -1905,3 +1905,61 @@ body{ background:var(--bg) }
 }
 .tb-dphint p{ margin:0 0 8px; font-size:15px; line-height:1.55; color:#D7DEE9 }
 .tb-dphint p.dim{ margin:14px 0 0; font-family:var(--f-mono); font-size:11.5px; color:#9BA7B8; letter-spacing:.02em }
+
+/* ---------- the SKU bar ----------
+   Docked bottom-centre, above the bench-run dock's z-index so it is never
+   buried, and narrow enough that it does not cover the device you are
+   looking at. It is an offer: "Not now" dismisses it for that device and it
+   does not come back. */
+.tb-skubar{
+  position:fixed; left:50%; bottom:22px; transform:translateX(-50%);
+  z-index:95; width:min(820px,calc(100vw - 32px));
+  display:flex; align-items:center; gap:16px;
+  padding:14px 18px; border-radius:16px;
+  background:var(--glass-2); border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(8px) saturate(118%);
+  backdrop-filter:blur(8px) saturate(118%);
+  box-shadow:var(--edge-strong), 0 24px 60px -24px rgba(0,0,0,.85);
+  animation:tb-skuin .26s var(--ease) both;
+}
+@keyframes tb-skuin{ from{opacity:0;transform:translate(-50%,14px)} to{opacity:1;transform:translate(-50%,0)} }
+.tb-skubar .ic{
+  flex:0 0 auto; width:38px; height:38px; border-radius:11px;
+  display:grid; place-items:center; font-size:17px;
+  background:var(--cyan-t12); color:var(--cyan); border:1px solid var(--cyan-t25);
+}
+.tb-skubar .txt{ flex:1 1 260px; min-width:0 }
+.tb-skubar .txt b{ display:block; font-size:14px; font-weight:650; color:var(--ink) }
+.tb-skubar .txt b .what{ color:var(--cyan); font-weight:600 }
+.tb-skubar .txt span{ display:block; font-size:12.5px; line-height:1.5; color:var(--ink-2) }
+.tb-skubar .act{ flex:0 0 auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+.tb-skubar input{
+  width:150px; padding:9px 12px; border-radius:9px;
+  border:1px solid var(--line); background:var(--raise); color:var(--ink);
+  font-family:var(--f-mono); font-size:13px;
+}
+.tb-skubar input:focus{ outline:2px solid var(--cyan); outline-offset:1px }
+
+/* A field that needs filling in says so by moving, not by turning red - the
+   operator is not being told off, they are being pointed at. */
+input.empty, .tb-skubar input.empty{
+  animation:tb-nudge .4s ease-in-out;
+  border-color:var(--warn) !important;
+}
+@keyframes tb-nudge{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+.tb-chip.sku{ border-color:var(--cyan-t25); color:var(--ink) }
+.tb-chip.sku b{ color:var(--cyan); margin-left:3px }
+.tb-chip.sku .tb-dot{ background:var(--cyan) }
+
+.tb-rephead .repno{
+  display:block; font-family:var(--f-mono); font-size:12px; letter-spacing:.08em;
+  color:var(--cyan); margin-top:2px; text-transform:uppercase;
+}
+
+@media (max-width:720px){
+  .tb-skubar{ flex-wrap:wrap; bottom:12px; padding:12px 14px }
+  .tb-skubar .ic{ display:none }
+  .tb-skubar .act{ width:100%; }
+  .tb-skubar input{ flex:1 1 120px; width:auto }
+}

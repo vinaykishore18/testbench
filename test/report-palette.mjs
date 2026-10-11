@@ -41,6 +41,15 @@ const feed = (view, panelId, score, flags) => page.evaluate(([v, id, sc, fl]) =>
   TB.verdict(host, sc, fl);
 }, [view, panelId, score, flags]);
 
+/* Every export path is gated on the SKU now - it is the report number, and a
+   report file that cannot be matched to a unit on the shelf is worse than no
+   file. Set one up front so these checks are about what they are named after
+   rather than about the gate, which export.mjs covers on its own. */
+await page.evaluate(() => {
+  const f = document.querySelector('#rep-unit');
+  if (f && !f.value) { f.value = 'TEST-SKU-001'; f.dispatchEvent(new Event('input', { bubbles: true })); }
+});
+
 console.log('\n1. nothing in, nothing claimed');
 {
   await page.click('button[data-view="home"]');
