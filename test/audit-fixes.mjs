@@ -397,7 +397,7 @@ console.log('\n10. keyboard reach');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(250);
   const atMain = await page.evaluate(() => location.hash === '#main' || document.activeElement.id === 'main');
-  atMain ? pass('it lands in the test area, past the sixteen rail buttons') : fail('the skip link did not move focus');
+  atMain ? pass('it lands in the test area, past the rail buttons') : fail('the skip link did not move focus');
 
   const unlabelled = await page.evaluate(() =>
     [...document.querySelectorAll('canvas')].filter((c) => !c.getAttribute('aria-label') && !c.getAttribute('aria-hidden')).length);

@@ -60,7 +60,7 @@ function offer(what) {
     field.dispatchEvent(new Event("input", { bubbles: true }));
     close();
     paintBadge();
-    toast("Report started", "Everything you test from here is recorded against " + v + ". Open the Bench page to build it.", "ok");
+    toast("Report started", "Everything you test from here is recorded against " + v + ". Open the Report tab to build it.", "ok");
     TB.watch("REPORT", "opened for " + v);
   };
   inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); go.click(); } });
@@ -84,7 +84,7 @@ function close() { if (bar) { bar.remove(); bar = null; } }
 /* So the operator can always see which unit they are recording against. A
    session that silently files results under the wrong SKU is the failure
    this whole feature exists to prevent, so the number is on screen the whole
-   time rather than only on the Bench page. */
+   time rather than only on the Report page. */
 function paintBadge() {
   var host = $("#statusbar");
   if (!host) return;
@@ -95,7 +95,7 @@ function paintBadge() {
     b = el("button", "tb-chip sku", "");
     b.id = "sku-badge";
     b.title = "The unit everything is being recorded against. Click to go to the report.";
-    b.onclick = function () { TB.go("home"); setTimeout(function () { field.focus(); field.select(); }, 250); };
+    b.onclick = function () { TB.go("report"); setTimeout(function () { field.focus(); field.select(); }, 250); };
     host.insertBefore(b, host.firstChild);
   }
   b.textContent = "";
@@ -105,13 +105,14 @@ function paintBadge() {
   b.classList.add("live");
 }
 field.addEventListener("input", paintBadge);
+TB.onEnter("report", paintBadge);
 TB.onEnter("home", paintBadge);
 
 /* ---------- the gate ---------- */
 /* Build, print, copy and both exports all go through here. */
 function gate(action) {
   if (sku()) return true;
-  TB.go("home");
+  TB.go("report");
   setTimeout(function () {
     field.focus();
     field.classList.add("empty");

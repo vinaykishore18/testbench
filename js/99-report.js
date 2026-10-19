@@ -85,15 +85,24 @@ function countLine() {
   var n = r.length;
   var bad = r.filter(function (x) { return x.kind === "bad"; }).length;
   var warn = r.filter(function (x) { return x.kind === "warn"; }).length;
-  var p = $("#rep-count");
-  if (!n) {
-    p.textContent = "nothing recorded yet";
-    p.className = "tb-sppill";
-    return;
+  var text = !n ? "nothing recorded yet"
+    : n + " result" + (n === 1 ? "" : "s") +
+      (bad ? " \u00b7 " + bad + " faulty" : "") + (warn ? " \u00b7 " + warn + " to check" : "");
+  var cls = !n ? "tb-sppill" : "tb-sppill " + (bad ? "fail" : warn ? "warn" : "pass");
+  /* the pill on the report page, and the twin on the Bench callout */
+  ["#rep-count", "#rep-count-home"].forEach(function (id) {
+    var p = $(id); if (p) { p.textContent = text; p.className = cls; }
+  });
+  /* the rail badge: a small count so you can see from any page that results
+     are waiting, coloured if anything needs attention */
+  if (TB.badge) TB.badge("report", n ? String(n) : "", !!(n && (bad || warn)));
+  var tb = $("#topbar-report");
+  if (tb) {
+    tb.textContent = n ? "Report \u00b7 " + n : "Report";
+    tb.classList.toggle("has", !!n);
+    tb.classList.toggle("bad", !!bad);
+    tb.classList.toggle("warn", !bad && !!warn);
   }
-  p.textContent = n + " result" + (n === 1 ? "" : "s") +
-    (bad ? " · " + bad + " faulty" : "") + (warn ? " · " + warn + " to check" : "");
-  p.className = "tb-sppill " + (bad ? "fail" : warn ? "warn" : "pass");
 }
 
 /* ---------- the overall call ---------- */
@@ -474,7 +483,13 @@ TB.arm($("#rep-reset"), "Start a new unit", "Press again \u2014 this clears the 
         "The recorded results are cleared. The test pages themselves still show what they last measured \u2014 re-run anything you want in the new report.", "ok");
 });
 
-TB.onEnter("home", countLine);
+/* Refresh the count wherever you navigate \u2014 results accrue while you are on a
+   test page, and the rail badge and top-bar button should reflect that the
+   moment you look away from it. */
+TB.$$(".tb-view").forEach(function (sec) {
+  var v = sec.id.replace(/^view-/, "");
+  TB.onEnter(v, countLine);
+});
 countLine();
 
 /* for the test suite */

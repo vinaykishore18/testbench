@@ -151,13 +151,23 @@ function build() {
   grid.appendChild(p2);
   body.appendChild(grid);
 
-  var p3 = el("div", "tb-panel");
-  p3.appendChild(TB.ptitle("Every axis, raw"));
+  /* Plug-and-use is the whole job here, so the raw per-axis meters \u2014 which
+     sit half-lit at rest and look alarming to someone who just wants to press
+     a pedal \u2014 are folded away. A tester never needs them for a normal check;
+     they are here only to chase down a load cell or a rim dial that has no slot
+     of its own, so they open on demand and stay shut otherwise. */
+  var p3 = el("details", "tb-panel tb-adv");
+  var sum = el("summary", "tb-advsum");
+  sum.appendChild(el("span", "tb-advtitle", "Advanced \u00b7 every axis, raw"));
+  sum.appendChild(el("span", "tb-advhint", "only if something moves that has no slot above"));
+  p3.appendChild(sum);
+  var axwrap = el("div", "tb-advbody");
   var axes = [];
   rec.axes.forEach(function (_, i) {
-    var m = TB.meterRow("Axis " + i); p3.appendChild(m.node); axes.push(m);
+    var m = TB.meterRow("Axis " + i); axwrap.appendChild(m.node); axes.push(m);
   });
-  p3.appendChild(el("p", "tb-note", "Load cells, handbrakes and rim dials all land here. If something moves that has no slot above, this is where you confirm it works."));
+  axwrap.appendChild(el("p", "tb-note", "Load cells, handbrakes and rim dials all land here. If something moves that has no slot above, this is where you confirm it works."));
+  p3.appendChild(axwrap);
   body.appendChild(p3);
 
   ui = { rot: svgWrap.querySelector("#whrot"), vDeg: vDeg, vSwept: vSwept, vCentre: vCentre, vLock: vLock,

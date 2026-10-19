@@ -25,7 +25,8 @@ var $ = TB.$, $$ = TB.$$, el = TB.el;
    list to keep in step. The keywords are the things somebody would actually
    type when they are not thinking about what the page is called. */
 var EXTRA = {
-  home: "bench overview dashboard report unit print pdf",
+  home: "bench overview dashboard detected devices scoreboard",
+  report: "report unit sku grade condition premium excellent good fair as-is print pdf csv json export qc record listing dispute",
   keyboard: "keys keycaps chatter ghosting rollover typing wpm capture lock",
   mouse: "clicks dpi cpi scroll wheel polling jitter double click drag side buttons",
   gamepad: "controller pad xbox playstation dualsense switch pro drift stick deadzone triggers rumble",

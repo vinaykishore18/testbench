@@ -77,7 +77,7 @@ console.log('\n3. "Not now" means not now');
 
 console.log('\n4. no SKU, no report — on every path');
 {
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.evaluate(() => {
     const sec = document.querySelector('#view-mouse');
     const n = document.createElement('div'); n.id = 'sku-t1'; sec.appendChild(n);

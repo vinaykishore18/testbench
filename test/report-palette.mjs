@@ -52,7 +52,7 @@ await page.evaluate(() => {
 
 console.log('\n1. nothing in, nothing claimed');
 {
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.click('#rep-build');
   await page.waitForTimeout(400);
   const t = await page.evaluate(() => document.querySelector('#rep-out').textContent);
@@ -65,7 +65,7 @@ console.log('\n1. nothing in, nothing claimed');
 console.log('\n2. a result reaches the report through TB.verdict');
 {
   await feed('gamepad', 'tb-test-a', 96, [{ level: 'ok', tag: 'sticks', text: 'Both sticks centre.' }]);
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.click('#rep-build');
   await page.waitForTimeout(400);
   const t = await page.evaluate(() => document.querySelector('#rep-out').textContent);
@@ -81,7 +81,7 @@ console.log('\n3. one failure makes the unit faulty, however much else passed');
     await feed(v, 'tb-test-p' + i, 98, [{ level: 'ok', tag: 'all', text: 'Fine.' }]);
   }
   await feed('wheel', 'tb-test-bad', 22, [{ level: 'bad', tag: 'pedals', text: 'The brake pedal reads nothing at all.' }]);
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.click('#rep-build');
   await page.waitForTimeout(400);
   const call = await page.evaluate(() => document.querySelector('.tb-repcall').textContent);
@@ -109,7 +109,7 @@ console.log('\n5. re-running a test replaces its result rather than adding a sec
   const after = await page.evaluate(() => TB.results().length);
   after === before ? pass(`still ${after} results after re-testing the same panel`)
                    : fail(`re-testing added a row: ${before} -> ${after}`);
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.click('#rep-build');
   await page.waitForTimeout(300);
   const call = await page.evaluate(() => document.querySelector('.tb-repcall').textContent);
@@ -147,7 +147,7 @@ console.log('\n7. starting a new unit really clears it');
 console.log('\n8. print mode strips the app, then puts it back');
 {
   await feed('mouse', 'tb-test-print', 91, [{ level: 'ok', tag: 'buttons', text: 'All five register.' }]);
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   /* window.print() blocks in a headless browser, so drive the class the
      button drives and assert what it does to the layout. */
   await page.evaluate(() => {
@@ -205,7 +205,7 @@ console.log('\n10. the palette finds pages by what you would actually type');
      buried, which is what the looser checks pin down. */
   for (const [typed, want, depth] of [
     ['ping', 'network', 1], ['dead pixel', 'monitor', 1], ['mp3', 'audio', 1],
-    ['fake', 'airpods', 1], ['pdf', 'home', 1], ['latency', 'network', 1],
+    ['fake', 'airpods', 1], ['pdf', 'report', 1], ['latency', 'network', 1],
     ['stuck', 'monitor', 1], ['serial', 'airpods', 1],
     ['drift', 'gamepad', 2], ['battery', 'system', 3]
   ]) {
@@ -234,7 +234,7 @@ console.log('\n10b. a match inside a longer word never beats a real one');
 
 console.log('\n11. Escape closes it and gives focus back');
 {
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.focus('#rep-unit');
   await page.keyboard.press('Control+k');
   await page.waitForTimeout(200);

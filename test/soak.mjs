@@ -216,6 +216,7 @@ console.log('\n5. 50 palette opens and 50 report builds');
   }
   const left = await page.evaluate(() => document.querySelectorAll('.tb-pal').length);
   left === 0 ? pass('no palette left in the DOM') : fail(`${left} palette nodes left behind`);
+  await page.evaluate(() => TB.go('report'));
   for (let i = 0; i < 50; i++) await page.click('#rep-build');
   await page.waitForTimeout(600);
   const after = await snap();

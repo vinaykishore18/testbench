@@ -62,7 +62,7 @@ console.log('\n1. no SKU, no report');
      in an inventory folder is worse than no file, because somebody will match
      it to the wrong item on the shelf - so nothing exports until the unit has
      a number. */
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   await page.click('#rep-csv');
   await page.waitForTimeout(500);
   const t = await page.evaluate(() => (document.querySelector('#toasts') || {}).textContent || '');
@@ -88,7 +88,7 @@ console.log('\n2. the CSV survives commas, quotes and newlines in every field');
 {
   await feed('keyboard', 'tb-x1', 97, [{ level: 'ok', tag: 'keys', text: 'All 104 register.' }]);
   await feed('mouse', 'tb-x2', 41, [{ level: 'bad', tag: 'chatter', text: 'Left button double-fired 7 times, down to 12 ms.' }]);
-  await page.click('button[data-view="home"]');
+  await page.evaluate(() => TB.go('report'));
   /* Every character that breaks a naive CSV writer, in the fields an operator
      actually types into. The notes field gets a comma AND a quote. */
   await page.fill('#rep-unit', 'LOT-418, tray 2');

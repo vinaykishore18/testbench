@@ -76,48 +76,85 @@ var TB = (function () {
 
   function verdict(node, score, flags, idleMsg) {
     flags = flags || [];
-    node.innerHTML = "";
     if (score == null) {
+      /* idle: rebuild only when the idle message itself changes */
+      if (node._vkind === "idle" && node._vidle === (idleMsg || "")) return;
+      node.innerHTML = "";
       var v0 = el("div", "tb-verdict idle");
-      v0.appendChild(el("div", "score", "—"));
+      v0.appendChild(el("div", "score", "\u2014"));
       var t0 = el("div", "txt"); t0.appendChild(el("b", null, "Waiting")); t0.appendChild(el("span", null, idleMsg || "No data yet."));
-      v0.appendChild(t0); node.appendChild(v0); return;
+      v0.appendChild(t0); node.appendChild(v0);
+      node._vkind = "idle"; node._vidle = (idleMsg || "");
+      return;
     }
     var c = classify(score, flags);
     var kind = c.kind, word = c.word;
-    var v = el("div", "tb-verdict " + kind);
-    v.appendChild(el("div", "score", String(c.n)));
-    var t = el("div", "txt"); t.appendChild(el("b", null, word));
     var bad = flags.filter(function (f) { return f.level !== "ok"; }).length;
-    t.appendChild(el("span", null, bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to look at" : "Nothing flagged."));
+    var summary = bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to look at" : "Nothing flagged.";
+
+    /* The live pages — the microphone, the sticks — call this several times a
+       second, with the numbers inside the flag text moving every time. If the
+       verdict is still the same KIND with the same number of flags, nothing
+       about its shape has changed, so the existing nodes are updated in place:
+       no innerHTML churn, no re-run of the entrance animation. Rebuilding the
+       pill at 12 fps is exactly what read on screen as the "pass" light
+       blinking. The pill is only torn down and rebuilt when the kind changes
+       or a flag appears or disappears — a genuinely new result. */
+    var built = node._vnodes;
+    var sameShape = built && node._vkind === kind && built.flags.length === flags.length;
+
+    if (sameShape) {
+      if (built.score.textContent !== String(c.n)) built.score.textContent = String(c.n);
+      if (built.word.textContent !== word) built.word.textContent = word;
+      if (built.summary.textContent !== summary) built.summary.textContent = summary;
+      flags.forEach(function (f, i) {
+        var row = built.flags[i];
+        if (row.li.className !== f.level) row.li.className = f.level;
+        if (row.tag.textContent !== f.tag) row.tag.textContent = f.tag;
+        if (row.text.textContent !== f.text) row.text.textContent = f.text;
+      });
+      record(node, c.n, kind, word, flags);
+      return;
+    }
+
+    /* shape changed (or first result): build it fresh */
+    var kindChanged = node._vkind !== undefined && node._vkind !== "idle" && node._vkind !== kind;
+    var firstLand = node._vkind === undefined || node._vkind === "idle";
+    node.innerHTML = "";
+    var v = el("div", "tb-verdict " + kind);
+    var scoreEl = el("div", "score", String(c.n));
+    v.appendChild(scoreEl);
+    var t = el("div", "txt");
+    var wordEl = el("b", null, word); t.appendChild(wordEl);
+    var sumEl = el("span", null, summary); t.appendChild(sumEl);
     v.appendChild(t); node.appendChild(v);
     var ul = el("ul", "tb-flags");
-    flags.forEach(function (f) {
+    var flagNodes = flags.map(function (f) {
       var li = el("li", f.level);
-      li.appendChild(el("span", "tag", f.tag));
-      li.appendChild(el("span", null, f.text));
+      var tag = el("span", "tag", f.tag); li.appendChild(tag);
+      var tx = el("span", null, f.text); li.appendChild(tx);
       ul.appendChild(li);
+      return { li: li, tag: tag, text: tx };
     });
     node.appendChild(ul);
+    node._vnodes = { score: scoreEl, word: wordEl, summary: sumEl, flags: flagNodes };
 
-    /* Tell the operator a result landed. Looking at the hardware rather than
-       the screen is the normal posture on a bench, so a verdict that merely
-       swaps its own text is easy to miss entirely; a short settle is not.
-       A pass also gets one sweep of light across its panel - a pass is the
-       result you can act on without reading, which is the only case where
-       decoration earns its place. A failure gets nothing, because a failure
-       needs reading. */
-    v.classList.add("tb-landed");
-    if (kind === "ok") {
-      var panel = node.closest ? node.closest(".tb-panel") : null;
-      if (panel) {
-        panel.classList.remove("tb-swept");
-        /* force the animation to restart if the same panel passes twice */
-        void panel.offsetWidth;
-        panel.classList.add("tb-swept");
-        setTimeout(function () { panel.classList.remove("tb-swept"); }, 900);
+    /* The landing settle and the single pass-sweep mark a NEW result, so they
+       fire when the result first lands or changes kind — never on a refresh of
+       a result that is still saying the same thing. */
+    if (firstLand || kindChanged) {
+      v.classList.add("tb-landed");
+      if (kind === "ok") {
+        var panel = node.closest ? node.closest(".tb-panel") : null;
+        if (panel) {
+          panel.classList.remove("tb-swept");
+          void panel.offsetWidth;   /* restart the sweep if the same panel passes twice */
+          panel.classList.add("tb-swept");
+          setTimeout(function () { panel.classList.remove("tb-swept"); }, 900);
+        }
       }
     }
+    node._vkind = kind; node._vidle = null;
 
     /* Record it. Every scored verdict in the app comes through this function,
        so this is the one place that can collect a session's results without
@@ -302,7 +339,7 @@ var TB = (function () {
   function initTheme() {
     var saved = null;
     try { saved = localStorage.getItem(KEY); } catch (e) {}
-    current = saved || "system";
+    current = saved || "dark";   /* calm dark is the default look; System/Light still available in the top bar */
     buildPicker();
     setTheme(current, true);
     /* follow the OS while the choice is "System" */
@@ -697,6 +734,13 @@ var TB = (function () {
 
   /* ---------- rail, clock, theme ---------- */
   $$("#rail .tb-nav").forEach(function (b) { b.onclick = function () { go(b.dataset.view); }; });
+  /* Any other control carrying data-view (the Bench "open the report" button,
+     the top-bar Report button) navigates too, so the report is reachable from
+     wherever you are without duplicating the rail. */
+  $$("[data-view]").forEach(function (b) {
+    if (b.closest("#rail")) return;
+    b.addEventListener("click", function () { go(b.dataset.view); });
+  });
   initTheme();
   (function () { var c = $("#clock"); function tick() { c.textContent = stamp(); } tick(); setInterval(tick, 1000); })();
 

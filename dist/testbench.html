@@ -17,7 +17,7 @@
      which is why there is nothing in this site worth taking. -->
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, notranslate, nocache">
 <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Pzt3bn1Q0PmLHK65y0J/QZYzXS8vuVq+sBQs5QNp3Ow='; style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-1iVBuTGKrf6d207Y9yJyMwzw3ucnrQ2POfD+04ereVE='; style-src 'unsafe-inline'; font-src 'none'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src blob:; base-uri 'self'; form-action 'none'; object-src 'none'; frame-ancestors 'none'">
 <style>
 /* ============================================================
    Testbench by Vinay — design system
@@ -36,19 +36,19 @@
      patch a panel resolves to #11141C, over the brightest overlap of two
      colour blobs to #161B28, and every ink and signal below clears 5.69:1
      against BOTH. The worst pair has a full point of headroom over AA. */
-  --bg:#07080C;
-  --bg-2:#0B0D14;
-  --panel:rgba(20,24,33,.72);
-  --panel-solid:#141821;        /* where a real opaque fill is needed */
-  --panel-2:rgba(28,33,46,.74);
-  --raise:rgba(38,44,60,.80);
+  --bg:#10141B;
+  --bg-2:#161B23;
+  --panel:#1B212B;
+  --panel-solid:#1B212B;        /* where a real opaque fill is needed */
+  --panel-2:#222932;
+  --raise:#242B35;
   --line:rgba(255,255,255,.09);
   --line-soft:rgba(255,255,255,.05);
 
   /* ink */
-  --ink:#F2F6FB;
-  --ink-2:#B4C0D2;
-  --ink-3:#8A95A8;
+  --ink:#E9EDF2;
+  --ink-2:#AEB8C5;
+  --ink-3:#8E98A6;
 
   /* ---- signal ------------------------------------------------------------
      The brand accent is no longer red. Red was doing two jobs at once - it
@@ -56,50 +56,50 @@
      furniture read as a page full of alarms, and a genuine failure had
      nothing left to distinguish it. Cyan carries the identity now, violet
      supports it, and red means one thing only: this unit has a fault. */
-  --cyan:#3FE3D4;
-  --cyan-hot:#15D8C6;
-  --violet:#A99BFF;
-  --violet-hot:#7B5CFF;
-  --red:#FF6176;
-  --red-hot:#FF2D52;
+  --cyan:#4FACBA;
+  --cyan-hot:#61C4D1;
+  --violet:#9E93DD;
+  --violet-hot:#8A7BE6;
+  --red:#E8707F;
+  --red-hot:#E24B5F;
   --red-dim:#B3243C;
-  --red-glow:rgba(255,45,82,.18);
-  --pass:#39EE8E;
-  --pass-glow:rgba(57,238,142,.16);
-  --warn:#FFC94D;
-  --warn-glow:rgba(255,201,77,.16);
+  --red-glow:rgba(226,75,95,.18);
+  --pass:#49BE8B;
+  --pass-glow:rgba(73,190,139,.16);
+  --warn:#DCA846;
+  --warn-glow:rgba(220,168,70,.16);
   --idle:#39414E;
 
   /* ink that sits ON a signal colour */
   --on-red:#1A0008;
-  --on-pass:#02160B;
-  --on-cyan:#04201E;        /* near-black, on the dark theme's bright cyan */
-  --red-soft:#FF93A2;
+  --on-pass:#07251A;
+  --on-cyan:#052327;        /* near-black, on the dark theme's bright cyan */
+  --red-soft:#F0939F;
 
   /* signal tints */
-  --pass-t08:rgba(57,238,142,.08);
-  --pass-t12:rgba(57,238,142,.12);
-  --pass-t16:rgba(57,238,142,.16);
-  --pass-t25:rgba(57,238,142,.25);
-  --pass-l40:rgba(57,238,142,.40);
-  --pass-l50:rgba(57,238,142,.50);
-  --pass-l65:rgba(57,238,142,.65);
-  --warn-t16:rgba(255,201,77,.16);
-  --warn-l45:rgba(255,201,77,.45);
-  --red-t18:rgba(255,45,82,.18);
-  --red-t25:rgba(255,45,82,.25);
-  --red-t32:rgba(255,45,82,.32);
-  --red-l35:rgba(255,45,82,.35);
-  --red-l50:rgba(255,45,82,.50);
-  --ink3-t30:rgba(138,149,168,.30);
-  --cyan-t12:rgba(63,227,212,.12);
-  --cyan-t25:rgba(63,227,212,.25);
-  --cyan-l45:rgba(63,227,212,.45);
+  --pass-t08:rgba(73,190,139,.08);
+  --pass-t12:rgba(73,190,139,.12);
+  --pass-t16:rgba(73,190,139,.16);
+  --pass-t25:rgba(73,190,139,.25);
+  --pass-l40:rgba(73,190,139,.40);
+  --pass-l50:rgba(73,190,139,.50);
+  --pass-l65:rgba(73,190,139,.65);
+  --warn-t16:rgba(220,168,70,.16);
+  --warn-l45:rgba(220,168,70,.45);
+  --red-t18:rgba(226,75,95,.18);
+  --red-t25:rgba(226,75,95,.25);
+  --red-t32:rgba(226,75,95,.32);
+  --red-l35:rgba(226,75,95,.35);
+  --red-l50:rgba(226,75,95,.50);
+  --ink3-t30:rgba(139,149,162,.30);
+  --cyan-t12:rgba(79,172,186,.12);
+  --cyan-t25:rgba(79,172,186,.25);
+  --cyan-l45:rgba(79,172,186,.45);
 
   /* hairlines and chrome */
   --hairline:rgba(255,255,255,.07);
   --scroll-hot:rgba(255,255,255,.18);
-  --topbar:rgba(9,11,17,.66);
+  --topbar:#161B23;
   --stick-core:#121622;
 
   /* ---- glass -------------------------------------------------------------
@@ -120,11 +120,11 @@
      and this app reads a controller on every frame. The ambient layer is
      blurred ONCE, as a filter on its own element, instead of every panel
      re-filtering what is behind it sixty times a second. */
-  --glass:rgba(13,16,23,.86);
-  --glass-2:rgba(11,14,20,.93);
+  --glass:#1B212B;
+  --glass-2:#222932;
   --glass-line:rgba(255,255,255,.12);
   --glass-sheen:rgba(255,255,255,.07);
-  --glass-blur:8px;
+  --glass-blur:0px;
   --edge:inset 0 1px 0 rgba(255,255,255,.10);
   --edge-strong:inset 0 1px 0 rgba(255,255,255,.16);
   --shadow-lift:
@@ -149,9 +149,9 @@
   --dev-btn:#222838;     --dev-btn-line:#55617A;
   --dev-knob:#2C3448;    --dev-knob-line:#6B7893;
   --dev-well:#0D1017;    --dev-lbl:#95A1B5;
-  --dev-on-line:#8CF5BE; --dev-knob-on-line:#FFDD8A;
+  --dev-on-line:#81D9AB; --dev-knob-on-line:#FFDD8A;
   --dev-rim:#323D52;     --dev-spoke:#45516B;
-  --dev-hub:#1F2635;     --dev-tip:#3FE3D4;
+  --dev-hub:#1F2635;     --dev-tip:#4FACBA;
 
   /* ---- type --------------------------------------------------------------
      Fonts the machine already has.
@@ -590,13 +590,13 @@ label.tb-lab{
 /* ============================ readouts ============================ */
 .tb-stats{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);
+  gap:1px;background:var(--line);border:1px solid var(--line);
   border-radius:var(--r);overflow:hidden;
 }
 .tb-stat{background:var(--panel);padding:12px 14px;min-width:0}
 .tb-stat .k{
-  font-family:var(--f-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-family:var(--f-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .tb-stat .v{
   font-family:var(--f-mono);font-size:clamp(22px,1.9vw,30px);font-weight:700;
@@ -1494,6 +1494,7 @@ a:hover{color:var(--red-hot)}
 .tb-printing .tb-run,
 .tb-printing .tb-skip,
 .tb-printing #view-home > *:not(#rep-panel),
+.tb-printing #view-report > .tb-h,
 .tb-printing #rep-panel > .tb-ptitle,
 .tb-printing #rep-panel > .tb-sub,
 .tb-printing #rep-panel > .tb-bar,
@@ -1531,7 +1532,7 @@ a:hover{color:var(--red-hot)}
   display:flex;align-items:flex-start;justify-content:center;
   padding:12vh 16px 16px;
   background:color-mix(in srgb,var(--bg) 72%,transparent);
-  backdrop-filter:blur(4px);
+  backdrop-filter:none;
   animation:tb-palin .14s ease-out both;
 }
 @keyframes tb-palin{from{opacity:0}to{opacity:1}}
@@ -1593,11 +1594,9 @@ a:hover{color:var(--red-hot)}
   position:fixed; inset:-30vmax; z-index:0; pointer-events:none;
   opacity:1;
   background:
-    radial-gradient(40vmax 40vmax at 20% 14%, rgba(123,92,255,.42), transparent 64%),
-    radial-gradient(36vmax 36vmax at 84% 20%, rgba(21,216,198,.32), transparent 64%),
-    radial-gradient(34vmax 34vmax at 40% 94%, rgba(255,45,82,.22), transparent 64%),
-    radial-gradient(30vmax 30vmax at 78% 76%, rgba(255,201,77,.17), transparent 64%),
-    radial-gradient(60vmax 60vmax at 50% 40%, rgba(60,80,160,.10), transparent 70%);
+    radial-gradient(52vmax 52vmax at 18% 12%, rgba(79,172,186,.06), transparent 66%),
+    radial-gradient(48vmax 48vmax at 86% 84%, rgba(138,123,230,.05), transparent 68%),
+    radial-gradient(70vmax 70vmax at 50% 46%, rgba(40,52,74,.08), transparent 72%);
   /* STATIC while you are working, and that is measured rather than taste.
 
        static ................ 61 fps
@@ -1885,7 +1884,7 @@ body{ background:var(--bg) }
 @media (max-width:1100px){
   /* A blurred bar is proportionally more expensive on a smaller GPU, and the
      machines this runs on are the ones being tested. */
-  .tb-brand, .tb-status{ -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px) }
+  .tb-brand, .tb-status{ -webkit-backdrop-filter:none; backdrop-filter:none }
 }
 @media (max-width:760px){
   :root{ --r:12px }
@@ -1913,8 +1912,8 @@ body{ background:var(--bg) }
   position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
   max-width:min(520px,86vw); padding:26px 30px; border-radius:16px;
   background:rgba(8,10,16,.82);
-  -webkit-backdrop-filter:blur(8px) saturate(118%);
-  backdrop-filter:blur(8px) saturate(118%);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 24px 60px -24px rgba(0,0,0,.9);
   color:#F2F6FB; text-align:center; font-family:var(--f-body);
   animation:tb-dpin .3s cubic-bezier(.2,.8,.2,1) both;
@@ -1938,8 +1937,8 @@ body{ background:var(--bg) }
   display:flex; align-items:center; gap:16px;
   padding:14px 18px; border-radius:16px;
   background:var(--glass-2); border:1px solid var(--glass-line);
-  -webkit-backdrop-filter:blur(8px) saturate(118%);
-  backdrop-filter:blur(8px) saturate(118%);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
   box-shadow:var(--edge-strong), 0 24px 60px -24px rgba(0,0,0,.85);
   animation:tb-skuin .26s var(--ease) both;
 }
@@ -1985,6 +1984,67 @@ input.empty, .tb-skubar input.empty{
   .tb-skubar input{ flex:1 1 120px; width:auto }
 }
 
+/* ---------- collapsible "Advanced" panel (wheel raw axes, and anywhere a
+   rarely-needed block should fold away so the default view stays simple) ---- */
+details.tb-adv{padding:0;overflow:hidden}
+details.tb-adv > .tb-advsum{
+  list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;
+  padding:14px 18px;user-select:none;border-radius:inherit;
+  transition:background var(--t-fast,.15s) var(--ease,ease);
+}
+details.tb-adv > .tb-advsum::-webkit-details-marker{display:none}
+details.tb-adv > .tb-advsum::before{
+  content:"";flex:none;width:7px;height:7px;margin-right:2px;
+  border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
+  transform:rotate(-45deg);transition:transform var(--t-fast,.15s) var(--ease,ease);
+}
+details.tb-adv[open] > .tb-advsum::before{transform:rotate(45deg)}
+details.tb-adv > .tb-advsum:hover{background:var(--panel-2)}
+.tb-advtitle{font-family:var(--f-display);font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+.tb-advhint{font-size:12px;color:var(--ink-3)}
+.tb-advbody{padding:2px 18px 16px}
+
+/* top-bar Report button — tints when results are waiting that need a look */
+#topbar-report.has{border-color:var(--pass);color:var(--pass)}
+#topbar-report.warn{border-color:var(--warn);color:var(--warn)}
+#topbar-report.bad{border-color:var(--red);color:var(--red)}
+
+/* ---------- MIDI: adaptive pad grid and knob/fader tiles ---------- */
+.tb-pads{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;
+}
+.tb-pad{
+  position:relative;aspect-ratio:1/1;border-radius:10px;
+  background:var(--bg-2);border:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  font-family:var(--f-mono);--v:1;transition:background .06s,border-color .12s,transform .06s;
+}
+.tb-pad .lbl{font-size:12px;color:var(--ink-3);letter-spacing:.04em}
+.tb-pad em{font-style:normal;font-size:15px;font-weight:700;color:var(--ink-2)}
+.tb-pad.seen{background:color-mix(in srgb,var(--pass) calc(var(--v)*55%),var(--panel));border-color:var(--pass-l50)}
+.tb-pad.seen .lbl,.tb-pad.seen em{color:var(--ink)}
+.tb-pad.weak{background:color-mix(in srgb,var(--warn) 55%,var(--panel));border-color:var(--warn-l45)}
+.tb-pad.down{background:var(--pass);border-color:var(--pass);transform:translateY(2px)}
+.tb-pad.down .lbl,.tb-pad.down em{color:var(--on-pass)}
+
+.tb-knobs{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;
+}
+.tb-knob{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+}
+.tb-knob .kt{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.tb-knob .cc{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
+.tb-knob .val{font-family:var(--f-mono);font-size:17px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.tb-knob .bar{height:8px;border-radius:5px;background:var(--bg-2);border:1px solid var(--line-soft);overflow:hidden}
+.tb-knob .bar i{display:block;height:100%;width:0;background:var(--cyan);transition:width .05s}
+.tb-knob .span{margin-top:7px;font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+.tb-knob.full{border-color:var(--pass-l50)}
+.tb-knob.full .bar i{background:var(--pass)}
+.tb-knob.full .span{color:var(--pass)}
+.tb-knob.partial{border-color:var(--warn-l45)}
+.tb-knob.partial .bar i{background:var(--warn)}
+
 </style>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2308090C'/%3E%3Cpath d='M4 14h3l2-5 2.6 7 2.2-9 2 7h3.2' stroke='%23FF2D46' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
@@ -2024,6 +2084,7 @@ input.empty, .tb-skubar input.empty{
     <span class="tb-chip" id="chip-midi"><span class="tb-dot"></span>MIDI <b>—</b></span>
     <span class="tb-chip" id="chip-scr"><span class="tb-dot"></span>Screen <b>—</b></span>
     <div class="tb-themepick" id="themepick" role="group" aria-label="Theme" style="margin-left:auto"></div>
+    <button class="tb-btn" id="topbar-report" data-view="report" style="min-height:30px;padding:5px 12px;font-size:11px">Report</button>
     <button class="tb-btn" id="run-start" style="min-height:30px;padding:5px 14px;font-size:11px">Run bench</button>
     <span class="tb-clock" id="clock"></span>
   </div>
@@ -2049,6 +2110,7 @@ input.empty, .tb-skubar input.empty{
     <div class="tb-railhead">Machine</div>
     <button class="tb-nav" data-view="stress"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" stroke-linejoin="round"/></svg>Stress test<span class="tb-badge" id="badge-stress"></span></button>
     <button class="tb-nav" data-view="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>System<span class="tb-badge" id="badge-system"></span></button>
+    <button class="tb-nav tb-nav-report" data-view="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true" focusable="false"><path d="M8 3h6l4 4v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M13 3v5h5M9 13h6M9 17h6"/></svg>Report<span class="tb-badge" id="badge-report"></span></button>
   </nav>
 
   <main class="tb-main" id="main" tabindex="-1">
@@ -2082,18 +2144,38 @@ input.empty, .tb-skubar input.empty{
       </div>
     </div>
 
+    <div class="tb-panel" id="home-reportlink">
+      <h2 class="tb-ptitle">Unit report<span class="tb-rule"></span></h2>
+      <p class="tb-sub">Every test you run is collected into one QC record — pass, fail and the parts you did not test. The report has its own tab now so you can reach it from anywhere: open it to grade the unit, print it, or export the CSV/JSON for your listing.</p>
+      <div class="tb-bar">
+        <button class="tb-btn pri" data-view="report">Open the unit report →</button>
+        <span class="tb-sppill" id="rep-count-home">nothing recorded yet</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== REPORT ============================== -->
+  <section class="tb-view" id="view-report">
+    <div class="tb-h">
+      <div>
+        <span class="tb-eyebrow">QC record</span>
+        <h1>Build the <em>unit report</em></h1>
+      </div>
+      <p>This is the one place every result lands. Test the device on the other tabs, then come here to grade it, print it, and export the record for your listing or a returns dispute. It is built from what the bench actually found &mdash; it never fills in a test you did not run.</p>
+    </div>
+
     <div class="tb-panel accent" id="rep-panel">
       <h2 class="tb-ptitle">Unit report<span class="tb-rule"></span></h2>
-      <p class="tb-sub">Everything you test in this tab is recorded as you go. Fill in the unit details and this turns the session into a one-page QC record you can print, save as a PDF, or paste straight into a listing or a returns dispute. It is built from the results themselves, not typed up afterwards &mdash; so it says what the bench actually found, including the parts that failed.</p>
       <div class="tb-bar">
         <label class="tb-lab">SKU &mdash; this is the report number <input type="text" id="rep-unit" placeholder="e.g. DS4-CUH-ZCT2 / lot 418" style="min-width:230px;text-transform:none" required></label>
         <label class="tb-lab">Condition
           <select id="rep-grade">
             <option value="">not graded</option>
-            <option value="A — as new">A &mdash; as new</option>
-            <option value="B — light wear">B &mdash; light wear</option>
-            <option value="C — heavy wear, working">C &mdash; heavy wear, working</option>
-            <option value="D — faulty, for parts">D &mdash; faulty, for parts</option>
+            <option value="Premium — No marks or scratches">Premium &mdash; no marks or scratches</option>
+            <option value="Excellent — Minor cosmetic scratches">Excellent &mdash; minor cosmetic scratches</option>
+            <option value="Good — Many cosmetic scratches">Good &mdash; many cosmetic scratches</option>
+            <option value="Fair — Major damage and stains">Fair &mdash; major damage and stains</option>
+            <option value="AS-IS UNTESTED — Possible faults, unable to test">AS-IS UNTESTED &mdash; possible faults, unable to test</option>
           </select>
         </label>
         <label class="tb-lab">Tested by <input type="text" id="rep-by" placeholder="initials" style="min-width:90px;text-transform:uppercase"></label>
@@ -2111,9 +2193,9 @@ input.empty, .tb-skubar input.empty{
         <span class="tb-sppill" id="rep-count">nothing recorded yet</span>
       </div>
       <div id="rep-out" style="margin-top:16px"></div>
-      <p class="tb-note"><b>CSV</b> gives one row per test with the unit, grade and operator repeated on every line, so it drops straight into an inventory sheet and filters properly. The untested pages get rows too, with an empty score &mdash; a sheet of nothing but passes reads as a pass for the whole unit, which is the error the printed report exists to avoid. <b>JSON</b> is the same data with the flags and timestamps intact, for anything that reads the file rather than looks at it. Both are generated here and saved by your browser; nothing is uploaded.</p>
-      <p class="tb-note">The report never invents a result. A test you did not run is listed as not tested rather than assumed good, because &ldquo;not tested&rdquo; and &ldquo;passed&rdquo; are very different things to put in front of a buyer. Nothing leaves this machine &mdash; printing goes to your own printer or PDF writer, and copying goes to your clipboard.</p>
+      <p class="tb-note">Untested pages are listed as <b>not tested</b>, never assumed good. <b>CSV</b> drops into an inventory sheet; <b>JSON</b> keeps the flags and timestamps. Everything is generated and saved here &mdash; nothing is uploaded.</p>
     </div>
+
   </section>
 
   <!-- ============================= KEYBOARD ============================= -->
@@ -2268,7 +2350,6 @@ input.empty, .tb-skubar input.empty{
           <div class="tb-stat"><div class="k">Held right now</div><div class="v" id="ms-heldnow" style="font-size:16px">none</div></div>
           <div class="tb-stat"><div class="k">Last event</div><div class="v" id="ms-lastev" style="font-size:16px">—</div></div>
         </div>
-        <div id="ms-svg"></div>
         <div class="tb-idbar" id="ms-id"></div>
         <p class="tb-note" id="ms-mmonote"></p>
         </div>
@@ -2872,7 +2953,10 @@ input.empty, .tb-skubar input.empty{
       <span class="tb-lab" id="mi-state" style="text-transform:none;letter-spacing:0">Press Connect. No driver is needed for class-compliant gear.</span>
     </div>
 
-    <div class="tb-panel accent">
+    <p class="tb-note" id="mi-hint">Play a key, hit a pad, or move a knob, fader or wheel — the page shows only the controls your device actually sends. Different gear, different layout.</p>
+    <div id="mi-verdict" style="margin-bottom:16px"></div>
+
+    <div class="tb-panel accent" id="mi-panel-keys" hidden>
       <h2 class="tb-ptitle">Keyboard<span class="tb-rule"></span></h2>
       <div class="tb-piano" id="mi-keys"></div>
       <div class="tb-stats" style="margin-top:16px">
@@ -2883,11 +2967,27 @@ input.empty, .tb-skubar input.empty{
         <div class="tb-stat"><div class="k">Channels</div><div class="v" id="mi-chans" style="font-size:18px">&mdash;</div></div>
       </div>
       <p class="tb-note">Play every key from the bottom to the top at an even, moderate strength. A key that lights <b>amber</b> came in under velocity 45 while its neighbours were near 100 &mdash; the contact is closing late. That one plays, so it survives a quick listen, and the buyer finds it a week later. Red means a note started and never stopped.</p>
-      <div id="mi-verdict" style="margin-top:14px"></div>
+    </div>
+
+    <div class="tb-panel accent" id="mi-panel-pads" hidden>
+      <h2 class="tb-ptitle">Pads<span class="tb-rule"></span></h2>
+      <div class="tb-pads" id="mi-pads"></div>
+      <div class="tb-stats" style="margin-top:16px">
+        <div class="tb-stat"><div class="k">Pads hit</div><div class="v" id="mi-padseen">0</div></div>
+        <div class="tb-stat"><div class="k">Softest hit</div><div class="v" id="mi-padmin" style="font-size:18px">&mdash;</div></div>
+        <div class="tb-stat"><div class="k">Hardest hit</div><div class="v" id="mi-padmax" style="font-size:18px">&mdash;</div></div>
+      </div>
+      <p class="tb-note">Strike every pad firmly, then softly. A pad that stays dark is dead; one that lights <b>amber</b> never got past a soft hit even when you struck it hard &mdash; the sensor is worn. Each pad shows the hardest hit it registered.</p>
+    </div>
+
+    <div class="tb-panel" id="mi-panel-knobs" hidden>
+      <h2 class="tb-ptitle">Knobs &amp; faders<span class="tb-rule"></span></h2>
+      <div class="tb-knobs" id="mi-knobs"></div>
+      <p class="tb-note">Sweep each knob and fader slowly from one end to the other. A control that never reaches <b>0</b> or <b>127</b>, or that jumps instead of gliding, is worn. A tile appears for every CC the device sends, in the order you touch them.</p>
     </div>
 
     <div class="tb-grid tb-cols2">
-      <div class="tb-panel">
+      <div class="tb-panel" id="mi-panel-wheels" hidden>
         <h2 class="tb-ptitle">Wheels &amp; pedal<span class="tb-rule"></span></h2>
         <div class="tb-meterrow"><span class="lbl">Pitch bend</span><span class="tb-meter"><i id="mi-bendbar"></i></span><span class="val" id="mi-bendv">0%</span></div>
         <div class="tb-meterrow"><span class="lbl">Mod wheel</span><span class="tb-meter"><i id="mi-modbar"></i></span><span class="val" id="mi-modv">0%</span></div>
@@ -2951,7 +3051,7 @@ input.empty, .tb-skubar input.empty{
           <button class="tb-btn pri big" id="mn-runfull">Run full test <kbd>F</kbd></button>
           <button class="tb-btn" id="mn-runquick">Quick run <kbd>Q</kbd></button>
           <label class="tb-lab">Hold each
-            <select id="mn-dwell"><option value="1">1 s</option><option value="2">2 s</option><option value="4">4 s</option><option value="6" selected>6 s</option><option value="9">9 s</option><option value="14">14 s</option></select>
+            <select id="mn-dwell"><option value="1" selected>1 s</option><option value="2">2 s</option><option value="4">4 s</option><option value="6">6 s</option><option value="9">9 s</option><option value="14">14 s</option></select>
           </label>
         </div>
         <p class="tb-note">The full run walks all eleven colour fields and all ten patterns on its own — twenty-one steps. About two minutes at six seconds each, or twenty seconds flat at one. One second is a fast sweep for catching a dead pixel or a backlight fault; six is the right dwell for banding, uniformity and near-black crush, which your eyes need a moment to settle into. Space pauses, → skips, ← goes back, Esc stops.</p>
@@ -3574,48 +3674,85 @@ var TB = (function () {
 
   function verdict(node, score, flags, idleMsg) {
     flags = flags || [];
-    node.innerHTML = "";
     if (score == null) {
+      /* idle: rebuild only when the idle message itself changes */
+      if (node._vkind === "idle" && node._vidle === (idleMsg || "")) return;
+      node.innerHTML = "";
       var v0 = el("div", "tb-verdict idle");
-      v0.appendChild(el("div", "score", "—"));
+      v0.appendChild(el("div", "score", "\u2014"));
       var t0 = el("div", "txt"); t0.appendChild(el("b", null, "Waiting")); t0.appendChild(el("span", null, idleMsg || "No data yet."));
-      v0.appendChild(t0); node.appendChild(v0); return;
+      v0.appendChild(t0); node.appendChild(v0);
+      node._vkind = "idle"; node._vidle = (idleMsg || "");
+      return;
     }
     var c = classify(score, flags);
     var kind = c.kind, word = c.word;
-    var v = el("div", "tb-verdict " + kind);
-    v.appendChild(el("div", "score", String(c.n)));
-    var t = el("div", "txt"); t.appendChild(el("b", null, word));
     var bad = flags.filter(function (f) { return f.level !== "ok"; }).length;
-    t.appendChild(el("span", null, bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to look at" : "Nothing flagged."));
+    var summary = bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to look at" : "Nothing flagged.";
+
+    /* The live pages — the microphone, the sticks — call this several times a
+       second, with the numbers inside the flag text moving every time. If the
+       verdict is still the same KIND with the same number of flags, nothing
+       about its shape has changed, so the existing nodes are updated in place:
+       no innerHTML churn, no re-run of the entrance animation. Rebuilding the
+       pill at 12 fps is exactly what read on screen as the "pass" light
+       blinking. The pill is only torn down and rebuilt when the kind changes
+       or a flag appears or disappears — a genuinely new result. */
+    var built = node._vnodes;
+    var sameShape = built && node._vkind === kind && built.flags.length === flags.length;
+
+    if (sameShape) {
+      if (built.score.textContent !== String(c.n)) built.score.textContent = String(c.n);
+      if (built.word.textContent !== word) built.word.textContent = word;
+      if (built.summary.textContent !== summary) built.summary.textContent = summary;
+      flags.forEach(function (f, i) {
+        var row = built.flags[i];
+        if (row.li.className !== f.level) row.li.className = f.level;
+        if (row.tag.textContent !== f.tag) row.tag.textContent = f.tag;
+        if (row.text.textContent !== f.text) row.text.textContent = f.text;
+      });
+      record(node, c.n, kind, word, flags);
+      return;
+    }
+
+    /* shape changed (or first result): build it fresh */
+    var kindChanged = node._vkind !== undefined && node._vkind !== "idle" && node._vkind !== kind;
+    var firstLand = node._vkind === undefined || node._vkind === "idle";
+    node.innerHTML = "";
+    var v = el("div", "tb-verdict " + kind);
+    var scoreEl = el("div", "score", String(c.n));
+    v.appendChild(scoreEl);
+    var t = el("div", "txt");
+    var wordEl = el("b", null, word); t.appendChild(wordEl);
+    var sumEl = el("span", null, summary); t.appendChild(sumEl);
     v.appendChild(t); node.appendChild(v);
     var ul = el("ul", "tb-flags");
-    flags.forEach(function (f) {
+    var flagNodes = flags.map(function (f) {
       var li = el("li", f.level);
-      li.appendChild(el("span", "tag", f.tag));
-      li.appendChild(el("span", null, f.text));
+      var tag = el("span", "tag", f.tag); li.appendChild(tag);
+      var tx = el("span", null, f.text); li.appendChild(tx);
       ul.appendChild(li);
+      return { li: li, tag: tag, text: tx };
     });
     node.appendChild(ul);
+    node._vnodes = { score: scoreEl, word: wordEl, summary: sumEl, flags: flagNodes };
 
-    /* Tell the operator a result landed. Looking at the hardware rather than
-       the screen is the normal posture on a bench, so a verdict that merely
-       swaps its own text is easy to miss entirely; a short settle is not.
-       A pass also gets one sweep of light across its panel - a pass is the
-       result you can act on without reading, which is the only case where
-       decoration earns its place. A failure gets nothing, because a failure
-       needs reading. */
-    v.classList.add("tb-landed");
-    if (kind === "ok") {
-      var panel = node.closest ? node.closest(".tb-panel") : null;
-      if (panel) {
-        panel.classList.remove("tb-swept");
-        /* force the animation to restart if the same panel passes twice */
-        void panel.offsetWidth;
-        panel.classList.add("tb-swept");
-        setTimeout(function () { panel.classList.remove("tb-swept"); }, 900);
+    /* The landing settle and the single pass-sweep mark a NEW result, so they
+       fire when the result first lands or changes kind — never on a refresh of
+       a result that is still saying the same thing. */
+    if (firstLand || kindChanged) {
+      v.classList.add("tb-landed");
+      if (kind === "ok") {
+        var panel = node.closest ? node.closest(".tb-panel") : null;
+        if (panel) {
+          panel.classList.remove("tb-swept");
+          void panel.offsetWidth;   /* restart the sweep if the same panel passes twice */
+          panel.classList.add("tb-swept");
+          setTimeout(function () { panel.classList.remove("tb-swept"); }, 900);
+        }
       }
     }
+    node._vkind = kind; node._vidle = null;
 
     /* Record it. Every scored verdict in the app comes through this function,
        so this is the one place that can collect a session's results without
@@ -3800,7 +3937,7 @@ var TB = (function () {
   function initTheme() {
     var saved = null;
     try { saved = localStorage.getItem(KEY); } catch (e) {}
-    current = saved || "system";
+    current = saved || "dark";   /* calm dark is the default look; System/Light still available in the top bar */
     buildPicker();
     setTheme(current, true);
     /* follow the OS while the choice is "System" */
@@ -4195,6 +4332,13 @@ var TB = (function () {
 
   /* ---------- rail, clock, theme ---------- */
   $$("#rail .tb-nav").forEach(function (b) { b.onclick = function () { go(b.dataset.view); }; });
+  /* Any other control carrying data-view (the Bench "open the report" button,
+     the top-bar Report button) navigates too, so the report is reachable from
+     wherever you are without duplicating the rail. */
+  $$("[data-view]").forEach(function (b) {
+    if (b.closest("#rail")) return;
+    b.addEventListener("click", function () { go(b.dataset.view); });
+  });
   initTheme();
   (function () { var c = $("#clock"); function tick() { c.textContent = stamp(); } tick(); setInterval(tick, 1000); })();
 
@@ -6419,13 +6563,23 @@ function build() {
   grid.appendChild(p2);
   body.appendChild(grid);
 
-  var p3 = el("div", "tb-panel");
-  p3.appendChild(TB.ptitle("Every axis, raw"));
+  /* Plug-and-use is the whole job here, so the raw per-axis meters \u2014 which
+     sit half-lit at rest and look alarming to someone who just wants to press
+     a pedal \u2014 are folded away. A tester never needs them for a normal check;
+     they are here only to chase down a load cell or a rim dial that has no slot
+     of its own, so they open on demand and stay shut otherwise. */
+  var p3 = el("details", "tb-panel tb-adv");
+  var sum = el("summary", "tb-advsum");
+  sum.appendChild(el("span", "tb-advtitle", "Advanced \u00b7 every axis, raw"));
+  sum.appendChild(el("span", "tb-advhint", "only if something moves that has no slot above"));
+  p3.appendChild(sum);
+  var axwrap = el("div", "tb-advbody");
   var axes = [];
   rec.axes.forEach(function (_, i) {
-    var m = TB.meterRow("Axis " + i); p3.appendChild(m.node); axes.push(m);
+    var m = TB.meterRow("Axis " + i); axwrap.appendChild(m.node); axes.push(m);
   });
-  p3.appendChild(el("p", "tb-note", "Load cells, handbrakes and rim dials all land here. If something moves that has no slot above, this is where you confirm it works."));
+  axwrap.appendChild(el("p", "tb-note", "Load cells, handbrakes and rim dials all land here. If something moves that has no slot above, this is where you confirm it works."));
+  p3.appendChild(axwrap);
   body.appendChild(p3);
 
   ui = { rot: svgWrap.querySelector("#whrot"), vDeg: vDeg, vSwept: vSwept, vCentre: vCentre, vLock: vLock,
@@ -6558,20 +6712,25 @@ $("#wh-reset").onclick = function () {
 /* ---- 45-midi.js ---- */
 /* Testbench — MIDI controllers and keyboards.
 
-   What actually fails on a second-hand MIDI keyboard, in the order you meet it:
+   "MIDI" is three very different machines wearing one plug: a keyboard, a pad
+   controller, and a box of knobs and faders. A page that shows an 88-key piano
+   to someone testing a fader bank is worse than useless, so this page shows
+   nothing until the device speaks, then reveals ONLY the controls it actually
+   sends:
 
-     dead keys      the contact under one note has stopped closing
-     weak keys      it closes, but late, so the note arrives at a low velocity
-                    while its neighbours arrive at 100+. Worse than dead, because
-                    it plays, and the buyer only notices a week later
-     stuck notes    a Note On with no matching Note Off
-     dead wheels    pitch bend that will not return to centre, or a mod wheel
-                    with a flat spot
+     notes on a melodic channel .... the keyboard
+     notes on channel 10 ........... the drum pads
+     control-change (knobs/faders) . a tile per control, as you touch them
+     pitch bend / mod / sustain .... the wheels and pedal
 
-   So the page is built around velocity rather than around "did it make a
-   sound". Every key you press is kept with the velocity it reported, and the
-   spread across the keyboard is what the verdict is computed from: one key
-   coming in at 40 when the rest average 100 is the fault you are looking for.
+   What actually fails on used gear, in the order you meet it:
+     dead keys/pads   the contact has stopped closing
+     weak keys/pads   it closes late, so it arrives at a low velocity while its
+                      neighbours arrive at 100+. Worse than dead, because it
+                      plays, and the buyer only notices a week later
+     stuck notes      a Note On with no matching Note Off
+     dead wheels      pitch bend that will not return to centre, a mod wheel or
+                      fader with a flat spot, a knob that never reaches an end
 
    Web MIDI needs no driver and no permission prompt for input-only access in
    Chrome, but it does need a secure context. On http:// it simply is not there,
@@ -6586,11 +6745,24 @@ var NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 var BLACK = { 1: 1, 3: 1, 6: 1, 8: 1, 10: 1 };
 function noteName(n) { return NAMES[n % 12] + (Math.floor(n / 12) - 1); }
 
-var access = null, keyEls = {}, st = fresh(), bound = Object.create(null);
+var access = null, keyEls = {}, padEls = {}, knobEls = {}, st = fresh(), bound = Object.create(null);
+var shown = Object.create(null);
 function fresh() {
   var b = function () { return Object.create(null); };
   return { on: b(), vel: b(), count: 0, notes: 0, stuck: b(),
-           bend: 8192, mod: 0, cc: b(), chans: b(), sustain: false, clock: 0 };
+           bend: 8192, mod: 0, cc: b(), chans: b(), sustain: false, clock: 0,
+           pads: b(), padOn: b(), padMax: b(), padSeen: 0,
+           ccv: b(), ccMin: b(), ccMax: b(), wheelsTouched: false };
+}
+
+/* ---------- reveal only what the device sends ---------- */
+function reveal(id) {
+  if (shown[id]) return;
+  shown[id] = true;
+  var n = $("#mi-panel-" + id);
+  if (n) n.hidden = false;
+  var hint = $("#mi-hint");
+  if (hint) hint.hidden = true;
 }
 
 /* ---------- the keyboard ---------- */
@@ -6626,8 +6798,67 @@ function paintKey(n) {
   k.classList.toggle("seen", v != null);
   k.classList.toggle("weak", v != null && v < 45);
   k.classList.toggle("stuck", !!st.stuck[n]);
-  /* velocity drives the strength of the mark, so a soft key looks soft */
   if (v != null) k.style.setProperty("--v", (0.25 + (v / 127) * 0.75).toFixed(3));
+}
+
+/* ---------- the pads ----------
+   A pad grid is not fixed like a keyboard: a 4x4 unit and a 64-pad unit are
+   both "pads". So cells are created as notes arrive, in the order the device
+   sends them, which is the order the operator strikes them. */
+function padCell(note) {
+  if (padEls[note]) return padEls[note];
+  var host = $("#mi-pads"); if (!host) return null;
+  var c = el("div", "tb-pad");
+  c.dataset.note = note;
+  c.appendChild(el("span", "lbl", noteName(note)));
+  c.appendChild(el("em"));
+  host.appendChild(c);
+  padEls[note] = c;
+  return c;
+}
+function paintPad(note) {
+  var c = padCell(note); if (!c) return;
+  var mx = st.padMax[note];
+  c.classList.toggle("down", !!st.padOn[note]);
+  c.classList.toggle("seen", mx != null);
+  c.classList.toggle("weak", mx != null && mx < 45);
+  if (mx != null) {
+    c.style.setProperty("--v", (0.2 + (mx / 127) * 0.8).toFixed(3));
+    c.querySelector("em").textContent = mx;
+  }
+}
+
+/* ---------- knobs and faders ----------
+   One tile per CC number, created the first time that control moves, showing
+   the live value and the full span it has covered so a knob that never reaches
+   an end is visible. */
+function knobTile(cc) {
+  if (knobEls[cc]) return knobEls[cc];
+  var host = $("#mi-knobs"); if (!host) return null;
+  var t = el("div", "tb-knob");
+  t.dataset.cc = cc;
+  var top = el("div", "kt");
+  top.appendChild(el("span", "cc", "CC " + cc));
+  var val = el("span", "val", "0");
+  top.appendChild(val);
+  t.appendChild(top);
+  var bar = el("div", "bar"); var fill = el("i"); bar.appendChild(fill); t.appendChild(bar);
+  var span = el("div", "span", "range —");
+  t.appendChild(span);
+  knobEls[cc] = { node: t, val: val, fill: fill, span: span };
+  host.appendChild(t);
+  return knobEls[cc];
+}
+function paintKnob(cc) {
+  var k = knobTile(cc); if (!k) return;
+  var v = st.ccv[cc] || 0;
+  k.val.textContent = v;
+  k.fill.style.width = (v / 127 * 100) + "%";
+  var lo = st.ccMin[cc], hi = st.ccMax[cc];
+  k.span.textContent = "range " + lo + "–" + hi;
+  var full = lo <= 2 && hi >= 125;
+  k.node.classList.toggle("full", full);
+  k.node.classList.toggle("partial", (hi - lo) > 10 && !full);
 }
 
 /* ---------- messages ---------- */
@@ -6638,25 +6869,40 @@ function onMessage(e) {
   st.chans[chan] = true;
 
   if (status === 0x90 && d[2] > 0) {
-    st.on[d[1]] = true;
-    if (st.vel[d[1]] == null) st.notes++;
-    st.vel[d[1]] = d[2];
     st.count++;
-    delete st.stuck[d[1]];
-    log("NOTE ON", noteName(d[1]) + "  vel " + d[2] + "  ch " + chan);
-    paintKey(d[1]);
+    if (chan === 10) {                                /* GM drums: a pad */
+      if (st.padMax[d[1]] == null) st.padSeen++;
+      st.padOn[d[1]] = true;
+      if (st.padMax[d[1]] == null || d[2] > st.padMax[d[1]]) st.padMax[d[1]] = d[2];
+      reveal("pads"); paintPad(d[1]);
+      log("PAD", noteName(d[1]) + "  vel " + d[2] + "  ch " + chan);
+    } else {
+      st.on[d[1]] = true;
+      if (st.vel[d[1]] == null) st.notes++;
+      st.vel[d[1]] = d[2];
+      delete st.stuck[d[1]];
+      reveal("keys"); paintKey(d[1]);
+      log("NOTE ON", noteName(d[1]) + "  vel " + d[2] + "  ch " + chan);
+    }
   } else if (status === 0x80 || (status === 0x90 && d[2] === 0)) {
-    st.on[d[1]] = false;
-    log("NOTE OFF", noteName(d[1]) + "  ch " + chan);
-    paintKey(d[1]);
+    if (chan === 10) { st.padOn[d[1]] = false; paintPad(d[1]); log("PAD OFF", noteName(d[1]) + "  ch " + chan); }
+    else { st.on[d[1]] = false; paintKey(d[1]); log("NOTE OFF", noteName(d[1]) + "  ch " + chan); }
   } else if (status === 0xE0) {
     st.bend = d[1] | (d[2] << 7);
-    paintWheels();
+    st.wheelsTouched = true; reveal("wheels"); paintWheels();
+    st.count++;
   } else if (status === 0xB0) {
+    st.count++;
     st.cc[d[1]] = d[2];
-    if (d[1] === 1) { st.mod = d[2]; paintWheels(); }
-    if (d[1] === 64) { st.sustain = d[2] >= 64; paintWheels(); }
-    log("CC " + d[1], d[2] + "  ch " + chan);
+    if (d[1] === 1) { st.mod = d[2]; st.wheelsTouched = true; reveal("wheels"); paintWheels(); log("CC 1 (mod)", d[2] + "  ch " + chan); }
+    else if (d[1] === 64) { st.sustain = d[2] >= 64; st.wheelsTouched = true; reveal("wheels"); paintWheels(); log("CC 64 (sustain)", d[2] + "  ch " + chan); }
+    else {                                            /* a knob or a fader */
+      st.ccv[d[1]] = d[2];
+      if (st.ccMin[d[1]] == null || d[2] < st.ccMin[d[1]]) st.ccMin[d[1]] = d[2];
+      if (st.ccMax[d[1]] == null || d[2] > st.ccMax[d[1]]) st.ccMax[d[1]] = d[2];
+      reveal("knobs"); paintKnob(d[1]);
+      log("CC " + d[1], d[2] + "  ch " + chan);
+    }
   } else if (status === 0xD0) {
     log("AFTERTOUCH", d[1] + "  ch " + chan);
   } else if (status === 0xA0) {
@@ -6686,7 +6932,9 @@ function paintWheels() {
   s.className = "v " + (st.sustain ? "pass" : "");
 }
 
+/* ---------- the verdict, chosen by what the device actually is ---------- */
 function stats() {
+  /* keyboard readouts */
   $("#mi-notes").textContent = st.notes;
   $("#mi-msgs").textContent = st.count;
   var vels = [], weak = [];
@@ -6701,36 +6949,111 @@ function stats() {
   $("#mi-velrange").textContent = vels.length ? lo + " – " + hi : "—";
   $("#mi-chans").textContent = Object.keys(st.chans).join(", ") || "—";
 
-  var flags = [], score = 100;
+  /* pad readouts */
+  var pv = [];
+  Object.keys(st.padMax).forEach(function (n) { pv.push(st.padMax[n]); });
+  if ($("#mi-padseen")) {
+    $("#mi-padseen").textContent = st.padSeen;
+    $("#mi-padmin").textContent = pv.length ? Math.min.apply(null, pv) : "—";
+    $("#mi-padmax").textContent = pv.length ? Math.max.apply(null, pv) : "—";
+  }
+
   if (!st.count) {
-    verdict($("#mi-verdict"), null, [], "Play a few keys. Work up the whole keyboard, then the wheels and the sustain pedal.");
-    badge("midi", ""); return;
+    verdict($("#mi-verdict"), null, [], "Play a key, hit a pad, or move a knob, fader or wheel. The page shows the controls your device sends.");
+    badge("midi", "");
+    return;
   }
-  if (weak.length) {
-    score -= Math.min(50, weak.length * 8);
-    flags.push({ level: "bad", tag: "weak keys", text: weak.join(", ") + " came in under velocity 45 while the average is " + Math.round(avg) + ". The contact is closing late — it plays, so it passes a listen test, and the buyer finds it a week later." });
+
+  var flags = [], score = 100;
+
+  /* KEYBOARD — the original path, unchanged, so a keyboard grades exactly as before */
+  if (st.notes > 0) {
+    if (weak.length) {
+      score -= Math.min(50, weak.length * 8);
+      flags.push({ level: "bad", tag: "weak keys", text: weak.join(", ") + " came in under velocity 45 while the average is " + Math.round(avg) + ". The contact is closing late — it plays, so it passes a listen test, and the buyer finds it a week later." });
+    }
+    var stuck = Object.keys(st.stuck).map(function (n) { return noteName(+n); });
+    if (stuck.length) {
+      score -= 30;
+      flags.push({ level: "bad", tag: "stuck", text: stuck.join(", ") + " sent a note on with no note off." });
+    }
+    if (st.notes < 12) {
+      score -= 10;
+      flags.push({ level: "warn", tag: "coverage", text: "Only " + st.notes + " distinct key" + (st.notes === 1 ? "" : "s") + " played. A dead key looks exactly like one you have not pressed." });
+    } else {
+      flags.push({ level: "ok", tag: "coverage", text: st.notes + " distinct keys, velocity " + lo + " to " + hi + "." });
+    }
+    if (hi - lo > 0 && lo > 45) flags.push({ level: "ok", tag: "velocity", text: "Every key cleared velocity 45." });
+    if (Math.abs(st.bend - 8192) > 200) {
+      score -= 12;
+      flags.push({ level: "warn", tag: "pitch bend", text: "The bend wheel is resting off centre (" + st.bend + " of 16384). It should spring back to 8192." });
+    }
+    verdict($("#mi-verdict"), clamp(score, 0, 100), flags);
+    badge("midi", st.notes + " keys", score >= 90);
+    return;
   }
-  var stuck = Object.keys(st.stuck).map(function (n) { return noteName(+n); });
-  if (stuck.length) {
-    score -= 30;
-    flags.push({ level: "bad", tag: "stuck", text: stuck.join(", ") + " sent a note on with no note off." });
+
+  /* PADS */
+  if (st.padSeen > 0) {
+    var pweak = [];
+    Object.keys(st.padMax).forEach(function (n) { if (st.padMax[n] < 45) pweak.push(noteName(+n)); });
+    var pmin = Math.min.apply(null, pv), pmax = Math.max.apply(null, pv);
+    if (pweak.length) {
+      score -= Math.min(50, pweak.length * 10);
+      flags.push({ level: "bad", tag: "weak pads", text: pweak.join(", ") + " never got past a soft hit (under velocity 45). The sensor is worn — it triggers, but quietly, whatever you do." });
+    } else {
+      flags.push({ level: "ok", tag: "response", text: "Every pad struck reached a firm velocity (" + pmin + "–" + pmax + ")." });
+    }
+    flags.push({ level: st.padSeen < 4 ? "warn" : "ok", tag: "coverage", text: st.padSeen + " pad" + (st.padSeen === 1 ? "" : "s") + " hit. A pad you have not struck looks the same as a dead one, so work through all of them." });
+    verdict($("#mi-verdict"), clamp(score, 0, 100), flags);
+    badge("midi", st.padSeen + " pads", score >= 90);
+    return;
   }
-  if (st.notes < 12) {
-    score -= 10;
-    flags.push({ level: "warn", tag: "coverage", text: "Only " + st.notes + " distinct key" + (st.notes === 1 ? "" : "s") + " played. A dead key looks exactly like one you have not pressed." });
-  } else {
-    flags.push({ level: "ok", tag: "coverage", text: st.notes + " distinct keys, velocity " + lo + " to " + hi + "." });
+
+  /* KNOBS & FADERS */
+  var ccs = Object.keys(st.ccv);
+  if (ccs.length > 0) {
+    var partial = ccs.filter(function (c) { return !(st.ccMin[c] <= 2 && st.ccMax[c] >= 125); });
+    if (partial.length) {
+      score -= Math.min(40, partial.length * 8);
+      flags.push({ level: "warn", tag: "range", text: partial.length + " control" + (partial.length === 1 ? "" : "s") + " (CC " + partial.join(", ") + ") did not reach both 0 and 127. Sweep each one fully end to end — if it still will not, the track is worn." });
+    } else {
+      flags.push({ level: "ok", tag: "range", text: "Every control swept the full 0–127." });
+    }
+    flags.push({ level: "ok", tag: "controls", text: ccs.length + " knob/fader" + (ccs.length === 1 ? "" : "s") + " responded (CC " + ccs.join(", ") + ")." });
+    verdict($("#mi-verdict"), clamp(score, 0, 100), flags);
+    badge("midi", ccs.length + " CC", score >= 90);
+    return;
   }
-  if (hi - lo > 0 && lo > 45) flags.push({ level: "ok", tag: "velocity", text: "Every key cleared velocity 45." });
-  if (Math.abs(st.bend - 8192) > 200) {
-    score -= 12;
-    flags.push({ level: "warn", tag: "pitch bend", text: "The bend wheel is resting off centre (" + st.bend + " of 16384). It should spring back to 8192." });
+
+  /* WHEELS / PEDAL only */
+  if (st.wheelsTouched) {
+    if (Math.abs(st.bend - 8192) > 200) {
+      score -= 12;
+      flags.push({ level: "warn", tag: "pitch bend", text: "The bend wheel is resting off centre (" + st.bend + " of 16384). It should spring back to 8192." });
+    } else {
+      flags.push({ level: "ok", tag: "pitch bend", text: "Bend springs back to centre." });
+    }
+    flags.push({ level: "ok", tag: "controls", text: "Mod wheel and sustain responded." });
+    verdict($("#mi-verdict"), clamp(score, 0, 100), flags);
+    badge("midi", "wheels", score >= 90);
+    return;
   }
-  verdict($("#mi-verdict"), clamp(score, 0, 100), flags);
-  badge("midi", st.notes + " keys", score >= 90);
+
+  verdict($("#mi-verdict"), null, [], "Play a key, hit a pad, or move a knob, fader or wheel.");
 }
 
 /* ---------- ports ---------- */
+/* The port name is a hint, not proof — it lets the page show the likely layout
+   before the first note so an empty pad box does not greet someone who plugged
+   in a pad controller. The messages themselves still decide what finally shows. */
+function hintFromName(name) {
+  var s = (name || "").toLowerCase();
+  if (/launchpad|\bmpd\b|\bmpc\b|maschine|beatstep|pad|spd|drum/.test(s)) reveal("pads");
+  if (/nanokontrol|faderport|control|mixer|bcf|bcr|xtouch|x-touch|fader/.test(s)) reveal("knobs");
+  if (/key|piano|keystation|mpk|keylab|oxygen|axiom|\bkomplete\b|\bs61\b|\bs49\b|\bs88\b/.test(s)) reveal("keys");
+}
+
 function bindInputs() {
   if (!access) return;
   var list = $("#mi-ports"); list.textContent = "";
@@ -6738,6 +7061,7 @@ function bindInputs() {
   access.inputs.forEach(function (inp) {
     n++;
     if (!bound[inp.id]) { inp.onmidimessage = onMessage; bound[inp.id] = true; }
+    hintFromName(inp.name);
     var row = el("div", "tb-chiprow");
     var b = el("button", "go", inp.name || "MIDI in");
     b.type = "button"; b.disabled = true;
@@ -6745,7 +7069,7 @@ function bindInputs() {
     row.appendChild(b);
     list.appendChild(row);
   });
-  if (!n) list.appendChild(el("p", "tb-note", "No MIDI inputs. Plug the keyboard in over USB — class-compliant gear needs no driver — then press Connect again."));
+  if (!n) list.appendChild(el("p", "tb-note", "No MIDI inputs. Plug the keyboard, pad or controller in over USB — class-compliant gear needs no driver — then press Connect again."));
   TB.chip("midi", n > 0, n ? String(n) : "none");
   $("#mi-state").textContent = n
     ? n + (n === 1 ? " input" : " inputs") + " listening."
@@ -6783,6 +7107,9 @@ $("#mi-reset").onclick = function () {
   Object.keys(keyEls).forEach(function (n) {
     keyEls[n].className = keyEls[n].className.replace(/\s*(down|seen|weak|stuck)/g, "");
   });
+  if ($("#mi-pads")) $("#mi-pads").textContent = "";
+  if ($("#mi-knobs")) $("#mi-knobs").textContent = "";
+  padEls = {}; knobEls = {};
   $("#mi-log").textContent = "";
   paintWheels(); stats();
 };
@@ -11802,7 +12129,8 @@ var $ = TB.$, $$ = TB.$$, el = TB.el;
    list to keep in step. The keywords are the things somebody would actually
    type when they are not thinking about what the page is called. */
 var EXTRA = {
-  home: "bench overview dashboard report unit print pdf",
+  home: "bench overview dashboard detected devices scoreboard",
+  report: "report unit sku grade condition premium excellent good fair as-is print pdf csv json export qc record listing dispute",
   keyboard: "keys keycaps chatter ghosting rollover typing wpm capture lock",
   mouse: "clicks dpi cpi scroll wheel polling jitter double click drag side buttons",
   gamepad: "controller pad xbox playstation dualsense switch pro drift stick deadzone triggers rumble",
@@ -12290,15 +12618,24 @@ function countLine() {
   var n = r.length;
   var bad = r.filter(function (x) { return x.kind === "bad"; }).length;
   var warn = r.filter(function (x) { return x.kind === "warn"; }).length;
-  var p = $("#rep-count");
-  if (!n) {
-    p.textContent = "nothing recorded yet";
-    p.className = "tb-sppill";
-    return;
+  var text = !n ? "nothing recorded yet"
+    : n + " result" + (n === 1 ? "" : "s") +
+      (bad ? " \u00b7 " + bad + " faulty" : "") + (warn ? " \u00b7 " + warn + " to check" : "");
+  var cls = !n ? "tb-sppill" : "tb-sppill " + (bad ? "fail" : warn ? "warn" : "pass");
+  /* the pill on the report page, and the twin on the Bench callout */
+  ["#rep-count", "#rep-count-home"].forEach(function (id) {
+    var p = $(id); if (p) { p.textContent = text; p.className = cls; }
+  });
+  /* the rail badge: a small count so you can see from any page that results
+     are waiting, coloured if anything needs attention */
+  if (TB.badge) TB.badge("report", n ? String(n) : "", !!(n && (bad || warn)));
+  var tb = $("#topbar-report");
+  if (tb) {
+    tb.textContent = n ? "Report \u00b7 " + n : "Report";
+    tb.classList.toggle("has", !!n);
+    tb.classList.toggle("bad", !!bad);
+    tb.classList.toggle("warn", !bad && !!warn);
   }
-  p.textContent = n + " result" + (n === 1 ? "" : "s") +
-    (bad ? " · " + bad + " faulty" : "") + (warn ? " · " + warn + " to check" : "");
-  p.className = "tb-sppill " + (bad ? "fail" : warn ? "warn" : "pass");
 }
 
 /* ---------- the overall call ---------- */
@@ -12679,7 +13016,13 @@ TB.arm($("#rep-reset"), "Start a new unit", "Press again \u2014 this clears the 
         "The recorded results are cleared. The test pages themselves still show what they last measured \u2014 re-run anything you want in the new report.", "ok");
 });
 
-TB.onEnter("home", countLine);
+/* Refresh the count wherever you navigate \u2014 results accrue while you are on a
+   test page, and the rail badge and top-bar button should reflect that the
+   moment you look away from it. */
+TB.$$(".tb-view").forEach(function (sec) {
+  var v = sec.id.replace(/^view-/, "");
+  TB.onEnter(v, countLine);
+});
 countLine();
 
 /* for the test suite */
@@ -12750,7 +13093,7 @@ function offer(what) {
     field.dispatchEvent(new Event("input", { bubbles: true }));
     close();
     paintBadge();
-    toast("Report started", "Everything you test from here is recorded against " + v + ". Open the Bench page to build it.", "ok");
+    toast("Report started", "Everything you test from here is recorded against " + v + ". Open the Report tab to build it.", "ok");
     TB.watch("REPORT", "opened for " + v);
   };
   inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); go.click(); } });
@@ -12774,7 +13117,7 @@ function close() { if (bar) { bar.remove(); bar = null; } }
 /* So the operator can always see which unit they are recording against. A
    session that silently files results under the wrong SKU is the failure
    this whole feature exists to prevent, so the number is on screen the whole
-   time rather than only on the Bench page. */
+   time rather than only on the Report page. */
 function paintBadge() {
   var host = $("#statusbar");
   if (!host) return;
@@ -12785,7 +13128,7 @@ function paintBadge() {
     b = el("button", "tb-chip sku", "");
     b.id = "sku-badge";
     b.title = "The unit everything is being recorded against. Click to go to the report.";
-    b.onclick = function () { TB.go("home"); setTimeout(function () { field.focus(); field.select(); }, 250); };
+    b.onclick = function () { TB.go("report"); setTimeout(function () { field.focus(); field.select(); }, 250); };
     host.insertBefore(b, host.firstChild);
   }
   b.textContent = "";
@@ -12795,13 +13138,14 @@ function paintBadge() {
   b.classList.add("live");
 }
 field.addEventListener("input", paintBadge);
+TB.onEnter("report", paintBadge);
 TB.onEnter("home", paintBadge);
 
 /* ---------- the gate ---------- */
 /* Build, print, copy and both exports all go through here. */
 function gate(action) {
   if (sku()) return true;
-  TB.go("home");
+  TB.go("report");
   setTimeout(function () {
     field.focus();
     field.classList.add("empty");
