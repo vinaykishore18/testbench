@@ -76,6 +76,11 @@ function buildKeys() {
     }
     host.appendChild(k);
     keyEls[n] = k;
+    (function (note, elK) {
+      elK.addEventListener("pointerdown", function (e) { e.preventDefault(); try { elK.setPointerCapture(e.pointerId); } catch (x) {} playKey(note, true); });
+      elK.addEventListener("pointerup", function () { playKey(note, false); });
+      elK.addEventListener("pointercancel", function () { playKey(note, false); });
+    })(n, k);
   }
 }
 
@@ -100,6 +105,8 @@ function padCell(note) {
   c.dataset.note = note;
   c.appendChild(el("span", "lbl", noteName(note)));
   c.appendChild(el("em"));
+  c.style.cursor = "pointer";
+  c.addEventListener("pointerdown", function (e) { e.preventDefault(); playPad(note); });
   host.appendChild(c);
   padEls[note] = c;
   return c;
@@ -385,11 +392,98 @@ function connect() {
   });
 }
 
+/* ---------- built-in Web Audio synth + drum engine ----------
+   So an operator can click the on-screen keys and pads and HEAR the result,
+   and so a key played on hardware makes a sound without any external file or
+   soundfont. A saw voice through a low-pass for the keys; a pitched transient
+   plus a noise burst for the pads. Toggleable, and the context is only created
+   on the first real gesture so autoplay policies never block it. */
+var actx = null, voices = Object.create(null), soundOn = true;
+function ac() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state === "suspended") { try { actx.resume(); } catch (e) {} }
+  return actx;
+}
+function freqOf(n) { return 440 * Math.pow(2, (n - 69) / 12); }
+function synthOn(n, vel) {
+  if (!soundOn) return;
+  var c = ac(); if (!c) return;
+  synthOff(n);
+  var o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter();
+  o.type = "sawtooth"; o.frequency.value = freqOf(n);
+  lp.type = "lowpass"; lp.frequency.value = 1600 + (vel / 127) * 3200;
+  var amp = (vel / 127) * 0.2 + 0.02, t = c.currentTime;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(amp, t + 0.008);
+  o.connect(lp); lp.connect(g); g.connect(c.destination);
+  o.start(); voices[n] = { o: o, g: g };
+}
+function synthOff(n) {
+  var v = voices[n]; if (!v) return; var c = actx; if (!c) { return; }
+  try {
+    var t = c.currentTime;
+    v.g.gain.cancelScheduledValues(t);
+    v.g.gain.setTargetAtTime(0, t, 0.06);
+    v.o.stop(t + 0.3);
+  } catch (e) {}
+  delete voices[n];
+}
+function drumHit(n, vel) {
+  if (!soundOn) return;
+  var c = ac(); if (!c) return;
+  var t = c.currentTime, amp = (vel / 127) * 0.5 + 0.05;
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = "triangle";
+  o.frequency.setValueAtTime(90 + (n % 8) * 34, t);
+  o.frequency.exponentialRampToValueAtTime(48, t + 0.16);
+  g.gain.setValueAtTime(amp, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.2);
+  var nb = c.createBufferSource(), buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.2), c.sampleRate), ch = buf.getChannelData(0);
+  for (var i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+  nb.buffer = buf;
+  var ng = c.createGain(); ng.gain.setValueAtTime(amp * 0.7, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+  nb.connect(ng); ng.connect(c.destination); nb.start(t);
+}
+
+/* ---------- on-screen play (shares the exact state path a real note uses) ---------- */
+function playKey(n, on) {
+  if (on) {
+    st.count++; st.on[n] = true;
+    if (st.vel[n] == null) st.notes++;
+    st.vel[n] = 100; delete st.stuck[n];
+    reveal("keys"); paintKey(n); synthOn(n, 100);
+    log("NOTE ON", noteName(n) + "  (on screen)");
+  } else {
+    st.on[n] = false; paintKey(n); synthOff(n);
+    log("NOTE OFF", noteName(n) + "  (on screen)");
+  }
+  stats();
+}
+function playPad(n) {
+  st.count++;
+  if (st.padMax[n] == null) st.padSeen++;
+  st.padOn[n] = true;
+  if (st.padMax[n] == null || 110 > st.padMax[n]) st.padMax[n] = 110;
+  reveal("pads"); paintPad(n); drumHit(n, 110);
+  setTimeout(function () { st.padOn[n] = false; paintPad(n); }, 130);
+  stats();
+}
+
 /* ---------- wiring ---------- */
 buildKeys();
+reveal("keys");   /* a playable keyboard is always on screen */
 paintWheels();
 stats();
 $("#mi-connect").onclick = connect;
+(function () {
+  var b = $("#mi-sound"); if (!b) return;
+  b.onclick = function () {
+    soundOn = !soundOn;
+    b.textContent = "Sound: " + (soundOn ? "on" : "off");
+    b.classList.toggle("on", soundOn);
+    if (soundOn) ac();                 /* unlock the audio context on this gesture */
+    else { Object.keys(voices).forEach(synthOff); }
+  };
+})();
 $("#mi-reset").onclick = function () {
   st = fresh();
   Object.keys(keyEls).forEach(function (n) {

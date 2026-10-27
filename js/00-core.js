@@ -77,14 +77,13 @@ var TB = (function () {
   function verdict(node, score, flags, idleMsg) {
     flags = flags || [];
     if (score == null) {
-      /* idle: rebuild only when the idle message itself changes */
       if (node._vkind === "idle" && node._vidle === (idleMsg || "")) return;
       node.innerHTML = "";
       var v0 = el("div", "tb-verdict idle");
       v0.appendChild(el("div", "score", "\u2014"));
       var t0 = el("div", "txt"); t0.appendChild(el("b", null, "Waiting")); t0.appendChild(el("span", null, idleMsg || "No data yet."));
       v0.appendChild(t0); node.appendChild(v0);
-      node._vkind = "idle"; node._vidle = (idleMsg || "");
+      node._vkind = "idle"; node._vidle = null; node._vnodes = null;
       return;
     }
     var c = classify(score, flags);
@@ -92,75 +91,70 @@ var TB = (function () {
     var bad = flags.filter(function (f) { return f.level !== "ok"; }).length;
     var summary = bad ? bad + " thing" + (bad > 1 ? "s" : "") + " to look at" : "Nothing flagged.";
 
-    /* The live pages — the microphone, the sticks — call this several times a
-       second, with the numbers inside the flag text moving every time. If the
-       verdict is still the same KIND with the same number of flags, nothing
-       about its shape has changed, so the existing nodes are updated in place:
-       no innerHTML churn, no re-run of the entrance animation. Rebuilding the
-       pill at 12 fps is exactly what read on screen as the "pass" light
-       blinking. The pill is only torn down and rebuilt when the kind changes
-       or a flag appears or disappears — a genuinely new result. */
-    var built = node._vnodes;
-    var sameShape = built && node._vkind === kind && built.flags.length === flags.length;
-
-    if (sameShape) {
-      if (built.score.textContent !== String(c.n)) built.score.textContent = String(c.n);
-      if (built.word.textContent !== word) built.word.textContent = word;
-      if (built.summary.textContent !== summary) built.summary.textContent = summary;
-      flags.forEach(function (f, i) {
-        var row = built.flags[i];
-        if (row.li.className !== f.level) row.li.className = f.level;
-        if (row.tag.textContent !== f.tag) row.tag.textContent = f.tag;
-        if (row.text.textContent !== f.text) row.text.textContent = f.text;
+    /* ONE rule, and it is what keeps a live result from blinking: a verdict is
+       built and animated exactly once, the first time it lands. After that
+       every change — a moving score, a flag that appears or disappears at a
+       threshold, even a change of kind — is written into the existing nodes in
+       place. Nothing is ever torn down and rebuilt while a result is on screen,
+       so there is no re-run of the entrance animation and no one-frame flash.
+       The sticks and the microphone call this many times a second; this is why
+       they sit still. */
+    var N = node._vnodes;
+    if (!N || node._vkind === "idle" || node._vkind === undefined) {
+      /* first landing: build fresh and play the settle once */
+      node.innerHTML = "";
+      var v = el("div", "tb-verdict " + kind);
+      var scoreEl = el("div", "score", String(c.n)); v.appendChild(scoreEl);
+      var t = el("div", "txt");
+      var wordEl = el("b", null, word); t.appendChild(wordEl);
+      var sumEl = el("span", null, summary); t.appendChild(sumEl);
+      v.appendChild(t); node.appendChild(v);
+      var ul = el("ul", "tb-flags");
+      var flagNodes = flags.map(function (f) {
+        var li = el("li", f.level);
+        var tag = el("span", "tag", f.tag); li.appendChild(tag);
+        var tx = el("span", null, f.text); li.appendChild(tx);
+        ul.appendChild(li);
+        return { li: li, tag: tag, text: tx };
       });
-      record(node, c.n, kind, word, flags);
-      return;
-    }
-
-    /* shape changed (or first result): build it fresh */
-    var kindChanged = node._vkind !== undefined && node._vkind !== "idle" && node._vkind !== kind;
-    var firstLand = node._vkind === undefined || node._vkind === "idle";
-    node.innerHTML = "";
-    var v = el("div", "tb-verdict " + kind);
-    var scoreEl = el("div", "score", String(c.n));
-    v.appendChild(scoreEl);
-    var t = el("div", "txt");
-    var wordEl = el("b", null, word); t.appendChild(wordEl);
-    var sumEl = el("span", null, summary); t.appendChild(sumEl);
-    v.appendChild(t); node.appendChild(v);
-    var ul = el("ul", "tb-flags");
-    var flagNodes = flags.map(function (f) {
-      var li = el("li", f.level);
-      var tag = el("span", "tag", f.tag); li.appendChild(tag);
-      var tx = el("span", null, f.text); li.appendChild(tx);
-      ul.appendChild(li);
-      return { li: li, tag: tag, text: tx };
-    });
-    node.appendChild(ul);
-    node._vnodes = { score: scoreEl, word: wordEl, summary: sumEl, flags: flagNodes };
-
-    /* The landing settle and the single pass-sweep mark a NEW result, so they
-       fire when the result first lands or changes kind — never on a refresh of
-       a result that is still saying the same thing. */
-    if (firstLand || kindChanged) {
+      node.appendChild(ul);
+      node._vnodes = { root: v, score: scoreEl, word: wordEl, summary: sumEl, flags: flagNodes, ul: ul };
       v.classList.add("tb-landed");
       if (kind === "ok") {
         var panel = node.closest ? node.closest(".tb-panel") : null;
         if (panel) {
-          panel.classList.remove("tb-swept");
-          void panel.offsetWidth;   /* restart the sweep if the same panel passes twice */
+          panel.classList.remove("tb-swept"); void panel.offsetWidth;
           panel.classList.add("tb-swept");
           setTimeout(function () { panel.classList.remove("tb-swept"); }, 900);
         }
       }
+    } else {
+      /* every later update: in place, no rebuild, no animation */
+      if (N.root.className !== "tb-verdict " + kind) N.root.className = "tb-verdict " + kind;
+      if (N.score.textContent !== String(c.n)) N.score.textContent = String(c.n);
+      if (N.word.textContent !== word) N.word.textContent = word;
+      if (N.summary.textContent !== summary) N.summary.textContent = summary;
+      /* reconcile the flag rows without clearing the list */
+      for (var i = 0; i < flags.length; i++) {
+        var f = flags[i], row = N.flags[i];
+        if (!row) {
+          var li = el("li", f.level);
+          var tg = el("span", "tag", f.tag); li.appendChild(tg);
+          var tx2 = el("span", null, f.text); li.appendChild(tx2);
+          N.ul.appendChild(li);
+          N.flags[i] = { li: li, tag: tg, text: tx2 };
+        } else {
+          if (row.li.className !== f.level) row.li.className = f.level;
+          if (row.tag.textContent !== f.tag) row.tag.textContent = f.tag;
+          if (row.text.textContent !== f.text) row.text.textContent = f.text;
+        }
+      }
+      while (N.flags.length > flags.length) { var ex = N.flags.pop(); if (ex && ex.li.parentNode) ex.li.parentNode.removeChild(ex.li); }
     }
     node._vkind = kind; node._vidle = null;
 
     /* Record it. Every scored verdict in the app comes through this function,
-       so this is the one place that can collect a session's results without
-       each module having to remember to report in - and a report built from
-       something modules opt into is a report that silently omits whatever
-       was added last. */
+       so this is the one place that can collect a session's results. */
     record(node, c.n, kind, word, flags);
   }
 
@@ -287,11 +281,10 @@ var TB = (function () {
      Canvases cannot use var(), so anything drawn with 2D or WebGL asks paint()
      for the resolved value and redraws on a theme change. */
   var THEMES = [
-    { id: "system", label: "System" },
-    { id: "dark", label: "Dark" },
-    { id: "light", label: "Light" }
+    { id: "light", label: "Light" },
+    { id: "dark", label: "Dark" }
   ];
-  var KEY = "tb-theme", themeFns = [], swatch = Object.create(null), current = "system";
+  var KEY = "tb-theme", themeFns = [], swatch = Object.create(null), current = "light";
 
   function paint(name) {
     if (swatch[name] !== undefined) return swatch[name];
@@ -306,9 +299,9 @@ var TB = (function () {
     themeFns.forEach(function (f) { try { f(current); } catch (e) {} });
   }
   function setTheme(id, quiet) {
-    if (!THEMES.some(function (t) { return t.id === id; })) id = "system";
+    if (!THEMES.some(function (t) { return t.id === id; })) id = "light";
     current = id;
-    if (id === "system") document.documentElement.removeAttribute("data-theme");
+    if (id === "light") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", id);
     try { localStorage.setItem(KEY, id); } catch (e) {}
     $$("#themepick button").forEach(function (b) {
@@ -330,7 +323,7 @@ var TB = (function () {
       b.type = "button";
       b.dataset.theme = t.id;
       b.textContent = t.label;
-      b.title = t.id === "system" ? "Follow the operating system" : t.label + " theme";
+      b.title = t.label + " theme";
       b.setAttribute("aria-pressed", String(t.id === current));
       b.onclick = function () { setTheme(t.id); };
       host.appendChild(b);
@@ -339,7 +332,7 @@ var TB = (function () {
   function initTheme() {
     var saved = null;
     try { saved = localStorage.getItem(KEY); } catch (e) {}
-    current = saved || "dark";   /* calm dark is the default look; System/Light still available in the top bar */
+    current = saved || "light";   /* Light Studio is the default; Dark is the second mode */
     buildPicker();
     setTheme(current, true);
     /* follow the OS while the choice is "System" */

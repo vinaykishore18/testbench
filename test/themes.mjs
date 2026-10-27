@@ -24,19 +24,14 @@ let failures = 0;
 const fail = (m) => { console.log('  FAIL  ' + m); failures++; };
 const pass = (m) => console.log('  ok    ' + m);
 
-console.log('1. the two light blocks are identical');
+console.log('1. the dark-mode palette is complete');
 {
   const css = readFileSync('css/testbench.css', 'utf8');
-  const explicit = css.match(/:root\[data-theme="light"\]\{([\s\S]*?)\n\}/);
-  const system = css.match(/@media \(prefers-color-scheme:light\)\{\s*:root:not\(\[data-theme\]\)\{([\s\S]*?)\n\}/);
-  if (!explicit || !system) { fail('could not find both light blocks'); }
+  const explicit = css.match(/:root\[data-theme="dark"\]\{([\s\S]*?)\n\}/);
+  if (!explicit) { fail('could not find the dark block'); }
   else {
-    const toks = (b) => b.split(';').map(s => s.trim()).filter(s => s.startsWith('--')).sort();
-    const a = toks(explicit[1]), b = toks(system[1]);
-    a.length > 30 ? pass(a.length + ' tokens in the light palette') : fail('only ' + a.length + ' tokens — something is missing');
-    JSON.stringify(a) === JSON.stringify(b)
-      ? pass('explicit and system blocks match exactly')
-      : fail('the two light blocks have drifted: ' + a.filter(x => !b.includes(x)).concat(b.filter(x => !a.includes(x))).join(' | '));
+    const toks = explicit[1].split(';').map(s => s.trim()).filter(s => s.startsWith('--'));
+    toks.length > 30 ? pass(toks.length + ' tokens in the dark palette') : fail('only ' + toks.length + ' tokens — something is missing');
   }
 }
 
@@ -49,7 +44,7 @@ console.log('\n1b. every themed component still has its rules');
   const need = ['.tb-themepick', '.tb-themepick button[aria-pressed="true"]',
                 'input[type="range"]::-webkit-slider-thumb', '.tb-scopeidle',
                 '.tb-chiprow', '.tb-btn.pri:hover', 'select:focus-visible',
-                ':root[data-theme="light"]'];
+                ':root[data-theme="dark"]'];
   const missing = need.filter(sel => !css.includes(sel));
   missing.length ? missing.forEach(m => fail('stylesheet has lost ' + m))
                  : pass(need.length + ' required selectors present');
@@ -66,29 +61,29 @@ page.on('console', m => {
 await page.goto(URL);
 await page.waitForTimeout(1300);
 
-console.log('\n2. the picker offers three choices and System stamps nothing');
+console.log('\n2. the picker offers the two modes and Light stamps nothing');
 {
   const btns = await page.evaluate(() => [...document.querySelectorAll('#themepick button')].map(b => b.dataset.theme));
-  JSON.stringify(btns) === JSON.stringify(['system', 'dark', 'light'])
-    ? pass('System, Dark, Light') : fail('picker had ' + JSON.stringify(btns));
-  await page.click('#themepick button[data-theme="system"]');
+  JSON.stringify(btns) === JSON.stringify(['light', 'dark'])
+    ? pass('Light, Dark') : fail('picker had ' + JSON.stringify(btns));
+  await page.click('#themepick button[data-theme="light"]');
   await page.waitForTimeout(200);
   (await page.evaluate(() => document.documentElement.getAttribute('data-theme'))) === null
-    ? pass('System leaves the root unstamped, so the OS decides') : fail('System stamped an attribute');
+    ? pass('Light (default) leaves the root unstamped') : fail('Light stamped an attribute');
 }
 
 console.log('\n3. the choice survives a reload');
-await page.click('#themepick button[data-theme="light"]');
+await page.click('#themepick button[data-theme="dark"]');
 await page.waitForTimeout(250);
 await page.reload();
 await page.waitForTimeout(1200);
 {
   const t = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
-  t === 'light' ? pass('still light after reload') : fail('came back as ' + t);
+  t === 'dark' ? pass('still dark after reload') : fail('came back as ' + t);
 }
 
 console.log('\n4. text stays readable in both themes, on every page');
-const VIEWS = ['home', 'keyboard', 'mouse', 'gamepad', 'audio', 'monitor', 'network', 'stress', 'system'];
+const VIEWS = ['home', 'keyboard', 'mouse', 'gamepad', 'audio', 'monitor', 'report', 'stress', 'system'];
 for (const theme of ['light', 'dark']) {
   await page.click(`#themepick button[data-theme="${theme}"]`);
   await page.waitForTimeout(250);

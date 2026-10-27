@@ -15,19 +15,19 @@
      patch a panel resolves to #11141C, over the brightest overlap of two
      colour blobs to #161B28, and every ink and signal below clears 5.69:1
      against BOTH. The worst pair has a full point of headroom over AA. */
-  --bg:#10141B;
-  --bg-2:#161B23;
-  --panel:#1B212B;
-  --panel-solid:#1B212B;        /* where a real opaque fill is needed */
-  --panel-2:#222932;
-  --raise:#242B35;
-  --line:rgba(255,255,255,.09);
-  --line-soft:rgba(255,255,255,.05);
+  --bg:#f4f6f9;
+  --bg-2:#ebeef3;
+  --panel:#ffffff;
+  --panel-solid:#ffffff;        /* where a real opaque fill is needed */
+  --panel-2:#f6f8fa;
+  --raise:#eef1f5;
+  --line:#e4e8ee;
+  --line-soft:#eef1f5;
 
   /* ink */
-  --ink:#E9EDF2;
-  --ink-2:#AEB8C5;
-  --ink-3:#8E98A6;
+  --ink:#171b22;
+  --ink-2:#4a5261;
+  --ink-3:#5b6472;
 
   /* ---- signal ------------------------------------------------------------
      The brand accent is no longer red. Red was doing two jobs at once - it
@@ -35,51 +35,51 @@
      furniture read as a page full of alarms, and a genuine failure had
      nothing left to distinguish it. Cyan carries the identity now, violet
      supports it, and red means one thing only: this unit has a fault. */
-  --cyan:#4FACBA;
-  --cyan-hot:#61C4D1;
-  --violet:#9E93DD;
-  --violet-hot:#8A7BE6;
-  --red:#E8707F;
-  --red-hot:#E24B5F;
-  --red-dim:#B3243C;
-  --red-glow:rgba(226,75,95,.18);
-  --pass:#49BE8B;
-  --pass-glow:rgba(73,190,139,.16);
-  --warn:#DCA846;
-  --warn-glow:rgba(220,168,70,.16);
-  --idle:#39414E;
+  --cyan:#047857;
+  --cyan-hot:#059669;
+  --violet:#6d28d9;
+  --violet-hot:#5b21b6;
+  --red:#b91c1c;
+  --red-hot:#dc2626;
+  --red-dim:#e6a6a6;
+  --red-glow:rgba(220,38,38,.12);
+  --pass:#047857;
+  --pass-glow:rgba(4,120,87,.12);
+  --warn:#b45309;
+  --warn-glow:rgba(180,83,9,.12);
+  --idle:#c6ccd6;
 
   /* ink that sits ON a signal colour */
-  --on-red:#1A0008;
-  --on-pass:#07251A;
-  --on-cyan:#052327;        /* near-black, on the dark theme's bright cyan */
-  --red-soft:#F0939F;
+  --on-red:#ffffff;
+  --on-pass:#ffffff;
+  --on-cyan:#ffffff;        /* near-black, on the dark theme's bright cyan */
+  --red-soft:#9b1c1c;
 
   /* signal tints */
-  --pass-t08:rgba(73,190,139,.08);
-  --pass-t12:rgba(73,190,139,.12);
-  --pass-t16:rgba(73,190,139,.16);
-  --pass-t25:rgba(73,190,139,.25);
-  --pass-l40:rgba(73,190,139,.40);
-  --pass-l50:rgba(73,190,139,.50);
-  --pass-l65:rgba(73,190,139,.65);
-  --warn-t16:rgba(220,168,70,.16);
-  --warn-l45:rgba(220,168,70,.45);
-  --red-t18:rgba(226,75,95,.18);
-  --red-t25:rgba(226,75,95,.25);
-  --red-t32:rgba(226,75,95,.32);
-  --red-l35:rgba(226,75,95,.35);
-  --red-l50:rgba(226,75,95,.50);
-  --ink3-t30:rgba(139,149,162,.30);
-  --cyan-t12:rgba(79,172,186,.12);
-  --cyan-t25:rgba(79,172,186,.25);
-  --cyan-l45:rgba(79,172,186,.45);
+  --pass-t08:rgba(4,120,87,.08);
+  --pass-t12:rgba(4,120,87,.12);
+  --pass-t16:rgba(4,120,87,.16);
+  --pass-t25:rgba(4,120,87,.25);
+  --pass-l40:rgba(4,120,87,.40);
+  --pass-l50:rgba(4,120,87,.50);
+  --pass-l65:rgba(4,120,87,.65);
+  --warn-t16:rgba(180,83,9,.16);
+  --warn-l45:rgba(180,83,9,.45);
+  --red-t18:rgba(220,38,38,.18);
+  --red-t25:rgba(220,38,38,.25);
+  --red-t32:rgba(220,38,38,.32);
+  --red-l35:rgba(220,38,38,.35);
+  --red-l50:rgba(220,38,38,.50);
+  --ink3-t30:rgba(91,100,114,.30);
+  --cyan-t12:rgba(4,120,87,.12);
+  --cyan-t25:rgba(4,120,87,.25);
+  --cyan-l45:rgba(4,120,87,.45);
 
   /* hairlines and chrome */
-  --hairline:rgba(255,255,255,.07);
-  --scroll-hot:rgba(255,255,255,.18);
-  --topbar:#161B23;
-  --stick-core:#121622;
+  --hairline:rgba(20,25,35,.08);
+  --scroll-hot:#aab2c0;
+  --topbar:#ffffff;
+  --stick-core:#eef1f5;
 
   /* ---- glass -------------------------------------------------------------
      Three ingredients, and the third is the one people miss.
@@ -99,22 +99,20 @@
      and this app reads a controller on every frame. The ambient layer is
      blurred ONCE, as a filter on its own element, instead of every panel
      re-filtering what is behind it sixty times a second. */
-  --glass:#1B212B;
-  --glass-2:#222932;
-  --glass-line:rgba(255,255,255,.12);
-  --glass-sheen:rgba(255,255,255,.07);
+  --glass:#ffffff;
+  --glass-2:#f6f8fa;
+  --glass-line:rgba(20,25,35,.08);
+  --glass-sheen:rgba(255,255,255,.85);
   --glass-blur:0px;
-  --edge:inset 0 1px 0 rgba(255,255,255,.10);
-  --edge-strong:inset 0 1px 0 rgba(255,255,255,.16);
+  --edge:inset 0 1px 0 rgba(255,255,255,.9);
+  --edge-strong:inset 0 1px 0 rgba(255,255,255,1);
   --shadow-lift:
-    inset 0 1px 0 rgba(255,255,255,.08),
-    inset 0 0 0 1px rgba(255,255,255,.03),
-    0 16px 40px -20px rgba(0,0,0,.9);
+    0 1px 2px rgba(16,24,40,.04),0 6px 16px -4px rgba(16,24,40,.09);
 
   /* fullscreen HUD */
-  --hud-bg:rgba(8,10,16,.86); --hud-line:rgba(255,255,255,.18); --hud-ink:#DCE4EF; --hud-strong:#fff;
-  --ink-shadow:rgba(0,0,0,.85);
-  --shadow:rgba(0,0,0,.55);
+  --hud-bg:rgba(255,255,255,.96); --hud-line:rgba(20,25,35,.14); --hud-ink:#171b22; --hud-strong:#000;
+  --ink-shadow:rgba(255,255,255,.9);
+  --shadow:rgba(16,24,40,.12);
 
   /* motion */
   --t-fast:.12s;
@@ -123,14 +121,14 @@
   --ease:cubic-bezier(.2,.8,.2,1);
 
   /* device diagrams */
-  --dev-shell:#161B27;   --dev-shell-line:#49556B;
-  --dev-plate:#0F131C;   --dev-plate-line:#364054;
-  --dev-btn:#222838;     --dev-btn-line:#55617A;
-  --dev-knob:#2C3448;    --dev-knob-line:#6B7893;
-  --dev-well:#0D1017;    --dev-lbl:#95A1B5;
-  --dev-on-line:#81D9AB; --dev-knob-on-line:#FFDD8A;
-  --dev-rim:#323D52;     --dev-spoke:#45516B;
-  --dev-hub:#1F2635;     --dev-tip:#4FACBA;
+  --dev-shell:#ffffff;   --dev-shell-line:#c2c9d4;
+  --dev-plate:#f3f5f8;   --dev-plate-line:#d2d9e2;
+  --dev-btn:#eef1f5;     --dev-btn-line:#c2c9d4;
+  --dev-knob:#e6eaf0;    --dev-knob-line:#b3bcc8;
+  --dev-well:#e2e7ee;    --dev-lbl:#5b6472;
+  --dev-on-line:#047857; --dev-knob-on-line:#b45309;
+  --dev-rim:#cdd4de;     --dev-spoke:#b3bcc8;
+  --dev-hub:#eef1f5;     --dev-tip:#047857;
 
   /* ---- type --------------------------------------------------------------
      Fonts the machine already has.
@@ -160,9 +158,94 @@
   --num:tabular-nums;
 
   --rail:236px;
-  --r:14px;
+  --r:16px;
   --pad:clamp(16px,2vw,34px);
 }
+
+/* ===== Soft Graphite (dark mode) ===== */
+:root[data-theme="dark"]{
+  --bg:#14161b;
+  --bg-2:#191c22;
+  --panel:#1e2229;
+  --panel-solid:#1e2229;
+  --panel-2:#232830;
+  --raise:#262b34;
+  --line:rgba(255,255,255,.08);
+  --line-soft:rgba(255,255,255,.045);
+  --ink:#e9ebef;
+  --ink-2:#a9b1bd;
+  --ink-3:#8b94a1;
+  --cyan:#34d399;
+  --cyan-hot:#6ee7b7;
+  --violet:#a78bfa;
+  --violet-hot:#8b5cf6;
+  --red:#f27272;
+  --red-hot:#ef4444;
+  --red-dim:#7f2a2a;
+  --pass:#34d399;
+  --warn:#fbbf24;
+  --idle:#39414d;
+  --on-red:#2a0606;
+  --on-pass:#052b1d;
+  --on-cyan:#052b1d;
+  --red-soft:#f8a5a5;
+  --hairline:rgba(255,255,255,.06);
+  --scroll-hot:rgba(255,255,255,.18);
+  --topbar:rgba(20,22,27,.9);
+  --stick-core:#232830;
+  --glass:#1e2229;
+  --glass-2:#232830;
+  --glass-line:rgba(255,255,255,.08);
+  --glass-sheen:rgba(255,255,255,.04);
+  --glass-blur:0px;
+  --edge:inset 0 1px 0 rgba(255,255,255,.05);
+  --edge-strong:inset 0 1px 0 rgba(255,255,255,.08);
+  --shadow-lift:0 1px 2px rgba(0,0,0,.3),0 10px 28px -8px rgba(0,0,0,.55);
+  --hud-bg:rgba(20,22,27,.95);
+  --hud-line:rgba(255,255,255,.14);
+  --hud-ink:#e9ebef;
+  --hud-strong:#fff;
+  --ink-shadow:rgba(0,0,0,.6);
+  --shadow:rgba(0,0,0,.5);
+  --dev-shell:#242a33;
+  --dev-shell-line:#3c4553;
+  --dev-plate:#1a1f27;
+  --dev-plate-line:#333c49;
+  --dev-btn:#2a313b;
+  --dev-btn-line:#434d5c;
+  --dev-knob:#313a46;
+  --dev-knob-line:#55606f;
+  --dev-well:#171b22;
+  --dev-lbl:#8b94a1;
+  --dev-on-line:#34d399;
+  --dev-knob-on-line:#fbbf24;
+  --dev-rim:#3a4350;
+  --dev-spoke:#4a5564;
+  --dev-hub:#232830;
+  --dev-tip:#34d399;
+  --red-glow:rgba(239,68,68,.12);
+  --pass-glow:rgba(52,211,153,.12);
+  --warn-glow:rgba(251,191,36,.12);
+  --pass-t08:rgba(52,211,153,.08);
+  --pass-t12:rgba(52,211,153,.12);
+  --pass-t16:rgba(52,211,153,.16);
+  --pass-t25:rgba(52,211,153,.25);
+  --pass-l40:rgba(52,211,153,.40);
+  --pass-l50:rgba(52,211,153,.50);
+  --pass-l65:rgba(52,211,153,.65);
+  --warn-t16:rgba(251,191,36,.16);
+  --warn-l45:rgba(251,191,36,.45);
+  --red-t18:rgba(239,68,68,.18);
+  --red-t25:rgba(239,68,68,.25);
+  --red-t32:rgba(239,68,68,.32);
+  --red-l35:rgba(239,68,68,.35);
+  --red-l50:rgba(239,68,68,.50);
+  --ink3-t30:rgba(139,148,161,.30);
+  --cyan-t12:rgba(52,211,153,.12);
+  --cyan-t25:rgba(52,211,153,.25);
+  --cyan-l45:rgba(52,211,153,.45);
+}
+
 
 
 /* ============================================================
@@ -179,195 +262,15 @@
    A white-screen test has to be #FFFFFF and a black one #000000 or it
    is not the test any more, so those stay absolute in 60-display.js.
    ============================================================ */
-:root[data-theme="light"]{
-  /* ground — warm paper, never a flat white.
-     The first pass was too timid: panels sat two shades off the page and the
-     secondary ink was so light the notes disappeared. Surfaces are separated
-     harder now and every ink level is darkened until it clears 4.5:1. */
-  --bg:#EDE7DA;
-  --bg-2:#E4DCCB;
-  --panel:#FCFAF4;
-  --panel-2:#F2EDE1;
-  --raise:#E2D9C7;
-  --line:#C8BCA4;
-  --line-soft:#DCD3C0;
 
-  --ink:#14110C;
-  --ink-2:#3A342B;
-  --ink-3:#5E574B;
 
-  /* the same signals, deepened so they hold their contrast on paper */
-  --red:#B01026;
-  --red-dim:#D98C99;
-  --red-glow:rgba(208,27,51,.10);
-  --pass:#09703C;
-  --pass-glow:rgba(11,127,69,.12);
-  --warn:#7A5100;
-  --warn-glow:rgba(138,93,0,.12);
-  --idle:#B5A992;
 
-  --on-red:#FFF6F1;
-  --on-pass:#F2FCF6;
-  --red-hot:#B8172C;
-  --red-soft:#A9152A;
 
-  --pass-t08:rgba(11,127,69,.08);
-  --pass-t12:rgba(11,127,69,.12);
-  --pass-t16:rgba(11,127,69,.14);
-  --pass-t25:rgba(11,127,69,.25);
-  --pass-l40:rgba(11,127,69,.45);
-  --pass-l50:rgba(11,127,69,.55);
-  --pass-l65:rgba(11,127,69,.70);
-  --warn-t16:rgba(138,93,0,.14);
-  --warn-l45:rgba(138,93,0,.45);
-  --red-t18:rgba(208,27,51,.14);
-  --red-t32:rgba(208,27,51,.22);
-  --red-l35:rgba(208,27,51,.35);
-  --red-l50:rgba(208,27,51,.50);
-  --red-t25:rgba(208,27,51,.25);
-  --ink3-t30:rgba(120,111,98,.30);
 
-  --hairline:rgba(0,0,0,.10);
-  /* ---- brand, light ------------------------------------------------------
-     The dark theme's cyan is #3FE3D4, which measures 1.3:1 on warm paper -
-     invisible. The themes suite caught it on nine pages at once, which is
-     exactly what that check is for. A deep teal carries the same identity and
-     clears 4.5:1 on all three light surfaces, the tightest being 5.26 on the
-     raised one. */
-  --cyan:#0E5F66;
-  --cyan-hot:#0A4E54;
-  --violet:#4F35C4;
-  --violet-hot:#3D28A0;
-  --cyan-t12:rgba(14,95,102,.12);
-  --cyan-t25:rgba(14,95,102,.25);
-  --cyan-l45:rgba(14,95,102,.45);
-  --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
-  /* Glass over paper: a near-white frost, and the sheen becomes a dark
-     hairline because a white highlight on a light surface has no edge. */
-  --glass:rgba(250,247,240,.90);
-  --glass-2:rgba(248,245,237,.95);
-  --glass-line:rgba(0,0,0,.12);
-  --glass-sheen:rgba(255,255,255,.55);
-  --glass-blur:8px;
-  --edge:inset 0 1px 0 rgba(255,255,255,.75);
-  --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
-  --shadow-lift:
-    inset 0 1px 0 rgba(255,255,255,.7),
-    inset 0 0 0 1px rgba(255,255,255,.35),
-    0 14px 34px -22px rgba(60,48,30,.5);
-  --panel-solid:#FCFAF4;
 
-  --scroll-hot:#B0A48C;
-  --topbar:#FCFAF4;
-  --stick-core:#E4DCCB;
-  --ink-shadow:rgba(255,253,248,.9);
-  --shadow:rgba(90,78,58,.28);
 
-  --dev-shell:#FCFAF4;   --dev-shell-line:#A99C84;
-  --dev-plate:#F2EDE1;   --dev-plate-line:#BFB39B;
-  --dev-btn:#EBE3D3;     --dev-btn-line:#9C8F76;
-  --dev-knob:#E2D9C7;    --dev-knob-line:#8F8269;
-  --dev-well:#D9CFBA;    --dev-lbl:#544C41;
-  --dev-on-line:#0B7F45; --dev-knob-on-line:#8A5D00;
-  --dev-rim:#BBAF97;     --dev-spoke:#9C8F76;
-  --dev-hub:#E4DCCB;     --dev-tip:#0B6874;
-}
 
-@media (prefers-color-scheme:light){
-  :root:not([data-theme]){
-  /* ground — warm paper, never a flat white.
-     The first pass was too timid: panels sat two shades off the page and the
-     secondary ink was so light the notes disappeared. Surfaces are separated
-     harder now and every ink level is darkened until it clears 4.5:1. */
-  --bg:#EDE7DA;
-  --bg-2:#E4DCCB;
-  --panel:#FCFAF4;
-  --panel-2:#F2EDE1;
-  --raise:#E2D9C7;
-  --line:#C8BCA4;
-  --line-soft:#DCD3C0;
 
-  --ink:#14110C;
-  --ink-2:#3A342B;
-  --ink-3:#5E574B;
-
-  /* the same signals, deepened so they hold their contrast on paper */
-  --red:#B01026;
-  --red-dim:#D98C99;
-  --red-glow:rgba(208,27,51,.10);
-  --pass:#09703C;
-  --pass-glow:rgba(11,127,69,.12);
-  --warn:#7A5100;
-  --warn-glow:rgba(138,93,0,.12);
-  --idle:#B5A992;
-
-  --on-red:#FFF6F1;
-  --on-pass:#F2FCF6;
-  --red-hot:#B8172C;
-  --red-soft:#A9152A;
-
-  --pass-t08:rgba(11,127,69,.08);
-  --pass-t12:rgba(11,127,69,.12);
-  --pass-t16:rgba(11,127,69,.14);
-  --pass-t25:rgba(11,127,69,.25);
-  --pass-l40:rgba(11,127,69,.45);
-  --pass-l50:rgba(11,127,69,.55);
-  --pass-l65:rgba(11,127,69,.70);
-  --warn-t16:rgba(138,93,0,.14);
-  --warn-l45:rgba(138,93,0,.45);
-  --red-t18:rgba(208,27,51,.14);
-  --red-t32:rgba(208,27,51,.22);
-  --red-l35:rgba(208,27,51,.35);
-  --red-l50:rgba(208,27,51,.50);
-  --red-t25:rgba(208,27,51,.25);
-  --ink3-t30:rgba(120,111,98,.30);
-
-  --hairline:rgba(0,0,0,.10);
-  /* ---- brand, light ------------------------------------------------------
-     The dark theme's cyan is #3FE3D4, which measures 1.3:1 on warm paper -
-     invisible. The themes suite caught it on nine pages at once, which is
-     exactly what that check is for. A deep teal carries the same identity and
-     clears 4.5:1 on all three light surfaces, the tightest being 5.26 on the
-     raised one. */
-  --cyan:#0E5F66;
-  --cyan-hot:#0A4E54;
-  --violet:#4F35C4;
-  --violet-hot:#3D28A0;
-  --cyan-t12:rgba(14,95,102,.12);
-  --cyan-t25:rgba(14,95,102,.25);
-  --cyan-l45:rgba(14,95,102,.45);
-  --on-cyan:#FFFFFF;        /* white, on the light theme's deep teal */
-  /* Glass over paper: a near-white frost, and the sheen becomes a dark
-     hairline because a white highlight on a light surface has no edge. */
-  --glass:rgba(250,247,240,.90);
-  --glass-2:rgba(248,245,237,.95);
-  --glass-line:rgba(0,0,0,.12);
-  --glass-sheen:rgba(255,255,255,.55);
-  --glass-blur:8px;
-  --edge:inset 0 1px 0 rgba(255,255,255,.75);
-  --edge-strong:inset 0 1px 0 rgba(255,255,255,.95);
-  --shadow-lift:
-    inset 0 1px 0 rgba(255,255,255,.7),
-    inset 0 0 0 1px rgba(255,255,255,.35),
-    0 14px 34px -22px rgba(60,48,30,.5);
-  --panel-solid:#FCFAF4;
-
-  --scroll-hot:#B0A48C;
-  --topbar:#FCFAF4;
-  --stick-core:#E4DCCB;
-  --ink-shadow:rgba(255,253,248,.9);
-  --shadow:rgba(90,78,58,.28);
-
-  --dev-shell:#FCFAF4;   --dev-shell-line:#A99C84;
-  --dev-plate:#F2EDE1;   --dev-plate-line:#BFB39B;
-  --dev-btn:#EBE3D3;     --dev-btn-line:#9C8F76;
-  --dev-knob:#E2D9C7;    --dev-knob-line:#8F8269;
-  --dev-well:#D9CFBA;    --dev-lbl:#544C41;
-  --dev-on-line:#0B7F45; --dev-knob-on-line:#8A5D00;
-  --dev-rim:#BBAF97;     --dev-spoke:#9C8F76;
-  --dev-hub:#E4DCCB;     --dev-tip:#0B6874;
-}
-}
 
 /* The fullscreen test surface and its HUD always sit on black: they are
    showing monitor test patterns, not application chrome. */
@@ -500,9 +403,10 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
 /* ============================ panels ============================ */
 .tb-panel{
   background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
-  padding:clamp(14px,1.4vw,20px);margin-top:16px;min-width:0;
+  padding:clamp(16px,1.5vw,22px);margin-top:18px;min-width:0;
+  box-shadow:var(--shadow-lift);
 }
-.tb-panel.accent{border-color:var(--red-l35);background:linear-gradient(180deg,var(--red-glow),transparent 120px),var(--panel)}
+.tb-panel.accent{border-color:var(--cyan-l45);background:linear-gradient(180deg,var(--cyan-t12),transparent 130px),var(--panel)}
 .tb-ptitle{
   display:flex;align-items:center;gap:12px;font-family:var(--f-display);
   font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);
@@ -529,8 +433,8 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
 .tb-btn:hover{border-color:var(--ink-3);background:var(--raise)}
 .tb-btn:active{transform:translateY(1px)}
 .tb-btn[disabled]{opacity:.38;cursor:not-allowed}
-.tb-btn.pri{background:var(--red);border-color:var(--red);color:var(--on-red)}
-.tb-btn.pri:hover{background:var(--red-hot);border-color:var(--red-hot)}
+.tb-btn.pri{background:var(--cyan);border-color:var(--cyan);color:var(--on-cyan)}
+.tb-btn.pri:hover{background:var(--cyan-hot);border-color:var(--cyan-hot)}
 .tb-btn.danger{border-color:var(--red-l50);color:var(--red-soft)}
 .tb-btn.on{border-color:var(--pass);color:var(--pass);background:var(--pass-t08)}
 .tb-btn.big{padding:13px 22px;font-size:14px;min-height:46px}
@@ -554,7 +458,7 @@ h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;text-wrap:balance
   font-size:13px;font-weight:500;transition:.15s;
 }
 .tb-tabs button:hover{border-color:var(--ink-3);color:var(--ink)}
-.tb-tabs button[aria-selected="true"]{background-color:var(--cyan-hot);background-image:linear-gradient(180deg,var(--cyan),var(--cyan-hot));border-color:transparent;color:var(--on-cyan);font-weight:650;box-shadow:var(--edge-strong),0 6px 18px -10px rgba(21,216,198,.7)}
+.tb-tabs button[aria-selected="true"]{background:var(--cyan);border-color:transparent;color:var(--on-cyan);font-weight:650;box-shadow:var(--shadow-lift)}
 
 select,input[type=text],input[type=number],textarea{
   background:var(--panel-2);border:1px solid var(--line);border-radius:7px;
@@ -1123,13 +1027,13 @@ select:focus-visible,input:focus-visible,textarea:focus-visible{
 select:disabled,input:disabled,textarea:disabled{opacity:.5;cursor:not-allowed}
 
 .tb-btn:active{transform:translateY(1px);background:var(--raise)}
-.tb-btn.pri:hover{background:var(--red-hot);border-color:var(--red-hot);color:var(--on-red)}
-.tb-btn.pri:active{background:var(--red-dim);border-color:var(--red-dim)}
+.tb-btn.pri:hover{background:var(--cyan-hot);border-color:var(--cyan-hot);color:var(--on-cyan)}
+.tb-btn.pri:active{background:var(--pass);border-color:var(--pass)}
 .tb-btn.on:hover{background:var(--pass-t16);border-color:var(--pass)}
 .tb-btn.danger:hover{background:var(--red-t18);border-color:var(--red);color:var(--red)}
 .tb-seg button:hover:not([aria-pressed="true"]){background:var(--raise);color:var(--ink)}
 .tb-tabs button:hover:not([aria-selected="true"]){background:var(--raise);color:var(--ink)}
-.tb-tabs button[aria-selected="true"]:hover{background:var(--red-hot)}
+.tb-tabs button[aria-selected="true"]:hover{background:var(--cyan-hot)}
 .tb-nav:hover{background:var(--raise)}
 a{color:var(--red)}
 a:hover{color:var(--red-hot)}
@@ -1573,9 +1477,7 @@ a:hover{color:var(--red-hot)}
   position:fixed; inset:-30vmax; z-index:0; pointer-events:none;
   opacity:1;
   background:
-    radial-gradient(52vmax 52vmax at 18% 12%, rgba(79,172,186,.06), transparent 66%),
-    radial-gradient(48vmax 48vmax at 86% 84%, rgba(138,123,230,.05), transparent 68%),
-    radial-gradient(70vmax 70vmax at 50% 46%, rgba(40,52,74,.08), transparent 72%);
+    radial-gradient(70vmax 46vmax at 50% -8%, var(--cyan-t12), transparent 70%);
   /* STATIC while you are working, and that is measured rather than taste.
 
        static ................ 61 fps
@@ -1671,12 +1573,11 @@ body{ background:var(--bg) }
 
 /* The primary action carries the brand colour now. */
 .tb-btn.pri{
-  background-color:var(--cyan-hot);
-  background-image:linear-gradient(180deg,var(--cyan),var(--cyan-hot));
+  background:var(--cyan);
   border-color:transparent; color:var(--on-cyan); font-weight:650;
-  box-shadow:var(--edge-strong), 0 8px 22px -12px rgba(21,216,198,.7);
+  box-shadow:var(--shadow-lift);
 }
-.tb-btn.pri:hover{ box-shadow:var(--edge-strong), 0 10px 26px -10px rgba(21,216,198,.85) }
+.tb-btn.pri:hover{ box-shadow:var(--shadow-lift) }
 .tb-btn.danger{ border-color:var(--red-l35); color:var(--red) }
 
 /* The rail's active item: a cyan bar and a glass wash, not a red block. */

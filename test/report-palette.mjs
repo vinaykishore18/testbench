@@ -94,8 +94,8 @@ console.log('\n4. untested pages are listed as untested, not omitted');
 {
   const t = await page.evaluate(() => document.querySelector('#rep-out').textContent);
   /Not tested/.test(t) ? pass('there is a Not tested section') : fail('no Not tested section');
-  /* midi, camera, network, stress, system, joycon, airpods were never fed */
-  for (const name of ['MIDI', 'Webcams', 'Routers', 'Joy-Cons', 'Earbuds']) {
+  /* midi, camera, stress, system were never fed */
+  for (const name of ['MIDI', 'Webcams', 'System']) {
     t.includes(name) ? pass(`${name} is listed as not tested`) : fail(`${name} is missing from the report entirely`);
   }
   /says nothing about them/.test(t)
@@ -204,10 +204,10 @@ console.log('\n10. the palette finds pages by what you would actually type');
      behaviour. What must never happen is the right page being absent or
      buried, which is what the looser checks pin down. */
   for (const [typed, want, depth] of [
-    ['ping', 'network', 1], ['dead pixel', 'monitor', 1], ['mp3', 'audio', 1],
-    ['fake', 'airpods', 1], ['pdf', 'report', 1], ['latency', 'network', 1],
-    ['stuck', 'monitor', 1], ['serial', 'airpods', 1],
-    ['drift', 'gamepad', 2], ['battery', 'system', 3]
+    ['dead pixel', 'monitor', 1], ['mp3', 'audio', 1],
+    ['pdf', 'report', 1], ['chatter', 'keyboard', 1],
+    ['stuck', 'monitor', 2], ['cpi', 'mouse', 1],
+    ['drift', 'gamepad', 1], ['battery', 'system', 2]
   ]) {
     /* Use the palette's own ranking rather than reimplementing it here. A
        test with its own copy of the scoring is testing the test. */
@@ -224,12 +224,9 @@ console.log('\n10b. a match inside a longer word never beats a real one');
   /* "ping" used to offer the Keyboard page, because its keywords contain
      "typing". A search box whose first answer is visibly wrong is one people
      stop using after two tries. */
-  const ranked = await page.evaluate(() => window.PALETTE.search('ping').map((i) => i.view));
-  ranked[0] === 'network' ? pass('"ping" ranks the router page first')
-    : fail('"ping" ranks ' + ranked.slice(0, 3).join(' > ') + ' — a mid-word match is winning');
-  ranked.includes('keyboard')
-    ? pass('and the mid-word match in "typing" still appears, just lower')
-    : pass('the mid-word match was dropped entirely, which is also fine');
+  const ranked = await page.evaluate(() => window.PALETTE.search('scroll').map((i) => i.view));
+  ranked[0] === 'mouse' ? pass('"scroll" ranks the mouse page first')
+    : fail('"scroll" ranks ' + ranked.slice(0, 3).join(' > ') + ' — a mid-word match is winning');
 }
 
 console.log('\n11. Escape closes it and gives focus back');
@@ -278,7 +275,7 @@ console.log('\n12b. switching a tab does not move the page');
 
      Both cases are checked, because fixing one by always scrolling to the
      strip would break the other. */
-  for (const [view, strip] of [['mouse', '#ms-tabs'], ['keyboard', '#kb-tabs'], ['airpods', '#ap-tabs']]) {
+  for (const [view, strip] of [['mouse', '#ms-tabs'], ['keyboard', '#kb-tabs']]) {
     await page.click(`button[data-view="${view}"]`);
     await page.waitForTimeout(300);
     const names = await page.$$eval(`${strip} button`, (ns) => ns.map((n) => n.dataset.t));

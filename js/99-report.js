@@ -27,15 +27,12 @@ var PAGES = [
   ["keyboard", "Keyboard", "every key registers, no chatter, no stuck keys"],
   ["mouse", "Mouse", "buttons, scroll, tracking, double-click, side buttons"],
   ["gamepad", "Controllers", "sticks centred, no drift, every button and trigger"],
-  ["joycon", "Joy-Cons", "sticks, buttons, battery and calibration over HID"],
   ["wheel", "Wheels", "steering travel, pedals, buttons, force feedback"],
   ["audio", "Mic & headsets", "microphone level, both earcups, no distortion"],
-  ["airpods", "Earbuds", "driver response against a reference pair, serial check"],
   ["midi", "MIDI", "every key and control sends, no stuck notes"],
   ["monitor", "Monitors", "dead and stuck pixels, uniformity, banding, backlight"],
   ["camera", "Webcams", "image, resolution and frame rate"],
   ["touch", "Touch", "every touch point registers across the whole panel"],
-  ["network", "Routers", "speed, latency, latency under load, dropouts"],
   ["stress", "Stress test", "holds up under sustained CPU and GPU load"],
   ["system", "System", "what the machine reports about its own hardware"]
 ];

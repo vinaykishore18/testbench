@@ -125,14 +125,14 @@ console.log('\n3. untested pages appear, with no score');
   const body = rows.slice(1).filter((r) => r.length === header.length);
 
   const untested = body.filter((r) => r[resCol] === 'NOT TESTED');
-  untested.length >= 10
+  untested.length >= 8
     ? pass(`${untested.length} untested pages have their own rows`)
     : fail(`only ${untested.length} untested rows — a sheet of passes reads as a pass for the whole unit`);
   untested.every((r) => r[scoreCol] === '')
     ? pass('and none of them carries a score') : fail('an untested page was given a score');
 
   const names = body.map((r) => r[pageCol]);
-  ['network', 'monitor', 'airpods', 'midi'].every((n) => names.includes(n))
+  ['monitor', 'midi', 'camera', 'touch'].every((n) => names.includes(n))
     ? pass('the pages that were never opened are all named') : fail('pages are missing entirely: ' + JSON.stringify(names));
 
   /* The overall verdict repeats on every row so a filtered sheet still shows
@@ -169,7 +169,7 @@ console.log('\n5. the JSON says the same thing, and states its limits');
     : fail('no schema version — anything parsing this would break silently on a change');
   Array.isArray(j.results) && j.results.length === 2
     ? pass(`${j.results.length} results`) : fail('results: ' + JSON.stringify(j.results && j.results.length));
-  Array.isArray(j.not_tested) && j.not_tested.length >= 10
+  Array.isArray(j.not_tested) && j.not_tested.length >= 8
     ? pass(`${j.not_tested.length} untested pages listed`) : fail('untested list is missing or short');
   j.overall && j.overall.verdict === 'Faulty'
     ? pass('overall verdict: Faulty') : fail('overall: ' + JSON.stringify(j.overall));

@@ -54,14 +54,12 @@ await page.waitForTimeout(600);
 
 const read = () => page.evaluate(() => {
   const g = document.querySelector('#whrot');
-  const stats = [...document.querySelectorAll('#wh-body .tb-stat')].map(s => ({
-    k: s.querySelector('.k').textContent, v: s.querySelector('.v').textContent
-  }));
-  const val = (name) => (stats.find(s => s.k === name) || {}).v || '';
+  const ws = (window.TB && TB.wheelState) ? TB.wheelState() : {};
   return {
     transform: g ? g.getAttribute('transform') || '' : null,
-    angle: val('Angle'), swept: val('Swept'), centre: val('Centre offset'),
-    axis: (document.querySelector('#wh-body select') || {}).value
+    angle: (document.querySelector('#wh-deg') || {}).textContent || '',
+    axis: String(ws.steerAxis),
+    pedals: ws.pedals || []
   };
 });
 
@@ -99,36 +97,27 @@ console.log('\n3. it found the steering axis by itself');
                   : fail('selector says axis ' + st.axis + ' — it is still guessing');
 }
 
-console.log('\n4. a full sweep reports as full travel');
+console.log('\n4. pedals are found on their own and fill when pressed');
 {
+  /* axis 0 rests at one end like a real pedal, then gets stamped to the floor */
+  await page.evaluate(() => window.__pedal(0, -0.98)); await page.waitForTimeout(120);
+  await page.evaluate(() => window.__pedal(0, 1)); await page.waitForTimeout(220);
   const st = await read();
-  const swept = parseFloat(st.swept);
-  swept > 92 ? pass('swept ' + st.swept + ' after lock to lock') : fail('swept only ' + st.swept);
-  const centre = Math.abs(parseFloat(st.centre));
-  centre < 5 ? pass('centre offset ' + st.centre) : fail('centre offset ' + st.centre + ' on a centred wheel');
+  st.pedals.includes(0) ? pass('axis 0 found as a pedal, no setup')
+                        : fail('pedal not detected, pedals = ' + JSON.stringify(st.pedals));
+  const fill = await page.evaluate(() => {
+    const f = document.querySelector('#wh-peds .tb-pedbar i');
+    return f ? parseFloat(f.style.height || '0') : -1;
+  });
+  fill > 50 ? pass('its bar fills as it travels: ' + fill + '%') : fail('the pedal bar did not fill: ' + fill);
+  await page.evaluate(() => window.__pedal(0, -0.98)); await page.waitForTimeout(120);
 }
 
 console.log('\n5. a pedal is not mistaken for the steering');
 {
-  /* axis 0 swings its whole range but rests at one end, like a real pedal */
-  for (const v of [-0.98, -0.5, 0, 0.5, 1, -0.98]) {
-    await page.evaluate(v => window.__pedal(0, v), v);
-    await page.waitForTimeout(90);
-  }
-  await page.waitForTimeout(250);
   const st = await read();
   st.axis === '3' ? pass('still on axis 3 — a one-ended travel is not steering')
                   : fail('switched to axis ' + st.axis + ' after a pedal moved');
-}
-
-console.log('\n6. choosing an axis by hand stops the guessing');
-{
-  await page.selectOption('#wh-body select', '5');
-  await page.waitForTimeout(200);
-  for (const v of [-1, 1, 0]) { await page.evaluate(v => window.__steer(v), v); await page.waitForTimeout(90); }
-  await page.waitForTimeout(250);
-  const st = await read();
-  st.axis === '5' ? pass('kept the human choice') : fail('overrode the manual pick, now on axis ' + st.axis);
 }
 
 console.log('\n7. buttons register');

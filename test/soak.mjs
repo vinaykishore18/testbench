@@ -18,8 +18,8 @@ import { chromium } from 'playwright';
 
 const URL = process.env.TB_URL || 'http://127.0.0.1:8099/index.html';
 const CHROME = process.env.TB_CHROME || undefined;
-const VIEWS = ['home','keyboard','mouse','gamepad','joycon','wheel','midi','audio','airpods',
-               'monitor','camera','touch','network','stress','system'];
+const VIEWS = ['home','keyboard','mouse','gamepad','wheel','midi','audio',
+               'monitor','camera','touch','stress','system'];
 
 let failures = 0;
 const fail = (m) => { console.log('  FAIL  ' + m); failures++; };
@@ -243,7 +243,7 @@ console.log('\n6. nothing spins beyond the one loop that is meant to');
      rate is the design. Two loops, or an interval firing dozens of times a
      second, is not - so the bar is set just above a single loop rather than
      at zero, which would fail the healthy state. */
-  for (const v of ['home', 'keyboard', 'system', 'network', 'airpods']) {
+  for (const v of ['home', 'keyboard', 'system', 'audio', 'monitor']) {
     await page.click(`button[data-view="${v}"]`);
     await page.waitForTimeout(300);
     const before = await snap();
